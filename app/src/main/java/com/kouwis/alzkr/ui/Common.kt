@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -74,31 +78,50 @@ fun CardBox(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 @Composable
 fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, height: Dp = 40.dp) {
     val c = LocalColors.current
-    Row(
+    // one white pill that glides to the chosen tab (no flashing), text colours cross-fade
+    androidx.compose.foundation.layout.BoxWithConstraints(
         modifier
             .clip(RoundedCornerShape(14.dp))
             .background(c.chip)
             .padding(4.dp)
             .height(height),
     ) {
-        options.forEachIndexed { i, label ->
-            val on = i == selected
-            Box(
-                Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (on) c.card else Color.Transparent)
-                    .springClick(role = Role.Tab, haptic = Haptic.Tick, pressedScale = 0.95f) { onSelect(i) },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label,
-                    color = if (on) c.text else c.muted,
-                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
+        val segW = maxWidth / options.size
+        val x by androidx.compose.animation.core.animateDpAsState(
+            segW * selected,
+            androidx.compose.animation.core.spring(dampingRatio = 0.9f, stiffness = 320f),
+            label = "pill",
+        )
+        Box(
+            Modifier
+                .offset(x = x)
+                .width(segW)
+                .fillMaxHeight()
+                .shadow(1.dp, RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .background(c.card),
+        )
+        Row(Modifier.fillMaxSize()) {
+            options.forEachIndexed { i, label ->
+                val on = i == selected
+                val col by androidx.compose.animation.animateColorAsState(
+                    if (on) c.text else c.muted, androidx.compose.animation.core.tween(260), label = "segText",
                 )
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .springClick(role = Role.Tab, haptic = Haptic.Tick, pressedScale = 0.96f, ripple = false) { onSelect(i) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label,
+                        color = col,
+                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }

@@ -46,6 +46,7 @@ fun Modifier.springClick(
     label: String? = null,
     haptic: Haptic = Haptic.Tap,
     pressedScale: Float = 0.92f,
+    ripple: Boolean = true,
     onClick: () -> Unit,
 ): Modifier = composed {
     val view = LocalView.current
@@ -58,7 +59,7 @@ fun Modifier.springClick(
     )
     this
         .graphicsLayer { scaleX = scale; scaleY = scale }
-        .clickable(interactionSource = source, indication = LocalIndication.current, role = role, onClickLabel = label) {
+        .clickable(interactionSource = source, indication = if (ripple) LocalIndication.current else null, role = role, onClickLabel = label) {
             view.haptic(haptic)
             onClick()
         }

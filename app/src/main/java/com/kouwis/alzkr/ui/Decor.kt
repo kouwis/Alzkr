@@ -36,8 +36,9 @@ fun Modifier.mosqueBackdrop(tint: Color = Color.White): Modifier = drawBehind {
     }
 
     // 2) mosque silhouette, left side (the reading side of the card is on the right)
-    val u = size.height * 0.62f // overall height unit
-    val base = size.height * 0.60f // where the building stands
+    // fixed size and position (not tied to the card's height), so it never stretches
+    val u = 96.dp.toPx() // overall height unit
+    val base = 118.dp.toPx() // where the building stands
     val cx = 20.dp.toPx() + u * 0.62f
     val fill = tint.copy(alpha = 0.11f)
     val p = Path()

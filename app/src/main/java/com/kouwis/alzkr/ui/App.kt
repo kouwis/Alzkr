@@ -1,6 +1,7 @@
 package com.kouwis.alzkr.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,12 +60,34 @@ fun AlzkrApp() {
                 return@Box
             }
             BackHandler(enabled = nav.stack.size > 1) { nav.back() }
-            when (val s = nav.current) {
-                Screen.Home -> HomeScreen(q, state, prefs, nav)
-                Screen.Search -> SearchScreen(q, nav)
-                Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
-                Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)
-                is Screen.Mushaf -> MushafScreen(q, state, prefs, nav, s.page, s.verse, s.highlight)
+            // calm screen changes: the new screen fades in while easing up from 96%, the old one
+            // fades out and settles back a little (and the reverse when going back)
+            androidx.compose.animation.AnimatedContent(
+                targetState = nav.stack.size to nav.current,
+                transitionSpec = {
+                    val forward = targetState.first >= initialState.first
+                    val ease = androidx.compose.animation.core.FastOutSlowInEasing
+                    if (forward) {
+                        (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320, delayMillis = 60, easing = ease)) +
+                            androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(380, easing = ease), initialScale = 0.96f)) togetherWith
+                            (androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                                androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(380, easing = ease), targetScale = 1.03f))
+                    } else {
+                        (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320, delayMillis = 60, easing = ease)) +
+                            androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(380, easing = ease), initialScale = 1.03f)) togetherWith
+                            (androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                                androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(380, easing = ease), targetScale = 0.96f))
+                    }
+                },
+                label = "screens",
+            ) { (_, screen) ->
+                when (screen) {
+                    Screen.Home -> HomeScreen(q, state, prefs, nav)
+                    Screen.Search -> SearchScreen(q, nav)
+                    Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
+                    Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)
+                    is Screen.Mushaf -> MushafScreen(q, state, prefs, nav, screen.page, screen.verse, screen.highlight)
+                }
             }
         }
     }

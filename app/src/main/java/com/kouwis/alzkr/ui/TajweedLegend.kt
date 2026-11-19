@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -38,30 +39,41 @@ val TajweedLegend = listOf(
 @Composable
 fun TajweedLegendDialog(onDismiss: () -> Unit) {
     val c = LocalColors.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("تم", color = c.primary) } },
-        title = { Text("دليل ألوان التجويد", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.text) },
-        text = {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl,
+        ) {
             Column(
-                Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
+                Modifier
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(26.dp))
+                    .background(c.card)
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                TajweedLegend.forEach { (color, name, how) ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(Modifier.size(22.dp).clip(CircleShape).background(color))
-                        Column {
-                            Text(name, color = c.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                            Text(how, color = c.muted, fontSize = 13.sp)
+                Text("دليل ألوان التجويد", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = c.text)
+                Column(
+                    Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    TajweedLegend.forEach { (color, name, how) ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(Modifier.size(22.dp).clip(CircleShape).background(color))
+                            Column {
+                                Text(name, color = c.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                                Text(how, color = c.muted, fontSize = 13.sp)
+                            }
                         }
                     }
+                    Text(
+                        "الألوان من مصحف التجويد بتاع مجمع الملك فهد، وموجودة جوه خط الصفحة نفسه.",
+                        color = c.muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
-                Text(
-                    "الألوان من مصحف التجويد بتاع مجمع الملك فهد، وموجودة جوه خط الصفحة نفسه.",
-                    color = c.muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp),
-                )
+                // "تم" on the right (the start side in Arabic)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                    TextButton(onClick = onDismiss) { Text("تم", color = c.primary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+                }
             }
-        },
-        containerColor = c.card,
-    )
+        }
+    }
 }

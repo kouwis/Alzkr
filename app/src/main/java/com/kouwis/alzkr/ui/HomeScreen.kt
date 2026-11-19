@@ -236,7 +236,7 @@ private fun Pill(label: String, on: Boolean, onClick: () -> Unit) {
             .height(40.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(if (on) c.primary else Color.Transparent)
-            .springClick(role = Role.Tab, haptic = Haptic.Tick, onClick = onClick)
+            .springClick(role = Role.Tab, haptic = Haptic.Tick, ripple = false, onClick = onClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -297,7 +297,13 @@ private fun ContinueCard(
             ToggleChip("الترجمة", Ic.translate, prefs.translationOn, onTranslation, Modifier.weight(1f))
             ToggleChip("المجوّد", Ic.tajweed, prefs.tajweedOn, onTajweed, Modifier.weight(1f))
         }
-        if (prefs.tajweedOn) {
+        androidx.compose.animation.AnimatedVisibility(
+            visible = prefs.tajweedOn,
+            enter = androidx.compose.animation.expandVertically(androidx.compose.animation.core.tween(320)) +
+                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)),
+            exit = androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(260)) +
+                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)),
+        ) {
             Row(
                 Modifier.clip(RoundedCornerShape(12.dp)).springClick(haptic = Haptic.Tap, onClick = onLegend).padding(vertical = 4.dp, horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -322,7 +328,7 @@ private fun ToggleChip(label: String, icon: ImageVector, on: Boolean, onClick: (
             .clip(RoundedCornerShape(14.dp))
             .background(bg)
             .border(1.dp, if (on) Color.White else c.primaryLine, RoundedCornerShape(14.dp))
-            .springClick(role = Role.Switch, haptic = Haptic.Toggle, pressedScale = 0.94f, onClick = onClick)
+            .springClick(role = Role.Switch, haptic = Haptic.Toggle, pressedScale = 0.94f, ripple = false, onClick = onClick)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
