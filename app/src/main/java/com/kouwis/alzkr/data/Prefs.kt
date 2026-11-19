@@ -25,6 +25,7 @@ data class AppPrefs(
     val wardTarget: Int = 3,
     val wardDone: Int = 0,
     val verseMode: Boolean = false,
+    val tajweedOn: Boolean = false,
 )
 
 class Prefs(private val context: Context) {
@@ -39,6 +40,7 @@ class Prefs(private val context: Context) {
         val wardDay = stringPreferencesKey("ward_day")
         val wardPages = stringSetPreferencesKey("ward_pages")
         val verseMode = booleanPreferencesKey("verse_mode")
+        val tajweed = booleanPreferencesKey("tajweed_on")
     }
 
     private fun today() = LocalDate.now().toString()
@@ -55,12 +57,14 @@ class Prefs(private val context: Context) {
             wardTarget = p[K.wardTarget] ?: 3,
             wardDone = if (sameDay) p[K.wardPages]?.size ?: 0 else 0,
             verseMode = p[K.verseMode] ?: false,
+            tajweedOn = p[K.tajweed] ?: false,
         )
     }
 
     suspend fun setTafsir(on: Boolean) = context.store.edit { it[K.tafsir] = on }
     suspend fun setTranslation(on: Boolean) = context.store.edit { it[K.translation] = on }
     suspend fun setVerseMode(on: Boolean) = context.store.edit { it[K.verseMode] = on }
+    suspend fun setTajweed(on: Boolean) = context.store.edit { it[K.tajweed] = on }
 
     suspend fun markRead(page: Int, verseKey: String) = context.store.edit { p ->
         p[K.lastPage] = page

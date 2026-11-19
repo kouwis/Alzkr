@@ -230,7 +230,7 @@ fun MushafScreen(
             visible = markNote != null && !barsVisible,
             enter = slideInVertically(tween(350)) { -it } + fadeIn(tween(350)),
             exit = slideOutVertically(tween(300)) { -it } + fadeOut(tween(300)),
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 36.dp),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 46.dp),
         ) {
             var shown by remember { mutableStateOf("") }
             markNote?.let { shown = it }
@@ -413,7 +413,6 @@ private fun TopBar(
                 onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp, haptic = Haptic.Confirm,
             )
             RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
-            Segmented(listOf("عادي", "مجوّد"), 0, { if (it == 1) onTajweed() }, Modifier.width(112.dp), height = 32.dp)
         }
     }
 }

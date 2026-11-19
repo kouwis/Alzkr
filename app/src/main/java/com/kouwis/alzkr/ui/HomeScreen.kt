@@ -1,6 +1,17 @@
 package com.kouwis.alzkr.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.background
 import com.kouwis.alzkr.data.AppFonts
 import androidx.compose.foundation.border
@@ -69,8 +80,42 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         }
     }
 
+    // swipe the list left/right to move between السور / الأرباع / الأحزاب / الأجزاء
+    val view = LocalView.current
+    val density = LocalDensity.current
+    var dragX by remember { mutableFloatStateOf(0f) }
+    val enter = remember { Animatable(0f) }
+    var lastTab by remember { mutableIntStateOf(tab) }
+    LaunchedEffect(tab) {
+        if (tab != lastTab) {
+            val dir = if (tab > lastTab) -1f else 1f // next tab comes in from the right… slides left
+            lastTab = tab
+            enter.snapTo(-dir * with(density) { 120.dp.toPx() })
+            enter.animateTo(0f, spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow))
+        }
+    }
+    val swipeTabs = Modifier.pointerInput(Unit) {
+        detectHorizontalDragGestures(
+            onDragEnd = {
+                val limit = 70.dp.toPx()
+                val next = when {
+                    dragX < -limit -> (tab + 1).coerceAtMost(3) // swipe left -> next
+                    dragX > limit -> (tab - 1).coerceAtLeast(0) // swipe right -> previous
+                    else -> tab
+                }
+                if (next != tab) { view.haptic(Haptic.Tick); tab = next }
+                dragX = 0f
+            },
+            onDragCancel = { dragX = 0f },
+        ) { change, dx -> change.consume(); dragX += dx }
+    }
+    val rowShift = Modifier.graphicsLayer {
+        translationX = dragX * 0.35f + enter.value
+        alpha = (1f - kotlin.math.abs(translationX) / (size.width.coerceAtLeast(1f))).coerceIn(0.4f, 1f)
+    }
+
     Column(Modifier.fillMaxSize().background(c.bg).statusBarsPadding().navigationBarsPadding()) {
-        LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().then(swipeTabs)) {
             item {
                 Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -88,6 +133,10 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                     ContinueCard(q, prefs, nav,
                         onTafsir = { scope.launch { store.setTafsir(!prefs.tafsirOn) } },
                         onTranslation = { scope.launch { store.setTranslation(!prefs.translationOn) } },
+                        onTajweed = {
+                            if (!prefs.tajweedOn) soon("المصحف المجوّد")
+                            scope.launch { store.setTajweed(!prefs.tajweedOn) }
+                        },
                     )
                     CardBox(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -114,7 +163,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                 }
             }
             items(rows, key = { "$tab-${it.n}" }) { r ->
-                Column(Modifier.padding(horizontal = 20.dp).background(c.card)) {
+                Column(Modifier.then(rowShift).padding(horizontal = 20.dp).background(c.card)) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -171,7 +220,14 @@ private fun Pill(label: String, on: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ContinueCard(q: QuranData, prefs: AppPrefs, nav: Nav, onTafsir: () -> Unit, onTranslation: () -> Unit) {
+private fun ContinueCard(
+    q: QuranData,
+    prefs: AppPrefs,
+    nav: Nav,
+    onTafsir: () -> Unit,
+    onTranslation: () -> Unit,
+    onTajweed: () -> Unit,
+) {
     val c = LocalColors.current
     val page = if (prefs.lastPage in 1..604) prefs.lastPage else 1
     val started = prefs.lastPage in 1..604
@@ -183,6 +239,7 @@ private fun ContinueCard(q: QuranData, prefs: AppPrefs, nav: Nav, onTafsir: () -
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(c.primary)
+            .mosqueBackdrop()
             .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -212,6 +269,7 @@ private fun ContinueCard(q: QuranData, prefs: AppPrefs, nav: Nav, onTafsir: () -
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
             ToggleChip("التفسير", Ic.book, prefs.tafsirOn, onTafsir, Modifier.weight(1f))
             ToggleChip("الترجمة", Ic.translate, prefs.translationOn, onTranslation, Modifier.weight(1f))
+            ToggleChip("المجوّد", Ic.tajweed, prefs.tajweedOn, onTajweed, Modifier.weight(1f))
         }
     }
 }
@@ -219,31 +277,22 @@ private fun ContinueCard(q: QuranData, prefs: AppPrefs, nav: Nav, onTafsir: () -
 @Composable
 private fun ToggleChip(label: String, icon: ImageVector, on: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val c = LocalColors.current
-    val fg = if (on) LightColors.primary else Color.White
+    val bg by animateColorAsState(if (on) Color.White else Color.Transparent, label = "chipBg")
+    val fg by animateColorAsState(if (on) LightColors.primary else Color.White, label = "chipFg")
     Row(
         modifier
-            .height(48.dp)
+            .height(46.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(if (on) Color.White else Color.Transparent)
+            .background(bg)
             .border(1.dp, if (on) Color.White else c.primaryLine, RoundedCornerShape(14.dp))
-            .springClick(role = Role.Switch, haptic = Haptic.Toggle, pressedScale = 0.95f, onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .springClick(role = Role.Switch, haptic = Haptic.Toggle, pressedScale = 0.94f, onClick = onClick)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label, color = fg, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        // switch
-        Box(
-            Modifier
-                .width(34.dp)
-                .height(20.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(if (on) LightColors.primary else c.primaryLine)
-                .padding(2.dp),
-            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
-        ) {
-            Box(Modifier.size(16.dp).clip(RoundedCornerShape(8.dp)).background(Color.White))
-        }
+        val pop = popScale(on)
+        Icon(if (on) Ic.check else icon, null, tint = fg, modifier = Modifier.size(17.dp).graphicsLayer { scaleX = pop; scaleY = pop })
+        Spacer(Modifier.width(5.dp))
+        Text(label, color = fg, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)
     }
 }
