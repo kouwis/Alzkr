@@ -1,0 +1,60 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache downloaded Quran data
+        uses: actions/cache@v4
+        with:
+          path: .data-cache
+          key: quran-data-v1
+
+      - name: Build bundled Quran data
+        run: python3 scripts/build_data.py
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Build APK
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk "out/alzkr-0.1.${{ github.run_number }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alzkr-apk
+          path: out/*.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: الذِّكر 0.1.${{ github.run_number }}
+          body: |
+            نسخة تجريبية للاختبار. حمّل ملف الـ APK على موبايلك وافتحه للتثبيت.
+            Test build ${{ github.sha }}
+          files: out/*.apk
