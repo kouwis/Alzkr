@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.kouwis.alzkr.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -128,7 +131,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         alpha = (1f - kotlin.math.abs(translationX) / (size.width.coerceAtLeast(1f))).coerceIn(0.4f, 1f)
     }
 
-    Column(Modifier.fillMaxSize().background(c.bg).statusBarsPadding().navigationBarsPadding()) {
+    Column(Modifier.fillMaxSize().background(c.bg).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBarsIgnoringVisibility).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBarsIgnoringVisibility)) {
         LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
             item {
                 // swiping the top part (continue card, ward) moves between sections: القرآن → الأذكار
@@ -254,6 +257,10 @@ private fun ContinueCard(
     onTajweed: () -> Unit,
     onLegend: () -> Unit,
 ) {
+    // the switches flip at once; the setting is saved in the background
+    var tafsirL by remember(prefs.tafsirOn) { mutableStateOf(prefs.tafsirOn) }
+    var translationL by remember(prefs.translationOn) { mutableStateOf(prefs.translationOn) }
+    var tajweedL by remember(prefs.tajweedOn) { mutableStateOf(prefs.tajweedOn) }
     val c = LocalColors.current
     val page = if (prefs.lastPage in 1..604) prefs.lastPage else 1
     val started = prefs.lastPage in 1..604
@@ -293,12 +300,12 @@ private fun ContinueCard(
         HorizontalDivider(color = c.primaryLine)
         Text("اعرض أسفل الصفحة أثناء القراءة", color = Color(0xFFCFE3DD), fontSize = 12.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
-            ToggleChip("التفسير", Ic.book, prefs.tafsirOn, onTafsir, Modifier.weight(1f))
-            ToggleChip("الترجمة", Ic.translate, prefs.translationOn, onTranslation, Modifier.weight(1f))
-            ToggleChip("المجوّد", Ic.tajweed, prefs.tajweedOn, onTajweed, Modifier.weight(1f))
+            ToggleChip("التفسير", Ic.book, tafsirL, { tafsirL = !tafsirL; onTafsir() }, Modifier.weight(1f))
+            ToggleChip("الترجمة", Ic.translate, translationL, { translationL = !translationL; onTranslation() }, Modifier.weight(1f))
+            ToggleChip("المجوّد", Ic.tajweed, tajweedL, { tajweedL = !tajweedL; onTajweed() }, Modifier.weight(1f))
         }
         androidx.compose.animation.AnimatedVisibility(
-            visible = prefs.tajweedOn,
+            visible = tajweedL,
             enter = androidx.compose.animation.expandVertically(androidx.compose.animation.core.tween(320)) +
                 androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)),
             exit = androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(260)) +

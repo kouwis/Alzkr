@@ -150,8 +150,16 @@ fun QuranVerse(
     modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     val chunks = q.glyphs["$s:$a"].orEmpty()
-    val text = remember(s, a) {
-        val fonts = chunks.mapNotNull { ch -> PageFonts.get(ch.p)?.let { ch.p to it } }.toMap()
+    val fontsLoaded by androidx.compose.runtime.produceState<Map<Int, android.graphics.Typeface>?>(
+        chunks.mapNotNull { ch -> PageFonts.cached(ch.p)?.let { ch.p to it } }.toMap().takeIf { m -> chunks.all { it.p in m } },
+        s, a,
+    ) {
+        if (value == null) value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            chunks.mapNotNull { ch -> PageFonts.get(ch.p)?.let { ch.p to it } }.toMap()
+        }
+    }
+    val text = remember(s, a, fontsLoaded) {
+        val fonts = fontsLoaded ?: emptyMap()
         if (chunks.isEmpty() || fonts.size != chunks.map { it.p }.toSet().size) null
         else buildAnnotatedString {
             chunks.forEachIndexed { i, ch ->

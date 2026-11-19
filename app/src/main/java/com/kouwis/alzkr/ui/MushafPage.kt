@@ -104,7 +104,11 @@ private fun PageCanvas(
         value = if (tajweed) com.kouwis.alzkr.data.TajweedFonts.get(ctx, page, dark) else null
     }
     val useTajweed = tajweed && tjTf != null && q.pagesTajweed.size == 604
-    val plainTf = remember(page) { PageFonts.get(page) }
+    // the page font is read from the APK and the page is laid out on a background thread,
+    // so opening the mushaf and turning pages never stalls the animation
+    val plainTf by androidx.compose.runtime.produceState(PageFonts.cached(page), page) {
+        if (value == null) value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { PageFonts.get(page) }
+    }
     val tf = if (useTajweed) tjTf else plainTf
     // the ayah you came to (from favourites / bookmarks / search) lights up: two soft pulses,
     // then it stays gently lit until you tap the page
@@ -123,7 +127,10 @@ private fun PageCanvas(
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
         if (tf == null || w <= 0f || h <= 0f) return@BoxWithConstraints
-        val layout = remember(page, w, h, useTajweed, tf) { layoutPage(q, page, tf, w, h, useTajweed) }
+        val laid by androidx.compose.runtime.produceState<PageLayout?>(null, page, w, h, useTajweed, tf) {
+            value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { layoutPage(q, page, tf, w, h, useTajweed) }
+        }
+        val layout = laid ?: return@BoxWithConstraints
         // the page fonts exactly as the complex drew them: no added boldness
         val wordPaint = remember(tf) {
             // subpixel positioning + linear (unhinted, uncached-bitmap) glyphs: every word is

@@ -61,6 +61,7 @@ object TajweedFonts {
         if (prefetch?.isActive == true) return
         val app = ctx.applicationContext
         prefetch = scope.launch {
+            kotlinx.coroutines.delay(1500)
             for (p in 1..604) {
                 val f = file(app, p)
                 if (!(f.exists() && f.length() > 0)) download(p, f)
