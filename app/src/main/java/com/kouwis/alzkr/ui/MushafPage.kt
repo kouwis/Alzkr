@@ -86,10 +86,10 @@ private fun PageCanvas(
         val h = constraints.maxHeight.toFloat()
         if (tf == null || w <= 0f || h <= 0f) return@BoxWithConstraints
         val layout = remember(page, w, h) { layoutPage(q, page, tf, w, h) }
-        // every page drawn equally bold (the QCF page fonts differ slightly in weight)
+        // the page fonts exactly as the complex drew them: no added boldness
         val wordPaint = remember(tf) {
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                typeface = tf; style = Paint.Style.FILL_AND_STROKE; strokeJoin = Paint.Join.ROUND
+                typeface = tf; style = Paint.Style.FILL
             }
         }
         val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml; strokeJoin = Paint.Join.ROUND } }
@@ -118,7 +118,6 @@ private fun PageCanvas(
                 }
             }
             wordPaint.textSize = layout.textSize
-            wordPaint.strokeWidth = layout.textSize * (q.meta.bold.getOrNull(page - 1) ?: 0f)
             wordPaint.color = c.ink.toArgb()
             ornPaint.color = c.ink.toArgb()
             labelPaint.color = c.muted.toArgb()
@@ -133,8 +132,7 @@ private fun PageCanvas(
                 nc.drawText(pageLabel, size.width / 2f, layout.footerBaseline, labelPaint)
                 layout.ornaments.forEach { o ->
                     ornPaint.textSize = o.size
-                    ornPaint.style = if (o.bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL
-                    ornPaint.strokeWidth = o.size * 0.012f
+                    ornPaint.style = Paint.Style.FILL
                     nc.drawText(o.text, o.x, o.baseline, ornPaint)
                 }
                 layout.words.forEach { wd ->
