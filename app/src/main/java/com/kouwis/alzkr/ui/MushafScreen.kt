@@ -1,6 +1,7 @@
 package com.kouwis.alzkr.ui
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -360,43 +361,50 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val maxH = with(density) { constraints.maxHeight.toFloat().toDp() }
-        // collapsed = exactly the header, so its bottom line sits on the screen edge
+        // three states: 0 = small floating bar, 1 = half screen, 2 = full screen
         var headerPx by remember { mutableIntStateOf(0) }
         val dividerColor = c.border
-        val collapsedH = if (headerPx > 0) with(density) { headerPx.toDp() } else 64.dp
-        val expandedH = maxH * 0.58f
-        var expanded by remember { mutableStateOf(false) }
+        val headerH = if (headerPx > 0) with(density) { headerPx.toDp() } else 64.dp
+        var state by remember { mutableIntStateOf(0) }
         var dragOffset by remember { mutableFloatStateOf(0f) }
-        LaunchedEffect(selected) { if (selected != null) expanded = true }
-        val target = (if (expanded) expandedH else collapsedH) - dragOffset.dp
-        val height by animateDpAsState(
-            targetValue = target.coerceIn(collapsedH, maxH * 0.92f),
-            animationSpec = if (dragOffset == 0f) spring(dampingRatio = 0.82f, stiffness = 380f) else snap(),
-            label = "panel",
-        )
+        LaunchedEffect(selected) { if (selected != null && state == 0) state = 1 }
+        BackHandler(enabled = state > 0) { state = 0 }
+        val stateH = when (state) { 0 -> headerH; 1 -> maxH * 0.58f; else -> maxH }
+        val target = stateH - dragOffset.dp
+        val anim = if (dragOffset == 0f) spring<androidx.compose.ui.unit.Dp>(dampingRatio = 0.82f, stiffness = 380f) else snap<androidx.compose.ui.unit.Dp>()
+        val height by animateDpAsState(target.coerceIn(headerH, maxH), anim, label = "panel")
+        // collapsed it floats above the bottom edge with rounded corners; open it spans the width
+        val side by animateDpAsState(if (state == 0 && dragOffset == 0f) 14.dp else 0.dp, label = "side")
+        val bottom by animateDpAsState(if (state == 0 && dragOffset == 0f) 22.dp else 0.dp, label = "bottom")
+        val corner by animateDpAsState(if (state == 2) 0.dp else 24.dp, label = "corner")
+        val bottomCorner by animateDpAsState(if (state == 0 && dragOffset == 0f) 24.dp else 0.dp, label = "bcorner")
+        val expanded = state > 0
         val verses = remember(page) { q.versesOnPage(page) }
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         LaunchedEffect(selected, page) {
             val idx = verses.indexOfFirst { "${it.first}:${it.second}" == selected }
             if (idx >= 0) listState.animateScrollToItem(idx)
         }
+        val shape = RoundedCornerShape(topStart = corner, topEnd = corner, bottomStart = bottomCorner, bottomEnd = bottomCorner)
         Column(
             modifier
+                .padding(start = side, end = side, bottom = bottom)
                 .fillMaxWidth()
                 .height(height)
-                .shadow(16.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .shadow(16.dp, shape)
+                .clip(shape)
                 .background(c.card),
         ) {
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clickable(role = Role.Button, onClickLabel = if (expanded) "تصغير" else "فتح") { expanded = !expanded }
+                    .clickable(role = Role.Button, onClickLabel = if (expanded) "تصغير" else "فتح") { state = if (state == 0) 1 else 0 }
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragEnd = {
-                                // pulled up far enough -> open; pulled down -> close
-                                if (dragOffset < -40f) expanded = true else if (dragOffset > 40f) expanded = false
+                                // pull up -> next state (bar, half, full screen); pull down -> previous
+                                if (dragOffset < -40f) state = (state + 1).coerceAtMost(2)
+                                else if (dragOffset > 40f) state = if (dragOffset > 260f) 0 else (state - 1).coerceAtLeast(0)
                                 dragOffset = 0f
                             },
                             onDragCancel = { dragOffset = 0f },
@@ -410,6 +418,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                     .padding(bottom = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (state == 2) Box(Modifier.statusBarsPadding())
                 Box(Modifier.padding(top = 10.dp, bottom = 8.dp).width(40.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.border))
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     val title = when {

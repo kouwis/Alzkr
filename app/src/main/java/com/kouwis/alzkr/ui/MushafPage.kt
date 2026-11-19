@@ -118,7 +118,7 @@ private fun PageCanvas(
                 }
             }
             wordPaint.textSize = layout.textSize
-            wordPaint.strokeWidth = layout.textSize * 0.022f
+            wordPaint.strokeWidth = layout.textSize * 0.006f
             wordPaint.color = c.ink.toArgb()
             ornPaint.color = c.ink.toArgb()
             labelPaint.color = c.muted.toArgb()
@@ -236,8 +236,9 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     }
     return PageLayout(
         size, words, ornaments, labelSize,
-        headerBaseline = blockTop - labelRoom * 0.35f,
-        footerBaseline = blockTop + blockH + labelRoom * 0.7f,
+        // labels sit in the middle of the margin: away from the text and away from the edge
+        headerBaseline = blockTop - minOf(blockTop * 0.5f, labelRoom * 1.1f) + labelSize * 0.35f,
+        footerBaseline = blockTop + blockH + minOf((h - blockTop - blockH) * 0.5f, labelRoom * 1.1f) + labelSize * 0.35f,
     )
 }
 
