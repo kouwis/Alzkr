@@ -43,7 +43,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.animation.core.Spring
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -275,16 +277,30 @@ private fun PagesPager(
         ),
     ) { idx ->
         val p = idx + 1
-        // a calm page turn: the page you leave settles back a little and dims while the
-        // next page glides over it
-        val turn = Modifier.graphicsLayer {
-            val offset = (state.currentPage - idx) + state.currentPageOffsetFraction
-            val o = kotlin.math.abs(offset).coerceIn(0f, 1f)
-            val scale = 1f - 0.05f * o
-            scaleX = scale
-            scaleY = scale
-            alpha = 1f - 0.25f * o
-            shadowElevation = 12f * (1f - o)
+        // A calm page turn, like laying one page over another: the lower-numbered page stays
+        // still underneath and dims a little, while the other page glides over it with a soft
+        // shadow on its leading edge. (The pager is right-to-left, so a page at position p is
+        // drawn at x = -p * width; translating it by p * width keeps it in place.)
+        val turn = Modifier.drawWithContent {
+            val pos = idx - (state.currentPage + state.currentPageOffsetFraction)
+            if (pos > -1f && pos <= 0f) {
+                // the page underneath: pinned in place and dimmed as it gets covered
+                translate(left = pos * size.width) {
+                    this@drawWithContent.drawContent()
+                    drawRect(Color.Black.copy(alpha = 0.10f * -pos))
+                }
+            } else {
+                drawContent()
+                if (pos > 0f && pos < 1f) {
+                    // the page on top: soft shadow along its right (leading) edge
+                    val w = 18.dp.toPx()
+                    drawRect(
+                        Brush.horizontalGradient(listOf(Color.Black.copy(alpha = 0.18f * (1f - pos)), Color.Transparent), startX = size.width, endX = size.width + w),
+                        topLeft = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                        size = androidx.compose.ui.geometry.Size(w, size.height),
+                    )
+                }
+            }
         }
         val sel = selected?.takeIf { k -> parseKey(k)?.let { (s, a) -> q.pageOf(s, a) == p } == true }
         if (landscape) {

@@ -74,8 +74,8 @@ fun MushafPage(
         modifier
             .background(c.paper)
             .drawBehind {
-                val spineW = 34.dp.toPx()
-                val shade = Color.Black.copy(alpha = if (dark) 0.35f else 0.11f)
+                val spineW = 44.dp.toPx()
+                val shade = Color.Black.copy(alpha = if (dark) 0.75f else 0.20f)
                 val spine = if (rightHand) {
                     Brush.horizontalGradient(listOf(shade, Color.Transparent), startX = 0f, endX = spineW)
                 } else {
@@ -83,11 +83,11 @@ fun MushafPage(
                 }
                 drawRect(spine)
                 // thin stacked page edges on the outer side
-                val edge = Color.Black.copy(alpha = if (dark) 0.30f else 0.10f)
+                val edge = if (dark) Color.White.copy(alpha = 0.22f) else Color.Black.copy(alpha = 0.22f)
                 val step = 2.5.dp.toPx()
-                for (k in 0 until 3) {
+                for (k in 0 until 4) {
                     val x = if (rightHand) size.width - step * (k + 0.5f) else step * (k + 0.5f)
-                    drawLine(edge.copy(alpha = edge.alpha * (1f - k * 0.25f)), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
+                    drawLine(edge.copy(alpha = edge.alpha * (1f - k * 0.2f)), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
                 }
             }
             .padding(horizontal = 22.dp, vertical = 8.dp),
