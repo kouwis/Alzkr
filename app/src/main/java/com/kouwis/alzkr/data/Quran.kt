@@ -26,6 +26,8 @@ data class MetaDto(
     val basmala: String? = null,
     /** per-page stroke (fraction of font size) that evens out boldness across page fonts */
     val bold: List<Float> = emptyList(),
+    /** width of a full line in em; the same text size is used for every page */
+    val lineEm: Float = 0f,
 )
 
 @Serializable

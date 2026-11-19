@@ -365,7 +365,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
         // three states: 0 = small floating bar, 1 = half screen, 2 = full screen
         var headerPx by remember { mutableIntStateOf(0) }
         val dividerColor = c.border
-        val headerH = if (headerPx > 0) with(density) { headerPx.toDp() } else 64.dp
+        val headerH = 64.dp // fixed: the bar always keeps the same shape
         var state by remember { mutableIntStateOf(0) }
         var dragOffset by remember { mutableFloatStateOf(0f) }
         LaunchedEffect(selected) { if (selected != null && state == 0) state = 1 }
@@ -390,6 +390,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
         Column(
             modifier
                 .padding(start = side, end = side, bottom = bottom)
+                .then(if (state == 2) Modifier.statusBarsPadding() else Modifier)
                 .fillMaxWidth()
                 .height(height)
                 .shadow(if (state == 0) 3.dp else 6.dp, shape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.18f))
@@ -412,7 +413,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                             onDragCancel = { dragOffset = 0f },
                         ) { _, dy -> dragOffset += dy / density.density }
                     }
-                    .onSizeChanged { headerPx = it.height }
+                    .height(headerH)
                     .drawBehind {
                         if (expanded) {
                             val y = size.height - 1.dp.toPx()
@@ -421,7 +422,6 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                     },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (state == 2) Box(Modifier.statusBarsPadding())
                 // small grip on top; the title row is centred in equal space above and below
                 Box(Modifier.padding(top = 8.dp).width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(c.border))
                 Row(

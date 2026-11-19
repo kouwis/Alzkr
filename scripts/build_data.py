@@ -114,6 +114,30 @@ def page_weights(target=0.19):
     return out
 
 
+def line_em(pages):
+    """Typical width (in em) of a full mushaf line, measured over all page fonts.
+    The app draws every page at the size where this width fills the screen, so all
+    pages share one text size (a few slightly longer lines are condensed a hair)."""
+    from fontTools.ttLib import TTFont
+    full = []
+    for p, lines in enumerate(pages, start=1):
+        if p <= 2:
+            continue
+        f = TTFont(os.path.join(ASSETS, "qcf", f"p{p}.ttf"))
+        cmap = f.getBestCmap(); hm = f["hmtx"]; upm = f["head"].unitsPerEm
+        widths = []
+        for ln in lines:
+            if ln["t"] != "x":
+                continue
+            tot = sum(hm[cmap[ord(ch)]][0] for _, g in ln["w"] for ch in g if ch != " " and ord(ch) in cmap)
+            widths.append(tot / upm)
+        if widths:
+            top = max(widths)
+            full += [x for x in widths if x >= 0.9 * top]
+    full.sort()
+    return round(full[int(len(full) * 0.85)], 4)
+
+
 def edition(name):
     d = fetch(ALQURAN + "quran/" + name, f"alquran/{name}.json")
     out = []
@@ -218,9 +242,11 @@ def main():
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
 
     dump("pages.json", pages)
+    lem = line_em(pages)
+    print("line em", lem, file=sys.stderr)
     bold = page_weights()
     print("bold range", min(bold), max(bold), file=sys.stderr)
-    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "bold": bold})
+    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "bold": bold, "lineEm": lem})
     dump("verses.json", {"page": vpage, "simple": simple, "clean": clean_norm})
     dump("glyphs.json", verse_glyphs)
     dump("tafsir_muyassar.json", tafsir)

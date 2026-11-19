@@ -36,7 +36,7 @@ import com.kouwis.alzkr.data.PageFonts
 import com.kouwis.alzkr.data.PageLine
 import com.kouwis.alzkr.data.QuranData
 
-private class PlacedWord(val key: String, val text: String, val x: Float, val baseline: Float, val hit: Rect)
+private class PlacedWord(val key: String, val text: String, val x: Float, val baseline: Float, val hit: Rect, val scaleX: Float = 1f)
 private class PlacedGlyph(val text: String, val x: Float, val baseline: Float, val size: Float, val bold: Boolean = true)
 private class PageLayout(
     val textSize: Float,
@@ -137,7 +137,10 @@ private fun PageCanvas(
                     ornPaint.strokeWidth = o.size * 0.012f
                     nc.drawText(o.text, o.x, o.baseline, ornPaint)
                 }
-                layout.words.forEach { wd -> nc.drawText(wd.text, wd.x, wd.baseline, wordPaint) }
+                layout.words.forEach { wd ->
+                    wordPaint.textScaleX = wd.scaleX
+                    nc.drawText(wd.text, wd.x, wd.baseline, wordPaint)
+                }
             }
         }
     }
@@ -175,7 +178,9 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     }
     if (fullest <= 0f) fullest = w
     val minGap = w * 0.004f // a hair of space between units even on the fullest line
-    var size = 100f * (w - minGap * (fullestN - 1)) / fullest
+    // One text size for the whole mushaf (from the typical full-line width of all pages);
+    // falls back to this page's fullest line if that number is missing.
+    var size = if (q.meta.lineEm > 0f) w / q.meta.lineEm * 0.985f else 100f * (w - minGap * (fullestN - 1)) / fullest
     probe.textSize = size
     var fm = probe.fontMetrics
     val boxH = fm.descent - fm.ascent
@@ -210,14 +215,22 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
                     PlacedGlyph(it.text, it.x, it.baseline, it.size, bold = false)
                 }
                 val frameH = minOf(lineH * 1.3f, w / 8.2f)
-                ornaments += centered(AppFonts.surahNameChar(line.surah).toString(), w * 0.30f, frameH * 0.62f, mid)
+                ornaments += centered(AppFonts.surahNameChar(line.surah).toString(), w * 0.30f, frameH * 0.62f, mid).let {
+                    PlacedGlyph(it.text, it.x, it.baseline, it.size, bold = false)
+                }
             }
-            PageLine.Basmala -> ornaments += centered(AppFonts.BASMALA, w * 0.52f, lineH * 0.8f, mid)
+            PageLine.Basmala -> ornaments += centered(AppFonts.BASMALA, w * 0.52f, lineH * 0.8f, mid).let {
+                PlacedGlyph(it.text, it.x, it.baseline, it.size, bold = false)
+            }
             is PageLine.Text -> {
                 val units = lineUnits[i]
-                val widths = units.map { probe.measureText(it.glyph) }
-                val natural = widths.sum()
+                var widths = units.map { probe.measureText(it.glyph) }
                 val n = widths.size
+                // a line a hair longer than the others is condensed slightly instead of shrinking the page
+                val room = w - minGap * (n - 1).coerceAtLeast(0)
+                val scaleX = if (widths.sum() > room) room / widths.sum() else 1f
+                if (scaleX < 1f) widths = widths.map { it * scaleX }
+                val natural = widths.sum()
                 // justified edge to edge (like the print); only the short opening pages are centred
                 val justify = page > 2 && n > 1 && natural >= w * 0.6f
                 val gap = if (justify) (w - natural) / (n - 1) else size * 0.18f
@@ -228,7 +241,7 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
                     val ww = widths[j]
                     val left = x - ww
                     val hit = Rect(left - gap / 2f, top + lineH * 0.04f, x + gap / 2f, top + lineH * 0.96f)
-                    words += PlacedWord(u.key, u.glyph, left, baseline, hit)
+                    words += PlacedWord(u.key, u.glyph, left, baseline, hit, scaleX)
                     x = left - gap
                 }
             }
