@@ -87,6 +87,33 @@ def normalize(s):
     return s.strip()
 
 
+def page_weights(target=0.19):
+    """Per-page stroke (as a fraction of the font size) that brings every QCF page
+    font to the same ink density as the bolder pages, so all pages look equally bold."""
+    from fontTools.ttLib import TTFont
+    from fontTools.pens.areaPen import AreaPen
+    from fontTools.pens.perimeterPen import PerimeterPen
+    out = []
+    for p in range(1, 605):
+        f = TTFont(os.path.join(ASSETS, "qcf", f"p{p}.ttf"))
+        gs = f.getGlyphSet()
+        upm = f["head"].unitsPerEm
+        area = per = adv = 0.0
+        for cp, g in f.getBestCmap().items():
+            if cp < 0xFB00:
+                continue
+            ap = AreaPen(gs); gs[g].draw(ap)
+            pp = PerimeterPen(gs); gs[g].draw(pp)
+            area += abs(ap.value); per += pp.value; adv += gs[g].width
+        if adv <= 0 or per <= 0:
+            out.append(0.0)
+            continue
+        ratio = area / (adv * upm)
+        stroke_units = max(0.0, 2 * (target - ratio) * upm * adv / per)
+        out.append(round(stroke_units / upm, 5))
+    return out
+
+
 def edition(name):
     d = fetch(ALQURAN + "quran/" + name, f"alquran/{name}.json")
     out = []
@@ -191,7 +218,9 @@ def main():
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
 
     dump("pages.json", pages)
-    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub})
+    bold = page_weights()
+    print("bold range", min(bold), max(bold), file=sys.stderr)
+    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "bold": bold})
     dump("verses.json", {"page": vpage, "simple": simple, "clean": clean_norm})
     dump("glyphs.json", verse_glyphs)
     dump("tafsir_muyassar.json", tafsir)

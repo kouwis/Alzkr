@@ -118,7 +118,7 @@ private fun PageCanvas(
                 }
             }
             wordPaint.textSize = layout.textSize
-            wordPaint.strokeWidth = layout.textSize * 0.006f
+            wordPaint.strokeWidth = layout.textSize * (q.meta.bold.getOrNull(page - 1) ?: 0f)
             wordPaint.color = c.ink.toArgb()
             ornPaint.color = c.ink.toArgb()
             labelPaint.color = c.muted.toArgb()

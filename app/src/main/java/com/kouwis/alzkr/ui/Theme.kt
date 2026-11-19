@@ -46,7 +46,7 @@ val LightColors = AlzkrColors(
     text = Color(0xFF1E2A28), muted = Color(0xFF5E6B68), primary = Color(0xFF1F5E55), onPrimary = Color.White,
     primarySoft = Color(0xFFE3EEEA), primaryLine = Color(0xFF3A7A70), gold = Color(0xFFB8893B),
     goldSoft = Color(0xFFF4EAD7), goldText = Color(0xFF8A5F1A), heart = Color(0xFFB03A48),
-    paper = Color(0xFFFCFAF4), pageOuter = Color(0xFFEFE9DC), frame = Color(0xFFD9CBAE), frame2 = Color(0xFFE6DAC0),
+    paper = Color.White, pageOuter = Color.White, frame = Color(0xFFD9CBAE), frame2 = Color(0xFFE6DAC0),
     ink = Color(0xFF1B1B1B), highlight = Color(0xFFF3DFC1), dark = false,
 )
 

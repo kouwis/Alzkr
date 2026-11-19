@@ -120,7 +120,8 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
         }
     }
 
-    var selected by remember { mutableStateOf(startVerse) }
+    // opening at a verse only positions the reader there; selecting is a long-press
+    var selected by remember { mutableStateOf<String?>(null) }
     var barsVisible by remember { mutableStateOf(false) }
     var barsTick by remember { mutableIntStateOf(0) }
     var dialog by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -160,7 +161,7 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
         if (verseMode) {
             VerseList(
                 q, prefs, selected,
-                startKey = selected ?: q.versesOnPage(currentPage).firstOrNull()?.let { "${it.first}:${it.second}" } ?: "1:1",
+                startKey = selected ?: startVerse?.takeIf { parseKey(it)?.let { (s, a) -> q.pageOf(s, a) == currentPage } == true } ?: q.versesOnPage(currentPage).firstOrNull()?.let { "${it.first}:${it.second}" } ?: "1:1",
                 onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a) },
                 onLongPress = { selected = it },
                 onTap = onTap,
@@ -391,9 +392,10 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                 .padding(start = side, end = side, bottom = bottom)
                 .fillMaxWidth()
                 .height(height)
-                .shadow(16.dp, shape)
+                .shadow(if (state == 0) 3.dp else 6.dp, shape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.18f))
                 .clip(shape)
-                .background(c.card),
+                .background(c.card)
+                .border(1.dp, c.border, shape),
         ) {
             Column(
                 Modifier
@@ -412,15 +414,20 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                     }
                     .onSizeChanged { headerPx = it.height }
                     .drawBehind {
-                        val y = size.height - 1.dp.toPx()
-                        drawLine(dividerColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-                    }
-                    .padding(bottom = 10.dp),
+                        if (expanded) {
+                            val y = size.height - 1.dp.toPx()
+                            drawLine(dividerColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+                        }
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (state == 2) Box(Modifier.statusBarsPadding())
-                Box(Modifier.padding(top = 10.dp, bottom = 8.dp).width(40.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.border))
-                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                // small grip on top; the title row is centred in equal space above and below
+                Box(Modifier.padding(top = 8.dp).width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(c.border))
+                Row(
+                    Modifier.fillMaxWidth().height(52.dp).padding(start = 20.dp, end = 16.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     val title = when {
                         tafsir && translation -> "التفسير والترجمة"
                         tafsir -> "التفسير"

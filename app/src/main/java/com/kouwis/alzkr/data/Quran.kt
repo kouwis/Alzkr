@@ -24,6 +24,8 @@ data class MetaDto(
     val hizb: List<MarkDto>,
     val rub: List<MarkDto>,
     val basmala: String? = null,
+    /** per-page stroke (fraction of font size) that evens out boldness across page fonts */
+    val bold: List<Float> = emptyList(),
 )
 
 @Serializable
