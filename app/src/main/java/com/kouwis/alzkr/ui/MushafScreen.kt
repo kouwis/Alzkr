@@ -133,6 +133,8 @@ fun MushafScreen(
 
     // opening at a verse only positions the reader there; selecting is a long-press
     var selected by remember { mutableStateOf<String?>(null) }
+    var showLegend by remember { mutableStateOf(false) }
+    LaunchedEffect(prefs.tajweedOn) { if (prefs.tajweedOn) com.kouwis.alzkr.data.TajweedFonts.prefetchAll(ctx) }
     var barsVisible by remember { mutableStateOf(false) }
     var barsTick by remember { mutableIntStateOf(0) }
     var dialog by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -211,7 +213,7 @@ fun MushafScreen(
                 onTap = onTap,
             )
         } else {
-            PagesPager(q, currentPage, selected, focus, prefs.bookmarks,
+            PagesPager(q, currentPage, selected, focus, prefs.bookmarks, prefs.tajweedOn,
                 onPage = { currentPage = it },
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
@@ -263,7 +265,8 @@ fun MushafScreen(
                 },
                 onBack = { nav.back() },
                 onToggleMode = { scope.launch { store.setVerseMode(!verseMode) }; showBars() },
-                onTajweed = { Toast.makeText(ctx, "المصحف المجوّد — قريبًا إن شاء الله", Toast.LENGTH_SHORT).show() },
+                onTajweed = { showLegend = true },
+                tajweedOn = prefs.tajweedOn && !verseMode,
             )
         }
 
@@ -295,6 +298,8 @@ fun MushafScreen(
             )
         }
     }
+
+    if (showLegend) TajweedLegendDialog(onDismiss = { showLegend = false })
 
     dialog?.let { (title, key) ->
         val (s, a) = parseKey(key) ?: return@let
@@ -331,6 +336,7 @@ private fun PagesPager(
     selected: String?,
     focus: String?,
     bookmarks: List<String>,
+    tajweed: Boolean,
     onPage: (Int) -> Unit,
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
@@ -362,7 +368,7 @@ private fun PagesPager(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val w = maxWidth
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w, foc)
+                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w, foc, tajweed)
                 }
             }
         } else {
@@ -370,6 +376,7 @@ private fun PagesPager(
                 q, p, sel, onLongPressVerse, onTap,
                 Modifier.fillMaxSize().background(LocalColors.current.paper).pageEdges(p, LocalColors.current.dark, bookmarked = p in marked, ribbon = LocalColors.current.gold).displayCutoutPadding(),
                 focus = foc,
+                tajweed = tajweed,
             )
         }
     }
@@ -385,6 +392,7 @@ private fun TopBar(
     onBack: () -> Unit,
     onToggleMode: () -> Unit,
     onTajweed: () -> Unit,
+    tajweedOn: Boolean = false,
 ) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().shadow(6.dp).background(c.card)) {
@@ -412,6 +420,7 @@ private fun TopBar(
                 if (pageBookmarked) "شيل علامة الصفحة" else "علامة على الصفحة",
                 onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp, haptic = Haptic.Confirm,
             )
+            if (tajweedOn) RoundIconButton(Ic.palette, "دليل ألوان التجويد", onTajweed, tint = c.primary, size = 40.dp)
             RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
         }
     }

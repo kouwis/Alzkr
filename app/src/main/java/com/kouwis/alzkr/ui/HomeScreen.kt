@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -66,6 +67,8 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     val scope = rememberCoroutineScope()
     val soon = soon()
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var showLegend by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     val rows = remember(tab) {
         when (tab) {
@@ -88,9 +91,10 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     var lastTab by remember { mutableIntStateOf(tab) }
     LaunchedEffect(tab) {
         if (tab != lastTab) {
-            val dir = if (tab > lastTab) -1f else 1f // next tab comes in from the right… slides left
+            // swiping left-to-right goes forward, so the next list comes in from the left
+            val fromLeft = tab > lastTab
             lastTab = tab
-            enter.snapTo(-dir * with(density) { 120.dp.toPx() })
+            enter.snapTo((if (fromLeft) -1f else 1f) * with(density) { 120.dp.toPx() })
             enter.animateTo(0f, spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow))
         }
     }
@@ -99,8 +103,8 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             onDragEnd = {
                 val limit = 70.dp.toPx()
                 val next = when {
-                    dragX < -limit -> (tab + 1).coerceAtMost(3) // swipe left -> next
-                    dragX > limit -> (tab - 1).coerceAtLeast(0) // swipe right -> previous
+                    dragX > limit -> (tab + 1).coerceAtMost(3) // left -> right: next (السور ← الأرباع …)
+                    dragX < -limit -> (tab - 1).coerceAtLeast(0) // right -> left: previous
                     else -> tab
                 }
                 if (next != tab) { view.haptic(Haptic.Tick); tab = next }
@@ -109,15 +113,26 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             onDragCancel = { dragX = 0f },
         ) { change, dx -> change.consume(); dragX += dx }
     }
+    var sectionDrag by remember { mutableFloatStateOf(0f) }
+    val swipeSection = Modifier.pointerInput(Unit) {
+        detectHorizontalDragGestures(
+            onDragEnd = {
+                if (sectionDrag > 70.dp.toPx()) { view.haptic(Haptic.Tick); soon("الأذكار") }
+                sectionDrag = 0f
+            },
+            onDragCancel = { sectionDrag = 0f },
+        ) { change, dx -> change.consume(); sectionDrag += dx }
+    }
     val rowShift = Modifier.graphicsLayer {
         translationX = dragX * 0.35f + enter.value
         alpha = (1f - kotlin.math.abs(translationX) / (size.width.coerceAtLeast(1f))).coerceIn(0.4f, 1f)
     }
 
     Column(Modifier.fillMaxSize().background(c.bg).statusBarsPadding().navigationBarsPadding()) {
-        LazyColumn(Modifier.weight(1f).fillMaxWidth().then(swipeTabs)) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
             item {
-                Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // swiping the top part (continue card, ward) moves between sections: القرآن → الأذكار
+                Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("القرآن الكريم", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
@@ -134,9 +149,17 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         onTafsir = { scope.launch { store.setTafsir(!prefs.tafsirOn) } },
                         onTranslation = { scope.launch { store.setTranslation(!prefs.translationOn) } },
                         onTajweed = {
-                            if (!prefs.tajweedOn) soon("المصحف المجوّد")
+                            if (!prefs.tajweedOn) {
+                                com.kouwis.alzkr.data.TajweedFonts.prefetchAll(context)
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "بننزّل مصحف التجويد مرة واحدة (حوالي ٧٠ ميجا)، والصفحات بتتلوّن أول ما توصل",
+                                    android.widget.Toast.LENGTH_LONG,
+                                ).show()
+                            }
                             scope.launch { store.setTajweed(!prefs.tajweedOn) }
                         },
+                        onLegend = { showLegend = true },
                     )
                     CardBox(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -158,12 +181,12 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                 }
             }
             stickyHeader {
-                Box(Modifier.fillMaxWidth().background(c.bg).padding(horizontal = 20.dp, vertical = 8.dp)) {
+                Box(Modifier.fillMaxWidth().background(c.bg).then(swipeTabs).padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Segmented(listOf("السور", "الأرباع", "الأحزاب", "الأجزاء"), tab, { tab = it }, Modifier.fillMaxWidth())
                 }
             }
             items(rows, key = { "$tab-${it.n}" }) { r ->
-                Column(Modifier.then(rowShift).padding(horizontal = 20.dp).background(c.card)) {
+                Column(Modifier.then(swipeTabs).then(rowShift).padding(horizontal = 20.dp).background(c.card)) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -184,6 +207,8 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             }
             item { Spacer(Modifier.height(12.dp)) }
         }
+
+        if (showLegend) TajweedLegendDialog(onDismiss = { showLegend = false })
 
         // Section switcher
         Row(
@@ -227,6 +252,7 @@ private fun ContinueCard(
     onTafsir: () -> Unit,
     onTranslation: () -> Unit,
     onTajweed: () -> Unit,
+    onLegend: () -> Unit,
 ) {
     val c = LocalColors.current
     val page = if (prefs.lastPage in 1..604) prefs.lastPage else 1
@@ -270,6 +296,17 @@ private fun ContinueCard(
             ToggleChip("التفسير", Ic.book, prefs.tafsirOn, onTafsir, Modifier.weight(1f))
             ToggleChip("الترجمة", Ic.translate, prefs.translationOn, onTranslation, Modifier.weight(1f))
             ToggleChip("المجوّد", Ic.tajweed, prefs.tajweedOn, onTajweed, Modifier.weight(1f))
+        }
+        if (prefs.tajweedOn) {
+            Row(
+                Modifier.clip(RoundedCornerShape(12.dp)).springClick(haptic = Haptic.Tap, onClick = onLegend).padding(vertical = 4.dp, horizontal = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TajweedLegend.take(6).forEach { (col, _, _) ->
+                    Box(Modifier.padding(end = 3.dp).size(10.dp).clip(RoundedCornerShape(5.dp)).background(col))
+                }
+                Text("  دليل ألوان التجويد", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }

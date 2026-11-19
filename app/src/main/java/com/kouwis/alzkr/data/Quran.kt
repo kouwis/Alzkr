@@ -28,6 +28,8 @@ data class MetaDto(
     val bold: List<Float> = emptyList(),
     /** width of a full line in em; the same text size is used for every page */
     val lineEm: Float = 0f,
+    /** same for the tajweed (QCF V4, 1421 print) layout */
+    val lineEmTajweed: Float = 0f,
 )
 
 @Serializable
@@ -53,6 +55,8 @@ sealed interface PageLine {
 
 class QuranData(
     val pages: List<List<PageLine>>,
+    /** the colour-coded tajweed mushaf: 1421-print line breaks with QCF V4 glyphs */
+    val pagesTajweed: List<List<PageLine>>,
     val meta: MetaDto,
     val verses: VersesDto,
     val glyphs: Map<String, List<GlyphChunk>>,
@@ -112,8 +116,7 @@ object Quran {
             val assets = context.applicationContext.assets
             fun read(name: String) = assets.open("data/$name").bufferedReader(Charsets.UTF_8).use { it.readText() }
 
-            val rawPages: List<List<LineDto>> = json.decodeFromString(read("pages.json"))
-            val pages = rawPages.map { lines ->
+            fun parsePages(name: String): List<List<PageLine>> = json.decodeFromString<List<List<LineDto>>>(read(name)).map { lines ->
                 lines.map { l ->
                     when (l.t) {
                         "h" -> PageLine.Header(l.s)
@@ -126,7 +129,8 @@ object Quran {
                 }
             }
             QuranData(
-                pages = pages,
+                pages = parsePages("pages.json"),
+                pagesTajweed = runCatching { parsePages("pages_tajweed.json") }.getOrDefault(emptyList()),
                 meta = json.decodeFromString(read("meta.json")),
                 verses = json.decodeFromString(read("verses.json")),
                 glyphs = json.decodeFromString(read("glyphs.json")),

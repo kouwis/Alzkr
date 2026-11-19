@@ -76,6 +76,8 @@ def fetch(url, cache_name):
     raise RuntimeError(f"failed {url}: {last}")
 
 
+import unicodedata
+
 TASHKEEL = re.compile(r"[ؐ-ًؚ-ٰٟۖ-ۭـ]")
 
 
@@ -138,6 +140,86 @@ def line_em(pages):
     return round(full[int(len(full) * 0.85)], 4)
 
 
+TAJWEED_FONT = "https://raw.githubusercontent.com/mahmoud123-karash/quran_fonts/main/assets/fonts/qcf_tajweed/QCF4{:03d}_COLOR-Regular.ttf.gz"
+
+
+def tajweed_pages(pages_raw):
+    """Tajweed mushaf (KFGQPC QCF V4, colours inside the font, 1421 print) layout.
+
+    The V4 fonts follow the 1421 print, whose line breaks differ slightly from the 1405
+    print our layout file uses. Same pages, same surah headers, same number of lines, so
+    for every run of text lines between headers we re-split its words into that many lines
+    so the line widths are as even as possible: in the print every line is full, and this
+    recovers its breaks (lines come out within ~1% of each other)."""
+    import gzip
+    from fontTools.ttLib import TTFont
+    out, full = [], []
+    for p, d in enumerate(pages_raw, start=1):
+        path = os.path.join(CACHE, "tajweed", f"p{p}.ttf")
+        if not (os.path.exists(path) and os.path.getsize(path) > 0):
+            fetch_file(TAJWEED_FONT.format(p), path + ".gz")
+            with gzip.open(path + ".gz", "rb") as src, open(path, "wb") as dst:
+                dst.write(src.read())
+        f = TTFont(path)
+        cm = f.getBestCmap(); hm = f["hmtx"]; upm = f["head"].unitsPerEm
+
+        def width(g):
+            return sum(hm[cm[ord(ch)]][0] for ch in g if ch != " " and ord(ch) in cm) / upm
+
+        lines = []
+        segment = []  # pending text lines
+
+        def flush():
+            if not segment:
+                return
+            words = [[w["location"], w["qpcV2"]] for ln in segment for w in ln["words"]]
+            k = len(segment)
+            if p <= 2 or k == 1:
+                for ln in segment:
+                    lines.append({"t": "x", "w": [[w["location"], w["qpcV2"]] for w in ln["words"]]})
+            else:
+                ws = [width(g) for _, g in words]
+                n = len(ws)
+                pre = [0.0]
+                for x in ws:
+                    pre.append(pre[-1] + x)
+                target = pre[-1] / k
+                inf = float("inf")
+                dp = [[inf] * (k + 1) for _ in range(n + 1)]
+                back = [[0] * (k + 1) for _ in range(n + 1)]
+                dp[0][0] = 0.0
+                for j in range(1, k + 1):
+                    for i in range(j, n + 1):
+                        best, arg = inf, 0
+                        for st in range(j - 1, i):
+                            c = dp[st][j - 1] + (pre[i] - pre[st] - target) ** 2
+                            if c < best:
+                                best, arg = c, st
+                        dp[i][j], back[i][j] = best, arg
+                cuts, i = [], n
+                for j in range(k, 0, -1):
+                    st = back[i][j]
+                    cuts.append((st, i))
+                    i = st
+                for a, b in reversed(cuts):
+                    lines.append({"t": "x", "w": words[a:b]})
+                    full.append(pre[b] - pre[a])
+            segment.clear()
+
+        for ln in d["lines"]:
+            t = ln.get("type")
+            if t in ("surah-header", "basmala"):
+                flush()
+                lines.append({"t": "h", "s": int(ln["surah"])} if t == "surah-header" else {"t": "b"})
+            else:
+                segment.append(ln)
+        flush()
+        out.append(lines)
+    full.sort()
+    em = round(full[int(len(full) * 0.85)], 4) if full else 0
+    return out, em
+
+
 def edition(name):
     d = fetch(ALQURAN + "quran/" + name, f"alquran/{name}.json")
     out = []
@@ -167,10 +249,12 @@ def main():
 
     # ---------- page layout ----------
     pages = []
+    pages_raw = []
     verse_page = {}
     verse_glyphs = {}
     for p in range(1, 605):
         d = fetch(LAYOUT_URL.format(p), f"layout/page-{p:03d}.json")
+        pages_raw.append(d)
         lines = []
         for ln in d["lines"]:
             t = ln.get("type")
@@ -202,7 +286,8 @@ def main():
     surahs = []
     for r in meta["surahs"]["references"]:
         n = r["number"]
-        name = TASHKEEL.sub("", r["name"]).replace("ٱ", "ا").strip()
+        # NFC first so alef + maddah becomes "آ" (آل عمران) before the marks are stripped
+        name = TASHKEEL.sub("", unicodedata.normalize("NFC", r["name"])).replace("ٱ", "ا").strip()
         name = re.sub(r"^سورة\s+", "", name)
         surahs.append({
             "n": n,
@@ -242,11 +327,14 @@ def main():
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
 
     dump("pages.json", pages)
+    tj_pages, tj_em = tajweed_pages(pages_raw)
+    print("tajweed line em", tj_em, file=sys.stderr)
+    dump("pages_tajweed.json", tj_pages)
     lem = line_em(pages)
     print("line em", lem, file=sys.stderr)
     bold = page_weights()
     print("bold range", min(bold), max(bold), file=sys.stderr)
-    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "bold": bold, "lineEm": lem})
+    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "bold": bold, "lineEm": lem, "lineEmTajweed": tj_em})
     dump("verses.json", {"page": vpage, "simple": simple, "clean": clean_norm})
     dump("glyphs.json", verse_glyphs)
     dump("tafsir_muyassar.json", tafsir)

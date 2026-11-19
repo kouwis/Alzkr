@@ -68,6 +68,7 @@ fun MushafPage(
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
     focus: String? = null,
+    tajweed: Boolean = false,
 ) {
     val c = LocalColors.current
     Column(
@@ -75,7 +76,7 @@ fun MushafPage(
             .background(c.paper)
             .padding(horizontal = 22.dp, vertical = 8.dp),
     ) {
-        PageCanvas(q, page, selected, focus, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
+        PageCanvas(q, page, selected, focus, tajweed, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
@@ -85,6 +86,7 @@ private fun PageCanvas(
     page: Int,
     selected: String?,
     focus: String?,
+    tajweed: Boolean,
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
     modifier: Modifier,
@@ -93,7 +95,17 @@ private fun PageCanvas(
     val haptics = LocalHapticFeedback.current
     val longPress by rememberUpdatedState(onLongPressVerse)
     val tap by rememberUpdatedState(onTap)
-    val tf = remember(page) { PageFonts.get(page) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val dark = c.dark
+    // tajweed: the colour font for this page (downloaded once); until it is here, the normal page
+    val tjTf by androidx.compose.runtime.produceState(
+        if (tajweed) com.kouwis.alzkr.data.TajweedFonts.cached(page, dark) else null, page, tajweed, dark,
+    ) {
+        value = if (tajweed) com.kouwis.alzkr.data.TajweedFonts.get(ctx, page, dark) else null
+    }
+    val useTajweed = tajweed && tjTf != null && q.pagesTajweed.size == 604
+    val plainTf = remember(page) { PageFonts.get(page) }
+    val tf = if (useTajweed) tjTf else plainTf
     // the ayah you came to (from favourites / bookmarks / search) lights up: two soft pulses,
     // then it stays gently lit until you tap the page
     val glowAlpha = remember { Animatable(0f) }
@@ -111,7 +123,7 @@ private fun PageCanvas(
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
         if (tf == null || w <= 0f || h <= 0f) return@BoxWithConstraints
-        val layout = remember(page, w, h) { layoutPage(q, page, tf, w, h) }
+        val layout = remember(page, w, h, useTajweed, tf) { layoutPage(q, page, tf, w, h, useTajweed) }
         // the page fonts exactly as the complex drew them: no added boldness
         val wordPaint = remember(tf) {
             // subpixel positioning + linear (unhinted, uncached-bitmap) glyphs: every word is
@@ -179,8 +191,9 @@ private fun PageCanvas(
     }
 }
 
-private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float): PageLayout {
-    val lines = q.pages[page - 1]
+private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float, tajweed: Boolean = false): PageLayout {
+    val lines = if (tajweed) q.pagesTajweed[page - 1] else q.pages[page - 1]
+    val lineEm = if (tajweed) q.meta.lineEmTajweed else q.meta.lineEm
     // Keep the printed page's proportions: never taller than the real text block,
     // with room just above it for surah/juz and just below it for the page number.
     val labelRoom = w * 1.62f / 15f
@@ -212,7 +225,7 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     val minGap = w * 0.004f // a hair of space between units even on the fullest line
     // One text size for the whole mushaf (from the typical full-line width of all pages);
     // falls back to this page's fullest line if that number is missing.
-    var size = if (q.meta.lineEm > 0f) w / q.meta.lineEm * 0.985f else 100f * (w - minGap * (fullestN - 1)) / fullest
+    var size = if (lineEm > 0f) w / lineEm * 0.985f else 100f * (w - minGap * (fullestN - 1)) / fullest
     probe.textSize = size
     var fm = probe.fontMetrics
     val boxH = fm.descent - fm.ascent
@@ -344,8 +357,9 @@ fun MushafPageTall(
     onTap: () -> Unit,
     width: Dp,
     focus: String? = null,
+    tajweed: Boolean = false,
 ) {
-    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f), focus)
+    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f), focus, tajweed)
 }
 
 /** Real mushaf surah frame (QCF_BSML) with the surah name, for the verse-by-verse list. */
