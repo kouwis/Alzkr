@@ -37,8 +37,15 @@ import com.kouwis.alzkr.data.PageLine
 import com.kouwis.alzkr.data.QuranData
 
 private class PlacedWord(val key: String, val text: String, val x: Float, val baseline: Float, val hit: Rect)
-private class PlacedGlyph(val text: String, val x: Float, val baseline: Float, val size: Float)
-private class PageLayout(val textSize: Float, val words: List<PlacedWord>, val ornaments: List<PlacedGlyph>)
+private class PlacedGlyph(val text: String, val x: Float, val baseline: Float, val size: Float, val bold: Boolean = true)
+private class PageLayout(
+    val textSize: Float,
+    val words: List<PlacedWord>,
+    val ornaments: List<PlacedGlyph>,
+    val labelSize: Float,
+    val headerBaseline: Float,
+    val footerBaseline: Float,
+)
 
 /**
  * One page of the Madinah mushaf, drawn like the printed page: 15 lines, each
@@ -55,19 +62,8 @@ fun MushafPage(
     modifier: Modifier = Modifier,
 ) {
     val c = LocalColors.current
-    Column(modifier.background(c.paper).padding(horizontal = 22.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                q.surahName(q.surahOfPage(page)), color = c.muted, fontSize = 17.sp,
-                fontFamily = AppFonts.hafs, modifier = Modifier.weight(1f),
-            )
-            Text("الجزء ${num(q.juzOfPage(page))}", color = c.muted, fontSize = 17.sp, fontFamily = AppFonts.hafs)
-        }
-        PageCanvas(q, page, selected, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth().padding(vertical = 6.dp))
-        Text(
-            num(page), color = c.muted, fontSize = 18.sp, fontFamily = AppFonts.hafs,
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
-        )
+    Column(modifier.background(c.paper).padding(horizontal = 22.dp, vertical = 8.dp)) {
+        PageCanvas(q, page, selected, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
@@ -90,8 +86,17 @@ private fun PageCanvas(
         val h = constraints.maxHeight.toFloat()
         if (tf == null || w <= 0f || h <= 0f) return@BoxWithConstraints
         val layout = remember(page, w, h) { layoutPage(q, page, tf, w, h) }
-        val wordPaint = remember(tf) { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = tf } }
-        val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml } }
+        // every page drawn equally bold (the QCF page fonts differ slightly in weight)
+        val wordPaint = remember(tf) {
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = tf; style = Paint.Style.FILL_AND_STROKE; strokeJoin = Paint.Join.ROUND
+            }
+        }
+        val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml; strokeJoin = Paint.Join.ROUND } }
+        val labelPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.naskhTf } }
+        val surahLabel = q.surahName(q.surahOfPage(page))
+        val juzLabel = "الجزء ${num(q.juzOfPage(page))}"
+        val pageLabel = num(page)
         Canvas(
             Modifier
                 .fillMaxSize()
@@ -113,12 +118,23 @@ private fun PageCanvas(
                 }
             }
             wordPaint.textSize = layout.textSize
+            wordPaint.strokeWidth = layout.textSize * 0.022f
             wordPaint.color = c.ink.toArgb()
             ornPaint.color = c.ink.toArgb()
+            labelPaint.color = c.muted.toArgb()
+            labelPaint.textSize = layout.labelSize
             drawIntoCanvas { canvas ->
                 val nc = canvas.nativeCanvas
+                labelPaint.textAlign = Paint.Align.RIGHT
+                nc.drawText(surahLabel, size.width, layout.headerBaseline, labelPaint)
+                labelPaint.textAlign = Paint.Align.LEFT
+                nc.drawText(juzLabel, 0f, layout.headerBaseline, labelPaint)
+                labelPaint.textAlign = Paint.Align.CENTER
+                nc.drawText(pageLabel, size.width / 2f, layout.footerBaseline, labelPaint)
                 layout.ornaments.forEach { o ->
                     ornPaint.textSize = o.size
+                    ornPaint.style = if (o.bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL
+                    ornPaint.strokeWidth = o.size * 0.012f
                     nc.drawText(o.text, o.x, o.baseline, ornPaint)
                 }
                 layout.words.forEach { wd -> nc.drawText(wd.text, wd.x, wd.baseline, wordPaint) }
@@ -129,11 +145,15 @@ private fun PageCanvas(
 
 private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float): PageLayout {
     val lines = q.pages[page - 1]
-    // Keep the printed page's proportions: never taller than the real text block.
-    val blockH = minOf(h, w * 1.62f)
+    // Keep the printed page's proportions: never taller than the real text block,
+    // with room just above it for surah/juz and just below it for the page number.
+    val labelRoom = w * 1.62f / 15f
+    val blockH = minOf(h - 2f * labelRoom, w * 1.62f)
+    val blockTop = (h - blockH) / 2f
     val slots = if (page <= 2) lines.size + 3 else 15
     val lineH = blockH / slots
-    val topPad = (h - blockH) / 2f + if (page <= 2) lineH * 1.5f else 0f
+    val topPad = blockTop + if (page <= 2) lineH * 1.5f else 0f
+    val labelSize = labelRoom * 0.42f
 
     // Every word and every ayah-number is its own unit, so spacing is the same everywhere.
     class Glyph(val key: String, val glyph: String)
@@ -186,8 +206,10 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
         val mid = top + lineH / 2f
         when (line) {
             is PageLine.Header -> {
-                ornaments += centered(AppFonts.FRAME.toString(), w, lineH * 0.92f, mid)
-                val frameH = minOf(lineH * 0.92f, w / 8.2f)
+                ornaments += centered(AppFonts.FRAME.toString(), w, lineH * 1.3f, mid).let {
+                    PlacedGlyph(it.text, it.x, it.baseline, it.size, bold = false)
+                }
+                val frameH = minOf(lineH * 1.3f, w / 8.2f)
                 ornaments += centered(AppFonts.surahNameChar(line.surah).toString(), w * 0.30f, frameH * 0.62f, mid)
             }
             PageLine.Basmala -> ornaments += centered(AppFonts.BASMALA, w * 0.52f, lineH * 0.8f, mid)
@@ -212,7 +234,11 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
             }
         }
     }
-    return PageLayout(size, words, ornaments)
+    return PageLayout(
+        size, words, ornaments, labelSize,
+        headerBaseline = blockTop - labelRoom * 0.35f,
+        footerBaseline = blockTop + blockH + labelRoom * 0.7f,
+    )
 }
 
 /** The page at full width and taller than the screen, for reading in landscape. */

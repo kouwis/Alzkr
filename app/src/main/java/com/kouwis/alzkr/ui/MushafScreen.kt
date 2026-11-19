@@ -13,6 +13,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -357,7 +360,10 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val maxH = with(density) { constraints.maxHeight.toFloat().toDp() }
-        val collapsedH = 72.dp
+        // collapsed = exactly the header, so its bottom line sits on the screen edge
+        var headerPx by remember { mutableIntStateOf(0) }
+        val dividerColor = c.border
+        val collapsedH = if (headerPx > 0) with(density) { headerPx.toDp() } else 64.dp
         val expandedH = maxH * 0.58f
         var expanded by remember { mutableStateOf(false) }
         var dragOffset by remember { mutableFloatStateOf(0f) }
@@ -396,6 +402,11 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                             onDragCancel = { dragOffset = 0f },
                         ) { _, dy -> dragOffset += dy / density.density }
                     }
+                    .onSizeChanged { headerPx = it.height }
+                    .drawBehind {
+                        val y = size.height - 1.dp.toPx()
+                        drawLine(dividerColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+                    }
                     .padding(bottom = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -413,7 +424,6 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                     Icon(Ic.up, null, tint = c.muted, modifier = Modifier.padding(start = 8.dp).size(20.dp).rotate(rot))
                 }
             }
-            HorizontalDivider(color = c.border)
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
                 items(verses, key = { "${it.first}:${it.second}" }) { (s, a) ->
                     val isSel = selected == "$s:$a"
