@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -282,10 +283,25 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
  * Thin stacked page edges on the outer side of the page, over its full height (from the very
  * top of the screen to the bottom): odd pages are right-hand pages, even pages left-hand.
  */
-fun Modifier.pageEdges(page: Int, dark: Boolean): Modifier = drawWithContent {
+fun Modifier.pageEdges(page: Int, dark: Boolean, bookmarked: Boolean = false, ribbon: Color = Color(0xFFB8893B)): Modifier = drawWithContent {
     // drawn on top of the page (it sits in the outer margin, clear of the text)
     drawContent()
     val rightHand = page % 2 == 1
+    if (bookmarked) {
+        // a ribbon hanging from the top of the page, near its outer edge
+        val rw = 16.dp.toPx()
+        val rh = 44.dp.toPx()
+        val left = if (rightHand) size.width - 36.dp.toPx() - rw else 36.dp.toPx()
+        val path = Path().apply {
+            moveTo(left, 0f)
+            lineTo(left + rw, 0f)
+            lineTo(left + rw, rh)
+            lineTo(left + rw / 2f, rh - rw * 0.55f)
+            lineTo(left, rh)
+            close()
+        }
+        drawPath(path, ribbon)
+    }
     val edge = if (dark) Color.White.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.18f)
     val step = 2.5.dp.toPx()
     for (k in 0 until 4) {

@@ -167,7 +167,7 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
                 onTap = onTap,
             )
         } else {
-            PagesPager(q, currentPage, selected,
+            PagesPager(q, currentPage, selected, prefs.bookmarks,
                 onPage = { currentPage = it },
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
@@ -190,6 +190,13 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
         ) {
             TopBar(
                 q, currentPage, verseMode,
+                pageBookmarked = "p:$currentPage" in prefs.bookmarks,
+                onBookmarkPage = {
+                    val wasOn = "p:$currentPage" in prefs.bookmarks
+                    scope.launch { store.toggleBookmark("p:$currentPage") }
+                    Toast.makeText(ctx, if (wasOn) "اتشالت علامة الصفحة" else "اتحطت علامة على صفحة ${num(currentPage)}", Toast.LENGTH_SHORT).show()
+                    showBars()
+                },
                 onBack = { nav.back() },
                 onToggleMode = { scope.launch { store.setVerseMode(!verseMode) }; showBars() },
                 onTajweed = { Toast.makeText(ctx, "المصحف المجوّد — قريبًا إن شاء الله", Toast.LENGTH_SHORT).show() },
@@ -200,6 +207,12 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
         if (sel != null) {
             AyahActions(
                 isFavorite = sel in prefs.favorites,
+                isBookmarked = "a:$sel" in prefs.bookmarks,
+                onBookmark = {
+                    val wasOn = "a:$sel" in prefs.bookmarks
+                    scope.launch { store.toggleBookmark("a:$sel") }
+                    Toast.makeText(ctx, if (wasOn) "اتشالت علامة الآية" else "اتحطت علامة على الآية", Toast.LENGTH_SHORT).show()
+                },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp),
                 onFavorite = { scope.launch { store.toggleFavorite(sel) } },
                 onTafsir = { dialog = "التفسير الميسر" to sel },
@@ -252,10 +265,25 @@ private fun PagesPager(
     q: QuranData,
     page: Int,
     selected: String?,
+    bookmarks: List<String>,
     onPage: (Int) -> Unit,
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
 ) {
+    // pages that carry a bookmark (the page itself, or an ayah on it) show a ribbon
+    val marked = remember(bookmarks) {
+        bookmarks.mapNotNull { b ->
+            val parts = b.split(":")
+            when {
+                parts.size == 2 && parts[0] == "p" -> parts[1].toIntOrNull()
+                parts.size == 3 && parts[0] == "a" -> {
+                    val s = parts[1].toIntOrNull(); val a = parts[2].toIntOrNull()
+                    if (s != null && a != null) runCatching { q.pageOf(s, a) }.getOrNull() else null
+                }
+                else -> null
+            }
+        }.toSet()
+    }
     val state = rememberPagerState(initialPage = page - 1) { 604 }
     LaunchedEffect(state) {
         androidx.compose.runtime.snapshotFlow { state.currentPage }.distinctUntilChanged().collect { onPage(it + 1) }
@@ -274,7 +302,7 @@ private fun PagesPager(
         } else {
             MushafPage(
                 q, p, sel, onLongPressVerse, onTap,
-                Modifier.fillMaxSize().background(LocalColors.current.paper).pageEdges(p, LocalColors.current.dark).displayCutoutPadding(),
+                Modifier.fillMaxSize().background(LocalColors.current.paper).pageEdges(p, LocalColors.current.dark, bookmarked = p in marked, ribbon = LocalColors.current.gold).displayCutoutPadding(),
             )
         }
     }
@@ -285,6 +313,8 @@ private fun TopBar(
     q: QuranData,
     page: Int,
     verseMode: Boolean,
+    pageBookmarked: Boolean,
+    onBookmarkPage: () -> Unit,
     onBack: () -> Unit,
     onToggleMode: () -> Unit,
     onTajweed: () -> Unit,
@@ -310,6 +340,11 @@ private fun TopBar(
                     color = c.muted, fontSize = 11.sp, maxLines = 1,
                 )
             }
+            RoundIconButton(
+                if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
+                if (pageBookmarked) "شيل علامة الصفحة" else "علامة على الصفحة",
+                onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp,
+            )
             RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
             Segmented(listOf("عادي", "مجوّد"), 0, { if (it == 1) onTajweed() }, Modifier.width(112.dp), height = 32.dp)
         }
@@ -319,6 +354,8 @@ private fun TopBar(
 @Composable
 private fun AyahActions(
     isFavorite: Boolean,
+    isBookmarked: Boolean,
+    onBookmark: () -> Unit,
     modifier: Modifier,
     onFavorite: () -> Unit,
     onTafsir: () -> Unit,
@@ -335,6 +372,7 @@ private fun AyahActions(
             .background(Color(0xFF1E2A28))
             .padding(6.dp),
     ) {
+        ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark)
         ActionItem(if (isFavorite) Ic.heart else Ic.heartOutline, if (isFavorite) "محفوظة" else "مفضلة", Color(0xFFF3A6AF), onFavorite)
         ActionItem(Ic.book, "تفسير", Color.White, onTafsir)
         ActionItem(Ic.translate, "ترجمة", Color.White, onTranslation)

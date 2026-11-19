@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -103,6 +105,9 @@ fun VerseList(
                         .padding(horizontal = 22.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    if ("a:$key" in prefs.bookmarks) {
+                        Icon(Ic.bookmarkFilled, "علامة", tint = c.gold, modifier = Modifier.size(20.dp))
+                    }
                     QuranVerse(q, s, a)
                     if (prefs.tafsirOn) Inline("التفسير", c.primary, q.tafsirOf(s, a))
                     if (prefs.translationOn) Inline("الترجمة", c.goldText, q.translationOf(s, a))

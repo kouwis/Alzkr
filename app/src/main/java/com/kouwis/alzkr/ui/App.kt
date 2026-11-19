@@ -27,6 +27,7 @@ sealed interface Screen {
     data object Home : Screen
     data object Search : Screen
     data object Favorites : Screen
+    data object Bookmarks : Screen
     /** Opens the mushaf at [page]; [verse] ("s:a") is highlighted / scrolled to when given. */
     data class Mushaf(val page: Int, val verse: String? = null) : Screen
 }
@@ -62,6 +63,7 @@ fun AlzkrApp() {
                 Screen.Home -> HomeScreen(q, state, prefs, nav)
                 Screen.Search -> SearchScreen(q, nav)
                 Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
+                Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)
                 is Screen.Mushaf -> MushafScreen(q, state, prefs, nav, s.page, s.verse)
             }
         }

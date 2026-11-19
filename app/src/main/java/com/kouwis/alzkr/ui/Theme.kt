@@ -104,5 +104,7 @@ object Ic {
     val lines = make("lines", "M4 6h16M4 12h16M4 18h10")
     val page = make("page", "M6 3h9l4 4v14H6zM14 3v5h5")
     val up = make("up", "M6 15l6-6 6 6")
+    val bookmark = make("bookmark", "M6 3h12v18l-6-4.5L6 21z")
+    val bookmarkFilled = make("bookmarkFilled", "M6 3h12v18l-6-4.5L6 21z", fill = true)
     val close = make("close", "M6 6l12 12M18 6L6 18")
 }

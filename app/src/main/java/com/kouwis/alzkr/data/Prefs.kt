@@ -20,6 +20,8 @@ data class AppPrefs(
     val tafsirOn: Boolean = false,
     val translationOn: Boolean = false,
     val favorites: List<String> = emptyList(),
+    /** newest first: "p:<page>" for a page bookmark, "a:<surah>:<ayah>" for an ayah bookmark */
+    val bookmarks: List<String> = emptyList(),
     val wardTarget: Int = 3,
     val wardDone: Int = 0,
     val verseMode: Boolean = false,
@@ -32,6 +34,7 @@ class Prefs(private val context: Context) {
         val tafsir = booleanPreferencesKey("tafsir_on")
         val translation = booleanPreferencesKey("translation_on")
         val favorites = stringPreferencesKey("favorites") // newest first, comma separated "s:a"
+        val bookmarks = stringPreferencesKey("bookmarks") // newest first, "p:151" / "a:7:1"
         val wardTarget = intPreferencesKey("ward_target")
         val wardDay = stringPreferencesKey("ward_day")
         val wardPages = stringSetPreferencesKey("ward_pages")
@@ -48,6 +51,7 @@ class Prefs(private val context: Context) {
             tafsirOn = p[K.tafsir] ?: false,
             translationOn = p[K.translation] ?: false,
             favorites = p[K.favorites]?.split(',')?.filter { it.isNotBlank() } ?: emptyList(),
+            bookmarks = p[K.bookmarks]?.split(',')?.filter { it.isNotBlank() } ?: emptyList(),
             wardTarget = p[K.wardTarget] ?: 3,
             wardDone = if (sameDay) p[K.wardPages]?.size ?: 0 else 0,
             verseMode = p[K.verseMode] ?: false,
@@ -65,6 +69,11 @@ class Prefs(private val context: Context) {
         val pages = if (p[K.wardDay] == day) p[K.wardPages].orEmpty() else emptySet()
         p[K.wardDay] = day
         p[K.wardPages] = pages + page.toString()
+    }
+
+    suspend fun toggleBookmark(key: String) = context.store.edit { p ->
+        val list = p[K.bookmarks]?.split(',')?.filter { it.isNotBlank() }.orEmpty()
+        p[K.bookmarks] = (if (key in list) list - key else listOf(key) + list).joinToString(",")
     }
 
     suspend fun toggleFavorite(key: String) = context.store.edit { p ->
