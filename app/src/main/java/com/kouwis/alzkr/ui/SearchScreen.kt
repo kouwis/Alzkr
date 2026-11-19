@@ -144,7 +144,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                 items(verseHits, key = { "v${it.first}:${it.second}" }) { (s, a) ->
                     CardBox(Modifier.fillMaxWidth()) {
                         Column(
-                            Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(s, a), "$s:$a")) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                            Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(s, a), "$s:$a", highlight = true)) }.padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Row {

@@ -71,6 +71,16 @@ class Prefs(private val context: Context) {
         p[K.wardPages] = pages + page.toString()
     }
 
+    /**
+     * The page's bookmark button: if the page is marked (by itself or through an ayah on it),
+     * this clears the page mark and every ayah mark on it; otherwise it marks the page.
+     */
+    suspend fun togglePageBookmark(page: Int, ayahKeysOnPage: Set<String>) = context.store.edit { p ->
+        val list = p[K.bookmarks]?.split(',')?.filter { it.isNotBlank() }.orEmpty()
+        val linked = ayahKeysOnPage.map { "a:$it" }.toSet() + "p:$page"
+        p[K.bookmarks] = (if (list.any { it in linked }) list.filterNot { it in linked } else listOf("p:$page") + list).joinToString(",")
+    }
+
     suspend fun toggleBookmark(key: String) = context.store.edit { p ->
         val list = p[K.bookmarks]?.split(',')?.filter { it.isNotBlank() }.orEmpty()
         p[K.bookmarks] = (if (key in list) list - key else listOf(key) + list).joinToString(",")

@@ -100,7 +100,17 @@ private fun parseKey(k: String?): Pair<Int, Int>? =
     k?.split(":")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }?.let { it[0] to it[1] }
 
 @Composable
-fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPage: Int, startVerse: String?) {
+fun MushafScreen(
+    q: QuranData,
+    prefs: AppPrefs,
+    store: Prefs,
+    nav: Nav,
+    startPage: Int,
+    startVerse: String?,
+    highlightStart: Boolean = false,
+) {
+    // the ayah opened from favourites / bookmarks / search glows until the reader taps
+    var focus by remember { mutableStateOf(if (highlightStart) startVerse else null) }
     val c = LocalColors.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -127,6 +137,9 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
     var dialog by remember { mutableStateOf<Pair<String, String>?>(null) }
     var currentPage by remember { mutableIntStateOf(startPage.coerceIn(1, 604)) }
     val verseMode = prefs.verseMode
+    // page and ayah bookmarks are linked: an ayah mark lights the page's mark too
+    val ayahsOnPage = remember(currentPage) { q.versesOnPage(currentPage).map { "${it.first}:${it.second}" }.toSet() }
+    val pageMarked = "p:$currentPage" in prefs.bookmarks || ayahsOnPage.any { "a:$it" in prefs.bookmarks }
 
     // system bars come back together with our top bar, so it sits in its normal place
     LaunchedEffect(barsVisible) {
@@ -145,6 +158,7 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
     val onTap: () -> Unit = {
         when {
             selected != null -> selected = null
+            focus != null -> focus = null
             barsVisible -> barsVisible = false
             else -> showBars()
         }
@@ -160,14 +174,14 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
     Box(Modifier.fillMaxSize().background(c.paper)) {
         if (verseMode) {
             VerseList(
-                q, prefs, selected,
+                q, prefs, selected ?: focus,
                 startKey = selected ?: startVerse?.takeIf { parseKey(it)?.let { (s, a) -> q.pageOf(s, a) == currentPage } == true } ?: q.versesOnPage(currentPage).firstOrNull()?.let { "${it.first}:${it.second}" } ?: "1:1",
                 onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a) },
                 onLongPress = { selected = it },
                 onTap = onTap,
             )
         } else {
-            PagesPager(q, currentPage, selected, prefs.bookmarks,
+            PagesPager(q, currentPage, selected, focus, prefs.bookmarks,
                 onPage = { currentPage = it },
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
@@ -190,10 +204,10 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
         ) {
             TopBar(
                 q, currentPage, verseMode,
-                pageBookmarked = "p:$currentPage" in prefs.bookmarks,
+                pageBookmarked = pageMarked,
                 onBookmarkPage = {
-                    val wasOn = "p:$currentPage" in prefs.bookmarks
-                    scope.launch { store.toggleBookmark("p:$currentPage") }
+                    val wasOn = pageMarked
+                    scope.launch { store.togglePageBookmark(currentPage, ayahsOnPage) }
                     Toast.makeText(ctx, if (wasOn) "اتشالت علامة الصفحة" else "اتحطت علامة على صفحة ${num(currentPage)}", Toast.LENGTH_SHORT).show()
                     showBars()
                 },
@@ -265,6 +279,7 @@ private fun PagesPager(
     q: QuranData,
     page: Int,
     selected: String?,
+    focus: String?,
     bookmarks: List<String>,
     onPage: (Int) -> Unit,
     onLongPressVerse: (String) -> Unit,
@@ -292,17 +307,19 @@ private fun PagesPager(
     HorizontalPager(state = state, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1, key = { it }) { idx ->
         val p = idx + 1
         val sel = selected?.takeIf { k -> parseKey(k)?.let { (s, a) -> q.pageOf(s, a) == p } == true }
+        val foc = focus?.takeIf { k -> parseKey(k)?.let { (s, a) -> q.pageOf(s, a) == p } == true }
         if (landscape) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val w = maxWidth
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w)
+                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w, foc)
                 }
             }
         } else {
             MushafPage(
                 q, p, sel, onLongPressVerse, onTap,
                 Modifier.fillMaxSize().background(LocalColors.current.paper).pageEdges(p, LocalColors.current.dark, bookmarked = p in marked, ribbon = LocalColors.current.gold).displayCutoutPadding(),
+                focus = foc,
             )
         }
     }

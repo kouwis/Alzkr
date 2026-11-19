@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -124,3 +125,33 @@ fun soon(): (String) -> Unit {
 
 @Composable
 fun RowScope.Spacer1() = androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+
+/** Swipe a card left or right to delete it (favourites, bookmarks). */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit) {
+    val c = LocalColors.current
+    val state = androidx.compose.material3.rememberSwipeToDismissBoxState(
+        confirmValueChange = { v ->
+            if (v != androidx.compose.material3.SwipeToDismissBoxValue.Settled) { onDelete(); true } else false
+        },
+    )
+    androidx.compose.material3.SwipeToDismissBox(
+        state = state,
+        backgroundContent = {
+            val toStart = state.dismissDirection == androidx.compose.material3.SwipeToDismissBoxValue.EndToStart
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(c.heart.copy(alpha = 0.14f))
+                    .padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (toStart) androidx.compose.foundation.layout.Arrangement.Start else androidx.compose.foundation.layout.Arrangement.End,
+            ) {
+                Icon(Ic.trash, "حذف", tint = c.heart, modifier = Modifier.size(22.dp))
+                Text("  حذف", color = c.heart, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+            }
+        },
+    ) { content() }
+}

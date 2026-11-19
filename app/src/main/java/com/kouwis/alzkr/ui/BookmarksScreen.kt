@@ -78,6 +78,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         }
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(marks, key = { it.key }) { m ->
+              SwipeToDelete(onDelete = { scope.launch { store.toggleBookmark(m.key) } }) {
                 CardBox(Modifier.fillMaxWidth()) {
                     when (m) {
                         is Mark.Page -> Row(
@@ -99,7 +100,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                             Text("صفحة", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                         is Mark.Ayah -> Column(
-                            Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(m.s, m.a), "${m.s}:${m.a}")) }
+                            Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(m.s, m.a), "${m.s}:${m.a}", highlight = true)) }
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
@@ -121,6 +122,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         }
                     }
                 }
+              }
             }
         }
     }

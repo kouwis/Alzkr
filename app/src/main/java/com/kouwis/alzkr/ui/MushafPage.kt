@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -64,6 +67,7 @@ fun MushafPage(
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
+    focus: String? = null,
 ) {
     val c = LocalColors.current
     Column(
@@ -71,7 +75,7 @@ fun MushafPage(
             .background(c.paper)
             .padding(horizontal = 22.dp, vertical = 8.dp),
     ) {
-        PageCanvas(q, page, selected, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
+        PageCanvas(q, page, selected, focus, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
@@ -80,6 +84,7 @@ private fun PageCanvas(
     q: QuranData,
     page: Int,
     selected: String?,
+    focus: String?,
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
     modifier: Modifier,
@@ -89,6 +94,19 @@ private fun PageCanvas(
     val longPress by rememberUpdatedState(onLongPressVerse)
     val tap by rememberUpdatedState(onTap)
     val tf = remember(page) { PageFonts.get(page) }
+    // the ayah you came to (from favourites / bookmarks / search) lights up: two soft pulses,
+    // then it stays gently lit until you tap the page
+    val glowAlpha = remember { Animatable(0f) }
+    LaunchedEffect(focus) {
+        glowAlpha.snapTo(0f)
+        if (focus != null) {
+            repeat(2) {
+                glowAlpha.animateTo(1f, tween(500))
+                glowAlpha.animateTo(0.35f, tween(500))
+            }
+            glowAlpha.animateTo(0.85f, tween(500))
+        }
+    }
     BoxWithConstraints(modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
@@ -123,6 +141,12 @@ private fun PageCanvas(
                     )
                 },
         ) {
+            if (focus != null && focus != selected) {
+                val glow = c.gold.copy(alpha = 0.30f * glowAlpha.value)
+                layout.words.filter { it.key == focus }.forEach {
+                    drawRoundRect(glow, it.hit.topLeft, it.hit.size, CornerRadius(10f, 10f))
+                }
+            }
             if (selected != null) {
                 layout.words.filter { it.key == selected }.forEach {
                     drawRoundRect(c.highlight, it.hit.topLeft, it.hit.size, CornerRadius(10f, 10f))
@@ -319,8 +343,9 @@ fun MushafPageTall(
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
     width: Dp,
+    focus: String? = null,
 ) {
-    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f))
+    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f), focus)
 }
 
 /** Real mushaf surah frame (QCF_BSML) with the surah name, for the verse-by-verse list. */

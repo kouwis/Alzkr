@@ -60,9 +60,10 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         }
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(favs, key = { "${it.first}:${it.second}" }) { (s, a) ->
+              SwipeToDelete(onDelete = { scope.launch { store.toggleFavorite("$s:$a") } }) {
                 CardBox(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(s, a), "$s:$a")) }.padding(horizontal = 16.dp, vertical = 14.dp),
+                        Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(s, a), "$s:$a", highlight = true)) }.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -79,6 +80,7 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         QuranVerse(q, s, a, fontSize = 24.sp)
                     }
                 }
+              }
             }
         }
     }
