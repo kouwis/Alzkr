@@ -272,7 +272,10 @@ private fun PagesPager(
                 }
             }
         } else {
-            MushafPage(q, p, sel, onLongPressVerse, onTap, Modifier.fillMaxSize().displayCutoutPadding())
+            MushafPage(
+                q, p, sel, onLongPressVerse, onTap,
+                Modifier.fillMaxSize().background(LocalColors.current.paper).pageEdges(p, LocalColors.current.dark).displayCutoutPadding(),
+            )
         }
     }
 }
