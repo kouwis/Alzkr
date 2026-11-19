@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -190,8 +191,14 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                     Segmented(listOf("السور", "الأرباع", "الأحزاب", "الأجزاء"), tab, { tab = it }, Modifier.fillMaxWidth())
                 }
             }
-            items(rows, key = { "$tab-${it.n}" }) { r ->
-                Column(Modifier.then(swipeTabs).then(rowShift).padding(horizontal = 20.dp).background(c.card)) {
+            itemsIndexed(rows, key = { _, r -> "$tab-${r.n}" }) { i, r ->
+                val shape = when {
+                    rows.size == 1 -> RoundedCornerShape(18.dp)
+                    i == 0 -> RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+                    i == rows.lastIndex -> RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp)
+                    else -> RoundedCornerShape(0.dp)
+                }
+                Column(Modifier.then(swipeTabs).then(rowShift).padding(horizontal = 20.dp).clip(shape).background(c.card)) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -207,7 +214,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         }
                         Text("ص ${num(r.page)}", color = c.muted, fontSize = 13.sp)
                     }
-                    HorizontalDivider(color = c.border.copy(alpha = 0.6f))
+                    if (i != rows.lastIndex) HorizontalDivider(color = c.border.copy(alpha = 0.6f))
                 }
             }
             item { Spacer(Modifier.height(12.dp)) }
@@ -300,28 +307,30 @@ private fun ContinueCard(
             }
         }
         HorizontalDivider(color = c.primaryLine)
-        Text("اعرض أسفل الصفحة أثناء القراءة", color = Color(0xFFCFE3DD), fontSize = 12.sp)
+        Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("اعرض أسفل الصفحة أثناء القراءة", color = Color(0xFFCFE3DD), fontSize = 12.sp, modifier = Modifier.weight(1f))
+            // the tajweed colour guide sits on this same line and only fades, so nothing moves
+            val legendAlpha by androidx.compose.animation.core.animateFloatAsState(
+                if (tajweedL) 1f else 0f, androidx.compose.animation.core.tween(280), label = "legend",
+            )
+            Row(
+                Modifier
+                    .graphicsLayer { alpha = legendAlpha }
+                    .clip(RoundedCornerShape(12.dp))
+                    .then(if (tajweedL) Modifier.springClick(haptic = Haptic.Tap, ripple = false, onClick = onLegend) else Modifier)
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TajweedLegend.take(4).forEach { (col, _, _) ->
+                    Box(Modifier.padding(end = 2.dp).size(8.dp).clip(RoundedCornerShape(4.dp)).background(col))
+                }
+                Text(" دليل الألوان", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
             ToggleChip("التفسير", Ic.book, tafsirL, { tafsirL = !tafsirL; onTafsir() }, Modifier.weight(1f))
             ToggleChip("الترجمة", Ic.translate, translationL, { translationL = !translationL; onTranslation() }, Modifier.weight(1f))
             ToggleChip("المجوّد", Ic.tajweed, tajweedL, { tajweedL = !tajweedL; onTajweed() }, Modifier.weight(1f))
-        }
-        androidx.compose.animation.AnimatedVisibility(
-            visible = tajweedL,
-            enter = androidx.compose.animation.expandVertically(androidx.compose.animation.core.tween(320)) +
-                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)),
-            exit = androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(260)) +
-                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)),
-        ) {
-            Row(
-                Modifier.clip(RoundedCornerShape(12.dp)).springClick(haptic = Haptic.Tap, onClick = onLegend).padding(vertical = 4.dp, horizontal = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TajweedLegend.take(6).forEach { (col, _, _) ->
-                    Box(Modifier.padding(end = 3.dp).size(10.dp).clip(RoundedCornerShape(5.dp)).background(col))
-                }
-                Text("  دليل ألوان التجويد", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
         }
     }
 }
