@@ -51,6 +51,7 @@ def fetch_fonts():
     fetch_file(FONTS + "mushaf/QCF_BSML.TTF", os.path.join(ASSETS, "fonts", "bsml.ttf"))
     fetch_file(FONTS + "various/UthmanTN1%20Ver10.otf", os.path.join(ASSETS, "fonts", "naskh.otf"))
     fetch_file(FONTS + "various/UthmanTN1B%20Ver10.otf", os.path.join(ASSETS, "fonts", "naskh_bold.otf"))
+    fetch_file(FONTS + "various/UthmanicHafs1%20Ver09.otf", os.path.join(ASSETS, "fonts", "hafs.otf"))
 
 
 def fetch(url, cache_name):

@@ -103,5 +103,6 @@ object Ic {
     val share = make("share", "M12 3v12M7 8l5-5 5 5M5 14v6h14v-6")
     val lines = make("lines", "M4 6h16M4 12h16M4 18h10")
     val page = make("page", "M6 3h9l4 4v14H6zM14 3v5h5")
+    val up = make("up", "M6 15l6-6 6 6")
     val close = make("close", "M6 6l12 12M18 6L6 18")
 }

@@ -40,6 +40,8 @@ object AppFonts {
     val naskhTf: Typeface by lazy { asset("naskh.otf") }
     val naskhBoldTf: Typeface by lazy { asset("naskh_bold.otf") }
 
+    val hafsTf: Typeface by lazy { asset("hafs.otf") }
+    val hafs: FontFamily by lazy { FontFamily(ComposeTypeface(hafsTf)) }
     val naskh: FontFamily by lazy { FontFamily(ComposeTypeface(naskhTf)) }
     val naskhBold: FontFamily by lazy { FontFamily(ComposeTypeface(naskhBoldTf)) }
 

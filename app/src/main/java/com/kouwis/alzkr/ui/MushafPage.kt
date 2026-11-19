@@ -58,14 +58,14 @@ fun MushafPage(
     Column(modifier.background(c.paper).padding(horizontal = 22.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                q.surahName(q.surahOfPage(page)), color = c.muted, fontSize = 16.sp,
-                fontFamily = AppFonts.naskhBold, modifier = Modifier.weight(1f),
+                q.surahName(q.surahOfPage(page)), color = c.muted, fontSize = 17.sp,
+                fontFamily = AppFonts.hafs, modifier = Modifier.weight(1f),
             )
-            Text("الجزء ${num(q.juzOfPage(page))}", color = c.muted, fontSize = 16.sp, fontFamily = AppFonts.naskhBold)
+            Text("الجزء ${num(q.juzOfPage(page))}", color = c.muted, fontSize = 17.sp, fontFamily = AppFonts.hafs)
         }
         PageCanvas(q, page, selected, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth().padding(vertical = 6.dp))
         Text(
-            num(page), color = c.muted, fontSize = 15.sp, fontFamily = AppFonts.naskh,
+            num(page), color = c.muted, fontSize = 18.sp, fontFamily = AppFonts.hafs,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
         )
     }
@@ -129,26 +129,37 @@ private fun PageCanvas(
 
 private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float): PageLayout {
     val lines = q.pages[page - 1]
+    // Keep the printed page's proportions: never taller than the real text block.
+    val blockH = minOf(h, w * 1.62f)
     val slots = if (page <= 2) lines.size + 3 else 15
-    val lineH = h / slots
-    val topPad = if (page <= 2) lineH * 1.5f else 0f
+    val lineH = blockH / slots
+    val topPad = (h - blockH) / 2f + if (page <= 2) lineH * 1.5f else 0f
+
+    // Every word and every ayah-number is its own unit, so spacing is the same everywhere.
+    class Glyph(val key: String, val glyph: String)
+    val lineUnits = lines.map { line ->
+        if (line is PageLine.Text) line.words.flatMap { wd -> wd.glyph.split(' ').filter { it.isNotEmpty() }.map { Glyph(wd.key, it) } }
+        else emptyList()
+    }
 
     // Font size: the fullest line exactly fills the width (QCF V1 lines are pre-justified).
     val probe = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = tf; textSize = 100f }
     var fullest = 0f
-    lines.forEach { line ->
-        if (line is PageLine.Text) {
+    var fullestN = 1
+    lineUnits.forEach { units ->
+        if (units.isNotEmpty()) {
             var sum = 0f
-            line.words.forEach { sum += probe.measureText(it.glyph) }
-            fullest = maxOf(fullest, sum)
+            units.forEach { sum += probe.measureText(it.glyph) }
+            if (sum > fullest) { fullest = sum; fullestN = units.size }
         }
     }
     if (fullest <= 0f) fullest = w
-    var size = 100f * w / fullest
+    val minGap = w * 0.004f // a hair of space between units even on the fullest line
+    var size = 100f * (w - minGap * (fullestN - 1)) / fullest
     probe.textSize = size
     var fm = probe.fontMetrics
     val boxH = fm.descent - fm.ascent
-    if (boxH > lineH * 1.35f) size *= lineH * 1.35f / boxH
+    if (boxH > lineH * 1.3f) size *= lineH * 1.3f / boxH
     if (page <= 2) size *= 0.92f
     probe.textSize = size
     fm = probe.fontMetrics
@@ -181,19 +192,21 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
             }
             PageLine.Basmala -> ornaments += centered(AppFonts.BASMALA, w * 0.52f, lineH * 0.8f, mid)
             is PageLine.Text -> {
-                val widths = line.words.map { probe.measureText(it.glyph) }
+                val units = lineUnits[i]
+                val widths = units.map { probe.measureText(it.glyph) }
                 val natural = widths.sum()
                 val n = widths.size
-                val justify = page > 2 && n > 1 && natural >= w * 0.85f
-                val gap = if (justify) (w - natural) / (n - 1) else size * 0.12f
+                // justified edge to edge (like the print); only the short opening pages are centred
+                val justify = page > 2 && n > 1 && natural >= w * 0.6f
+                val gap = if (justify) (w - natural) / (n - 1) else size * 0.18f
                 val total = natural + gap * (n - 1).coerceAtLeast(0)
                 var x = if (justify) w else (w + total) / 2f
                 val baseline = mid - (fm.ascent + fm.descent) / 2f
-                line.words.forEachIndexed { j, word ->
+                units.forEachIndexed { j, u ->
                     val ww = widths[j]
                     val left = x - ww
                     val hit = Rect(left - gap / 2f, top + lineH * 0.04f, x + gap / 2f, top + lineH * 0.96f)
-                    words += PlacedWord(word.key, word.glyph, left, baseline, hit)
+                    words += PlacedWord(u.key, u.glyph, left, baseline, hit)
                     x = left - gap
                 }
             }

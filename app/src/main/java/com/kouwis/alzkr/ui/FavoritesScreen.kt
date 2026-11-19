@@ -76,7 +76,7 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                             )
                             Text("ص ${num(q.pageOf(s, a))}", color = c.muted, fontSize = 12.sp)
                         }
-                        Text(q.simple(s, a), color = c.text, fontSize = 19.sp, lineHeight = 34.sp)
+                        QuranVerse(q, s, a, fontSize = 24.sp)
                     }
                 }
             }

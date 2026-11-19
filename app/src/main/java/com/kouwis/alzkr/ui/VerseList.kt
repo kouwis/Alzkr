@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.TextUnit
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.ArabicText.num
 import com.kouwis.alzkr.data.PageFonts
@@ -102,7 +103,7 @@ fun VerseList(
                         .padding(horizontal = 22.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    VerseGlyphs(q, s, a)
+                    QuranVerse(q, s, a)
                     if (prefs.tafsirOn) Inline("التفسير", c.primary, q.tafsirOf(s, a))
                     if (prefs.translationOn) Inline("الترجمة", c.goldText, q.translationOf(s, a))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -133,28 +134,31 @@ private fun SurahHeader(q: QuranData, s: Int) {
 
 private val bsmlFamily by lazy { FontFamily(Typeface(AppFonts.bsml)) }
 
-/** The verse in its mushaf glyphs (one font per page it spans); plain text until fonts are ready. */
+/** A verse in real mushaf script (QCF glyphs, one font per page it spans). */
 @Composable
-private fun VerseGlyphs(q: QuranData, s: Int, a: Int) {
-    val c = LocalColors.current
-    val ctx = LocalContext.current
+fun QuranVerse(
+    q: QuranData,
+    s: Int,
+    a: Int,
+    fontSize: TextUnit = 30.sp,
+    color: Color = LocalColors.current.ink,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+) {
     val chunks = q.glyphs["$s:$a"].orEmpty()
-    val fonts = remember(s, a) {
-        chunks.mapNotNull { ch -> PageFonts.get(ch.p)?.let { ch.p to it } }.toMap().takeIf { it.size == chunks.size && chunks.isNotEmpty() }
-    }
-    val f = fonts
-    if (f == null) {
-        Text(q.simple(s, a) + " ﴿${num(a)}﴾", color = c.ink, fontSize = 24.sp, lineHeight = 46.sp, modifier = Modifier.fillMaxWidth())
-    } else {
-        val text = remember(f) {
-            buildAnnotatedString {
-                chunks.forEachIndexed { i, ch ->
-                    withStyle(SpanStyle(fontFamily = FontFamily(Typeface(f.getValue(ch.p))))) { append(ch.g) }
-                    if (i < chunks.lastIndex) append(" ")
-                }
+    val text = remember(s, a) {
+        val fonts = chunks.mapNotNull { ch -> PageFonts.get(ch.p)?.let { ch.p to it } }.toMap()
+        if (chunks.isEmpty() || fonts.size != chunks.map { it.p }.toSet().size) null
+        else buildAnnotatedString {
+            chunks.forEachIndexed { i, ch ->
+                withStyle(SpanStyle(fontFamily = FontFamily(Typeface(fonts.getValue(ch.p))))) { append(ch.g) }
+                if (i < chunks.lastIndex) append(" ")
             }
         }
-        Text(text, color = c.ink, fontSize = 30.sp, lineHeight = 60.sp, modifier = Modifier.fillMaxWidth())
+    }
+    if (text == null) {
+        Text(q.simple(s, a) + " ﴿${num(a)}﴾", color = color, fontSize = fontSize * 0.8f, lineHeight = fontSize * 1.6f, fontFamily = AppFonts.hafs, modifier = modifier)
+    } else {
+        Text(text, color = color, fontSize = fontSize, lineHeight = fontSize * 2f, modifier = modifier)
     }
 }
 

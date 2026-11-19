@@ -5,6 +5,14 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -115,6 +123,12 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
     var currentPage by remember { mutableIntStateOf(startPage.coerceIn(1, 604)) }
     val verseMode = prefs.verseMode
 
+    // system bars come back together with our top bar, so it sits in its normal place
+    LaunchedEffect(barsVisible) {
+        val window = (view.context as? android.app.Activity)?.window ?: return@LaunchedEffect
+        val ctrl = WindowCompat.getInsetsController(window, view)
+        if (barsVisible) ctrl.show(WindowInsetsCompat.Type.systemBars()) else ctrl.hide(WindowInsetsCompat.Type.systemBars())
+    }
     // the top bar shows on tap and hides itself after a few seconds
     LaunchedEffect(barsVisible, barsTick) {
         if (barsVisible) {
@@ -153,8 +167,13 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
             )
-            if (prefs.tafsirOn || prefs.translationOn) {
-                StudyPanel(q, currentPage, prefs.tafsirOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
+            AnimatedVisibility(
+                visible = prefs.tafsirOn || prefs.translationOn,
+                enter = slideInVertically(tween(450)) { it } + fadeIn(tween(450)),
+                exit = slideOutVertically(tween(350)) { it } + fadeOut(tween(350)),
+                modifier = Modifier.align(Alignment.BottomCenter),
+            ) {
+                StudyPanel(q, currentPage, prefs.tafsirOn || !prefs.translationOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
             }
         }
 
@@ -204,7 +223,7 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
             title = { Text("$title · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold) },
             text = {
                 Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                    Text(q.simple(s, a), fontSize = 18.sp, lineHeight = 32.sp, color = c.primary)
+                    QuranVerse(q, s, a, fontSize = 22.sp, color = c.primary)
                     Text(
                         body.ifBlank { "غير متوفر" },
                         fontSize = 15.sp, lineHeight = 26.sp, color = c.text,
@@ -328,15 +347,27 @@ private fun RowScope.ActionItem(icon: ImageVector, label: String, tint: Color, o
     }
 }
 
-/** Bottom panel with tafsir / translation of the open page; drag the handle to resize. */
+/**
+ * Bottom panel with tafsir / translation of the open page. Collapsed it is just a
+ * small bar; tap (or drag) it to slide it up, tap again to bring it down.
+ */
 @Composable
 private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Boolean, selected: String?, modifier: Modifier) {
     val c = LocalColors.current
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val maxH = with(density) { constraints.maxHeight.toFloat().toDp() }
-        val minH = 96.dp
-        var heightDp by remember { mutableFloatStateOf(maxH.value * 0.42f) }
+        val collapsedH = 72.dp
+        val expandedH = maxH * 0.58f
+        var expanded by remember { mutableStateOf(false) }
+        var dragOffset by remember { mutableFloatStateOf(0f) }
+        LaunchedEffect(selected) { if (selected != null) expanded = true }
+        val target = (if (expanded) expandedH else collapsedH) - dragOffset.dp
+        val height by animateDpAsState(
+            targetValue = target.coerceIn(collapsedH, maxH * 0.92f),
+            animationSpec = if (dragOffset == 0f) spring(dampingRatio = 0.82f, stiffness = 380f) else snap(),
+            label = "panel",
+        )
         val verses = remember(page) { q.versesOnPage(page) }
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         LaunchedEffect(selected, page) {
@@ -346,29 +377,29 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
         Column(
             modifier
                 .fillMaxWidth()
-                .height(heightDp.dp)
+                .height(height)
                 .shadow(16.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .background(c.card),
         ) {
-            // drag handle + header
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .pointerInput(maxH) {
+                    .clickable(role = Role.Button, onClickLabel = if (expanded) "تصغير" else "فتح") { expanded = !expanded }
+                    .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragEnd = {
-                                val snaps = listOf(minH.value, maxH.value * 0.42f, maxH.value * 0.88f)
-                                heightDp = snaps.minBy { kotlin.math.abs(it - heightDp) }
+                                // pulled up far enough -> open; pulled down -> close
+                                if (dragOffset < -40f) expanded = true else if (dragOffset > 40f) expanded = false
+                                dragOffset = 0f
                             },
-                        ) { _, dy ->
-                            heightDp = (heightDp - dy / density.density).coerceIn(minH.value, maxH.value * 0.92f)
-                        }
+                            onDragCancel = { dragOffset = 0f },
+                        ) { _, dy -> dragOffset += dy / density.density }
                     }
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(Modifier.padding(top = 10.dp, bottom = 6.dp).width(40.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.border))
+                Box(Modifier.padding(top = 10.dp, bottom = 8.dp).width(40.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.border))
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     val title = when {
                         tafsir && translation -> "التفسير والترجمة"
@@ -378,6 +409,8 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                     Text("$title · صفحة ${num(page)}", color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     if (tafsir) Chip("الميسر", c.primarySoft, c.primary)
                     if (translation) Chip("English", c.goldSoft, c.goldText)
+                    val rot by animateFloatAsState(if (expanded) 180f else 0f, label = "chev")
+                    Icon(Ic.up, null, tint = c.muted, modifier = Modifier.padding(start = 8.dp).size(20.dp).rotate(rot))
                 }
             }
             HorizontalDivider(color = c.border)
@@ -392,7 +425,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Chip("${q.surahName(s)} · ${num(a)}", c.chip, c.text)
-                        Text(q.simple(s, a), color = c.primary, fontSize = 17.sp, lineHeight = 30.sp)
+                        QuranVerse(q, s, a, fontSize = 22.sp, color = c.primary)
                         if (tafsir) Labeled("التفسير", c.primary, q.tafsirOf(s, a), rtl = true)
                         if (translation) Labeled("الترجمة", c.goldText, q.translationOf(s, a), rtl = false)
                     }

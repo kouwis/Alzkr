@@ -151,7 +151,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                                 Text("${q.surahName(s)} · ${num(a)}", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                                 Text("ص ${num(q.pageOf(s, a))}", color = c.muted, fontSize = 12.sp)
                             }
-                            Text(highlighted(q.simple(s, a), needle, c.highlight), color = c.text, fontSize = 18.sp, lineHeight = 32.sp)
+                            QuranVerse(q, s, a, fontSize = 22.sp)
                         }
                     }
                 }
