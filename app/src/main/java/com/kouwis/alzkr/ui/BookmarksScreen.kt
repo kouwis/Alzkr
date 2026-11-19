@@ -88,7 +88,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         ) {
                             Icon(
                                 Ic.bookmarkFilled, "شيل العلامة", tint = c.gold,
-                                modifier = Modifier.size(22.dp).clickable { scope.launch { store.toggleBookmark(m.key) } },
+                                modifier = Modifier.size(22.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleBookmark(m.key) } },
                             )
                             Column(Modifier.weight(1f)) {
                                 Text("صفحة ${num(m.page)}", color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold)
@@ -107,7 +107,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(
                                     Ic.bookmarkFilled, "شيل العلامة", tint = c.gold,
-                                    modifier = Modifier.size(22.dp).clickable { scope.launch { store.toggleBookmark(m.key) } },
+                                    modifier = Modifier.size(22.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleBookmark(m.key) } },
                                 )
                                 Column(Modifier.weight(1f)) {
                                     Text("${q.surahName(m.s)} · آية ${num(m.a)}", color = c.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)

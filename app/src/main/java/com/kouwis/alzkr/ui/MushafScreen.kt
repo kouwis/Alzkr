@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onSizeChanged
@@ -164,6 +165,35 @@ fun MushafScreen(
         }
     }
 
+    // a small, quiet note when you turn onto a page where a juz / hizb / quarter begins
+    var markNote by remember { mutableStateOf<String?>(null) }
+    var noteTick by remember { mutableIntStateOf(0) }
+    var firstPageSeen by remember { mutableStateOf(false) }
+    LaunchedEffect(currentPage) {
+        if (!firstPageSeen) firstPageSeen = true
+        else if (!verseMode) {
+            val juz = q.meta.juz.firstOrNull { it.page == currentPage }
+            val rub = q.meta.rub.firstOrNull { it.page == currentPage }
+            val note = when {
+                juz != null -> "بداية الجزء ${num(juz.n)}"
+                rub != null -> {
+                    val hizb = (rub.n - 1) / 4 + 1
+                    when ((rub.n - 1) % 4) {
+                        0 -> "بداية الحزب ${num(hizb)}"
+                        1 -> "ربع الحزب ${num(hizb)}"
+                        2 -> "نصف الحزب ${num(hizb)}"
+                        else -> "ثلاثة أرباع الحزب ${num(hizb)}"
+                    }
+                }
+                else -> null
+            }
+            if (note != null) { markNote = note; noteTick++ }
+        }
+    }
+    LaunchedEffect(noteTick) {
+        if (markNote != null) { delay(2600); markNote = null }
+    }
+
     LaunchedEffect(currentPage) {
         val first = q.versesOnPage(currentPage).firstOrNull()
         val key = selected?.takeIf { parseKey(it)?.let { (s, a) -> q.pageOf(s, a) == currentPage } == true }
@@ -194,6 +224,26 @@ fun MushafScreen(
             ) {
                 StudyPanel(q, currentPage, prefs.tafsirOn || !prefs.translationOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
             }
+        }
+
+        AnimatedVisibility(
+            visible = markNote != null && !barsVisible,
+            enter = slideInVertically(tween(350)) { -it } + fadeIn(tween(350)),
+            exit = slideOutVertically(tween(300)) { -it } + fadeOut(tween(300)),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 36.dp),
+        ) {
+            var shown by remember { mutableStateOf("") }
+            markNote?.let { shown = it }
+            Text(
+                shown,
+                color = Color.White,
+                fontSize = 14.sp,
+                fontFamily = AppFonts.naskhBold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(c.primary.copy(alpha = 0.92f))
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+            )
         }
 
         AnimatedVisibility(
@@ -347,7 +397,7 @@ private fun TopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).springClick(label = "رجوع", onClick = onBack), contentAlignment = Alignment.Center) {
                 Icon(Ic.back, "رجوع", tint = c.text, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -360,7 +410,7 @@ private fun TopBar(
             RoundIconButton(
                 if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
                 if (pageBookmarked) "شيل علامة الصفحة" else "علامة على الصفحة",
-                onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp,
+                onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp, haptic = Haptic.Confirm,
             )
             RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
             Segmented(listOf("عادي", "مجوّد"), 0, { if (it == 1) onTajweed() }, Modifier.width(112.dp), height = 32.dp)
@@ -389,8 +439,8 @@ private fun AyahActions(
             .background(Color(0xFF1E2A28))
             .padding(6.dp),
     ) {
-        ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark)
-        ActionItem(if (isFavorite) Ic.heart else Ic.heartOutline, if (isFavorite) "محفوظة" else "مفضلة", Color(0xFFF3A6AF), onFavorite)
+        ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
+        ActionItem(if (isFavorite) Ic.heart else Ic.heartOutline, if (isFavorite) "محفوظة" else "مفضلة", Color(0xFFF3A6AF), onFavorite, Haptic.Confirm)
         ActionItem(Ic.book, "تفسير", Color.White, onTafsir)
         ActionItem(Ic.translate, "ترجمة", Color.White, onTranslation)
         ActionItem(Ic.copy, "نسخ", Color.White, onCopy)
@@ -399,13 +449,14 @@ private fun AyahActions(
 }
 
 @Composable
-private fun RowScope.ActionItem(icon: ImageVector, label: String, tint: Color, onClick: () -> Unit) {
+private fun RowScope.ActionItem(icon: ImageVector, label: String, tint: Color, onClick: () -> Unit, haptic: Haptic = Haptic.Tap) {
     Column(
-        Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onClick),
+        Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(12.dp)).springClick(haptic = haptic, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
+        val pop = popScale(icon)
+        Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp).graphicsLayer { scaleX = pop; scaleY = pop })
         Text(label, color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
     }
 }
@@ -459,7 +510,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clickable(role = Role.Button, onClickLabel = if (expanded) "تصغير" else "فتح") { state = if (state == 0) 1 else 0 }
+                    .springClick(label = if (expanded) "تصغير" else "فتح", haptic = Haptic.Tick, pressedScale = 0.98f) { state = if (state == 0) 1 else 0 }
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragEnd = {

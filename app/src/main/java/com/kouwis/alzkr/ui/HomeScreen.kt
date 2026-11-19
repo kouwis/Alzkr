@@ -162,7 +162,7 @@ private fun Pill(label: String, on: Boolean, onClick: () -> Unit) {
             .height(40.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(if (on) c.primary else Color.Transparent)
-            .clickable(role = Role.Tab, onClick = onClick)
+            .springClick(role = Role.Tab, haptic = Haptic.Tick, onClick = onClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -198,7 +198,7 @@ private fun ContinueCard(q: QuranData, prefs: AppPrefs, nav: Nav, onTafsir: () -
                     .height(44.dp)
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.White)
-                    .clickable(role = Role.Button) { nav.go(Screen.Mushaf(page, prefs.lastVerse.ifBlank { null })) }
+                    .springClick { nav.go(Screen.Mushaf(page, prefs.lastVerse.ifBlank { null })) }
                     .padding(horizontal = 18.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -226,7 +226,7 @@ private fun ToggleChip(label: String, icon: ImageVector, on: Boolean, onClick: (
             .clip(RoundedCornerShape(14.dp))
             .background(if (on) Color.White else Color.Transparent)
             .border(1.dp, if (on) Color.White else c.primaryLine, RoundedCornerShape(14.dp))
-            .clickable(role = Role.Switch, onClick = onClick)
+            .springClick(role = Role.Switch, haptic = Haptic.Toggle, pressedScale = 0.95f, onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

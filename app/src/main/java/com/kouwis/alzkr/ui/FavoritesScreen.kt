@@ -69,7 +69,7 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 Ic.heart, "إزالة من المفضلة", tint = c.heart,
-                                modifier = Modifier.size(20.dp).clickable { scope.launch { store.toggleFavorite("$s:$a") } },
+                                modifier = Modifier.size(20.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleFavorite("$s:$a") } },
                             )
                             Text(
                                 "  ${q.surahName(s)} · ${num(a)}", color = c.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,

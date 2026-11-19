@@ -263,7 +263,7 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
                     PlacedGlyph(it.text, it.x, it.baseline, it.size, bold = false)
                 }
                 val frameH = minOf(lineH * 1.3f, w / 8.2f)
-                ornaments += centered(AppFonts.surahNameChar(line.surah).toString(), w * 0.30f, frameH * 0.62f, mid).let {
+                ornaments += centered(AppFonts.surahNameChar(line.surah).toString(), w * 0.22f, frameH * 0.46f, mid).let {
                     PlacedGlyph(it.text, it.x, it.baseline, it.size, bold = false)
                 }
             }
@@ -370,6 +370,6 @@ fun SurahFrame(surah: Int, modifier: Modifier = Modifier) {
             }
         }
         draw(AppFonts.FRAME.toString(), cw, ch)
-        draw(AppFonts.surahNameChar(surah).toString(), cw * 0.30f, minOf(ch, cw / 8.2f) * 0.62f)
+        draw(AppFonts.surahNameChar(surah).toString(), cw * 0.22f, minOf(ch, cw / 8.2f) * 0.46f)
     }
 }

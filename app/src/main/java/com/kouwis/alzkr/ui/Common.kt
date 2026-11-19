@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +41,7 @@ fun RoundIconButton(
     onClick: () -> Unit,
     tint: Color = LocalColors.current.text,
     size: Dp = 44.dp,
+    haptic: Haptic = Haptic.Tap,
 ) {
     val c = LocalColors.current
     Box(
@@ -48,10 +50,11 @@ fun RoundIconButton(
             .clip(CircleShape)
             .background(c.card)
             .border(1.dp, c.border, CircleShape)
-            .clickable(onClickLabel = label, role = Role.Button, onClick = onClick),
+            .springClick(label = label, haptic = haptic, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
+        val pop = popScale(icon)
+        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp).graphicsLayer { scaleX = pop; scaleY = pop })
     }
 }
 
@@ -86,7 +89,7 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, mod
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(10.dp))
                     .background(if (on) c.card else Color.Transparent)
-                    .clickable(role = Role.Tab) { onSelect(i) },
+                    .springClick(role = Role.Tab, haptic = Haptic.Tick, pressedScale = 0.95f) { onSelect(i) },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -131,11 +134,18 @@ fun RowScope.Spacer1() = androidx.compose.foundation.layout.Spacer(Modifier.weig
 @Composable
 fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit) {
     val c = LocalColors.current
+    val view = androidx.compose.ui.platform.LocalView.current
     val state = androidx.compose.material3.rememberSwipeToDismissBoxState(
         confirmValueChange = { v ->
-            if (v != androidx.compose.material3.SwipeToDismissBoxValue.Settled) { onDelete(); true } else false
+            if (v != androidx.compose.material3.SwipeToDismissBoxValue.Settled) {
+                view.haptic(Haptic.Delete)
+                onDelete(); true
+            } else false
         },
     )
+    // a light tick the moment the swipe passes the "delete" point (and back)
+    val armed = state.targetValue != androidx.compose.material3.SwipeToDismissBoxValue.Settled
+    androidx.compose.runtime.LaunchedEffect(armed) { if (armed) view.haptic(Haptic.Tick) }
     androidx.compose.material3.SwipeToDismissBox(
         state = state,
         backgroundContent = {
