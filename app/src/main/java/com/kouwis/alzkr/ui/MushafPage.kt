@@ -23,7 +23,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -282,7 +282,9 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
  * Thin stacked page edges on the outer side of the page, over its full height (from the very
  * top of the screen to the bottom): odd pages are right-hand pages, even pages left-hand.
  */
-fun Modifier.pageEdges(page: Int, dark: Boolean): Modifier = drawBehind {
+fun Modifier.pageEdges(page: Int, dark: Boolean): Modifier = drawWithContent {
+    // drawn on top of the page (it sits in the outer margin, clear of the text)
+    drawContent()
     val rightHand = page % 2 == 1
     val edge = if (dark) Color.White.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.18f)
     val step = 2.5.dp.toPx()
