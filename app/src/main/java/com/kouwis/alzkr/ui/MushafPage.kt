@@ -88,8 +88,11 @@ private fun PageCanvas(
         val layout = remember(page, w, h) { layoutPage(q, page, tf, w, h) }
         // the page fonts exactly as the complex drew them: no added boldness
         val wordPaint = remember(tf) {
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            // subpixel positioning + linear (unhinted, uncached-bitmap) glyphs: every word is
+            // rasterised from its outline the same way, wherever it lands on the pixel grid
+            Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG or Paint.LINEAR_TEXT_FLAG).apply {
                 typeface = tf; style = Paint.Style.FILL
+                if (android.os.Build.VERSION.SDK_INT >= 29) hinting = Paint.HINTING_OFF
             }
         }
         val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml; strokeJoin = Paint.Join.ROUND } }
