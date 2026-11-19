@@ -1,13 +1,10 @@
 package com.kouwis.alzkr.ui
 
-import android.graphics.Typeface as AndroidTypeface
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,132 +12,62 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.Typeface
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextDirection
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.ArabicText.num
 import com.kouwis.alzkr.data.PageFonts
 import com.kouwis.alzkr.data.PageLine
 import com.kouwis.alzkr.data.QuranData
 
-private class PlacedWord(val key: String, val layout: TextLayoutResult, val topLeft: Offset, val hit: Rect)
-private class PlacedLabel(val layout: TextLayoutResult, val topLeft: Offset, val frame: Rect?)
-private class PageLayout(val words: List<PlacedWord>, val labels: List<PlacedLabel>, val lineH: Float)
+private class PlacedWord(val key: String, val text: String, val x: Float, val baseline: Float, val hit: Rect)
+private class PlacedGlyph(val text: String, val x: Float, val baseline: Float, val size: Float)
+private class PageLayout(val textSize: Float, val words: List<PlacedWord>, val ornaments: List<PlacedGlyph>)
 
-private sealed interface FontState {
-    data object Loading : FontState
-    data object Failed : FontState
-    data class Ready(val tf: AndroidTypeface) : FontState
-}
-
-/** One Madani mushaf page drawn line by line with its QCF V2 page font. */
+/**
+ * One page of the Madinah mushaf, drawn like the printed page: 15 lines, each
+ * line set with the page's own KFGQPC QCF font, real surah frames and basmala.
+ * Long-press an ayah to select it; a short tap is reported through [onTap].
+ */
 @Composable
 fun MushafPage(
     q: QuranData,
     page: Int,
     selected: String?,
-    onTapVerse: (String) -> Unit,
-    onTapEmpty: () -> Unit,
+    onLongPressVerse: (String) -> Unit,
+    onTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = LocalColors.current
-    val ctx = LocalContext.current
-    var retry by remember { mutableIntStateOf(0) }
-    val font by produceState<FontState>(
-        PageFonts.cached(page)?.let { FontState.Ready(it) } ?: FontState.Loading, page, retry,
-    ) {
-        if (value !is FontState.Ready) {
-            value = FontState.Loading
-            value = PageFonts.get(ctx, page)?.let { FontState.Ready(it) } ?: FontState.Failed
-        }
-    }
-    val lines = q.pages[page - 1]
-    val needsBasmala = lines.any { it is PageLine.Basmala }
-    val basmalaFont by produceState(PageFonts.cached(1), needsBasmala) {
-        if (needsBasmala && value == null) value = PageFonts.get(ctx, 1)
-    }
-
-    Column(
-        modifier
-            .background(c.pageOuter)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(c.paper, RoundedCornerShape(6.dp))
-                .border(1.dp, c.frame, RoundedCornerShape(6.dp))
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-        ) {
-            Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("سورة ${q.surahName(q.surahOfPage(page))}", color = c.primary, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text("الجزء ${num(q.juzOfPage(page))}", color = c.muted, fontSize = 12.sp)
-            }
-            HorizontalDivider(color = c.frame2)
-            Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 6.dp)) {
-                when (val f = font) {
-                    is FontState.Ready -> PageCanvas(q, page, f.tf, basmalaFont, selected, onTapVerse, onTapEmpty)
-                    FontState.Loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = c.primary)
-                        Text("جارٍ تنزيل خط الصفحة…", color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
-                    }
-                    FontState.Failed -> Column(
-                        Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text("محتاج إنترنت أول مرة عشان ننزّل خط الصفحة دي", color = c.muted, fontSize = 14.sp)
-                        Text(
-                            "حاول تاني",
-                            color = c.onPrimary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier
-                                .background(c.primary, RoundedCornerShape(20.dp))
-                                .clickable { retry++ }
-                                .padding(horizontal = 20.dp, vertical = 10.dp),
-                        )
-                    }
-                }
-            }
-            HorizontalDivider(color = c.frame2)
+    Column(modifier.background(c.paper).padding(horizontal = 22.dp)) {
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                num(page),
-                color = c.muted,
-                fontSize = 13.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp),
+                q.surahName(q.surahOfPage(page)), color = c.muted, fontSize = 16.sp,
+                fontFamily = AppFonts.naskhBold, modifier = Modifier.weight(1f),
             )
+            Text("الجزء ${num(q.juzOfPage(page))}", color = c.muted, fontSize = 16.sp, fontFamily = AppFonts.naskhBold)
         }
+        PageCanvas(q, page, selected, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth().padding(vertical = 6.dp))
+        Text(
+            num(page), color = c.muted, fontSize = 15.sp, fontFamily = AppFonts.naskh,
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp),
+        )
     }
 }
 
@@ -148,157 +75,168 @@ fun MushafPage(
 private fun PageCanvas(
     q: QuranData,
     page: Int,
-    tf: AndroidTypeface,
-    basmalaTf: AndroidTypeface?,
     selected: String?,
-    onTapVerse: (String) -> Unit,
-    onTapEmpty: () -> Unit,
+    onLongPressVerse: (String) -> Unit,
+    onTap: () -> Unit,
+    modifier: Modifier,
 ) {
     val c = LocalColors.current
-    val measurer = rememberTextMeasurer(cacheSize = 0)
-    val density = LocalDensity.current
-    val tapVerse by rememberUpdatedState(onTapVerse)
-    val tapEmpty by rememberUpdatedState(onTapEmpty)
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val haptics = LocalHapticFeedback.current
+    val longPress by rememberUpdatedState(onLongPressVerse)
+    val tap by rememberUpdatedState(onTap)
+    val tf = remember(page) { PageFonts.get(page) }
+    BoxWithConstraints(modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
-        val layout = remember(page, tf, basmalaTf, w, h, c.dark) {
-            layoutPage(q, page, tf, basmalaTf, w, h, measurer, density)
-        }
+        if (tf == null || w <= 0f || h <= 0f) return@BoxWithConstraints
+        val layout = remember(page, w, h) { layoutPage(q, page, tf, w, h) }
+        val wordPaint = remember(tf) { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = tf } }
+        val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml } }
         Canvas(
             Modifier
                 .fillMaxSize()
                 .pointerInput(layout) {
-                    detectTapGestures { pos ->
-                        val hit = layout.words.firstOrNull { it.hit.contains(pos) }
-                        if (hit != null) tapVerse(hit.key) else tapEmpty()
-                    }
+                    detectTapGestures(
+                        onLongPress = { pos ->
+                            layout.words.firstOrNull { it.hit.contains(pos) }?.let {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                longPress(it.key)
+                            }
+                        },
+                        onTap = { tap() },
+                    )
                 },
         ) {
             if (selected != null) {
                 layout.words.filter { it.key == selected }.forEach {
-                    drawRoundRect(c.highlight, it.hit.topLeft, it.hit.size, CornerRadius(8f, 8f))
+                    drawRoundRect(c.highlight, it.hit.topLeft, it.hit.size, CornerRadius(10f, 10f))
                 }
             }
-            layout.labels.forEach { l ->
-                l.frame?.let { r ->
-                    drawRoundRect(c.primary.copy(alpha = 0.08f), r.topLeft, r.size, CornerRadius(r.height / 2, r.height / 2))
-                    drawRoundRect(c.primary, r.topLeft, r.size, CornerRadius(r.height / 2, r.height / 2), style = Stroke(width = 2f))
-                    val inset = 5f
-                    drawRoundRect(
-                        c.gold, Offset(r.left + inset, r.top + inset), Size(r.width - 2 * inset, r.height - 2 * inset),
-                        CornerRadius(r.height / 2, r.height / 2), style = Stroke(width = 1f),
-                    )
+            wordPaint.textSize = layout.textSize
+            wordPaint.color = c.ink.toArgb()
+            ornPaint.color = c.ink.toArgb()
+            drawIntoCanvas { canvas ->
+                val nc = canvas.nativeCanvas
+                layout.ornaments.forEach { o ->
+                    ornPaint.textSize = o.size
+                    nc.drawText(o.text, o.x, o.baseline, ornPaint)
                 }
-                drawText(l.layout, color = if (l.frame != null) c.primary else c.ink, topLeft = l.topLeft)
+                layout.words.forEach { wd -> nc.drawText(wd.text, wd.x, wd.baseline, wordPaint) }
             }
-            layout.words.forEach { drawText(it.layout, color = c.ink, topLeft = it.topLeft) }
         }
     }
 }
 
-private fun layoutPage(
-    q: QuranData,
-    page: Int,
-    tf: AndroidTypeface,
-    basmalaTf: AndroidTypeface?,
-    w: Float,
-    h: Float,
-    measurer: TextMeasurer,
-    density: Density,
-): PageLayout {
-    val family = FontFamily(Typeface(tf))
+private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float): PageLayout {
     val lines = q.pages[page - 1]
-    val slots = if (page <= 2) lines.size + 2 else 15
+    val slots = if (page <= 2) lines.size + 3 else 15
     val lineH = h / slots
-    val topPad = if (page <= 2) lineH else 0f
-    val minGap = w * 0.008f
+    val topPad = if (page <= 2) lineH * 1.5f else 0f
 
-    fun style(px: Float, fam: FontFamily) = with(density) {
-        TextStyle(fontFamily = fam, fontSize = px.toSp(), textDirection = TextDirection.Rtl)
-    }
-
-    // 1) find the font size: the fullest line must exactly fill the width.
-    val basePx = 100f
-    val baseStyle = style(basePx, family)
+    // Font size: the fullest line exactly fills the width (QCF V1 lines are pre-justified).
+    val probe = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = tf; textSize = 100f }
     var fullest = 0f
-    var fullestCount = 1
-    var glyphH = 0f
     lines.forEach { line ->
-        if (line is PageLine.Text && line.words.isNotEmpty()) {
+        if (line is PageLine.Text) {
             var sum = 0f
-            line.words.forEach { word ->
-                val r = measurer.measure(word.glyph, baseStyle, softWrap = false, maxLines = 1)
-                sum += r.size.width
-                glyphH = maxOf(glyphH, r.size.height.toFloat())
-            }
-            if (sum > fullest) { fullest = sum; fullestCount = line.words.size }
+            line.words.forEach { sum += probe.measureText(it.glyph) }
+            fullest = maxOf(fullest, sum)
         }
     }
-    if (fullest == 0f) fullest = w
-    val byWidth = basePx * (w - (fullestCount - 1) * minGap) / fullest
-    val byHeight = if (glyphH > 0f) basePx * (lineH * 1.05f) / glyphH else byWidth
-    val px = minOf(byWidth, byHeight)
-    val st = style(px, family)
+    if (fullest <= 0f) fullest = w
+    var size = 100f * w / fullest
+    probe.textSize = size
+    var fm = probe.fontMetrics
+    val boxH = fm.descent - fm.ascent
+    if (boxH > lineH * 1.35f) size *= lineH * 1.35f / boxH
+    if (page <= 2) size *= 0.92f
+    probe.textSize = size
+    fm = probe.fontMetrics
 
     val words = ArrayList<PlacedWord>()
-    val labels = ArrayList<PlacedLabel>()
+    val ornaments = ArrayList<PlacedGlyph>()
+    val orn = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml }
+    val bounds = android.graphics.Rect()
+
+    fun centered(text: String, targetW: Float, maxH: Float, mid: Float): PlacedGlyph {
+        orn.textSize = 100f
+        orn.getTextBounds(text, 0, text.length, bounds)
+        var s = 100f * targetW / bounds.width().coerceAtLeast(1)
+        if (bounds.height() * s / 100f > maxH) s = 100f * maxH / bounds.height().coerceAtLeast(1)
+        orn.textSize = s
+        orn.getTextBounds(text, 0, text.length, bounds)
+        val x = (w - bounds.width()) / 2f - bounds.left
+        val baseline = mid - bounds.exactCenterY()
+        return PlacedGlyph(text, x, baseline, s)
+    }
 
     lines.forEachIndexed { i, line ->
         val top = topPad + i * lineH
-        val mid = top + lineH / 2
+        val mid = top + lineH / 2f
         when (line) {
             is PageLine.Header -> {
-                val ls = with(density) {
-                    TextStyle(fontSize = (lineH * 0.36f).toSp(), fontWeight = FontWeight.Bold, textDirection = TextDirection.Rtl)
-                }
-                val r = measurer.measure("سورة ${q.surahName(line.surah)}", ls)
-                val frame = Rect(w * 0.06f, top + lineH * 0.12f, w * 0.94f, top + lineH * 0.88f)
-                labels += PlacedLabel(r, Offset((w - r.size.width) / 2, mid - r.size.height / 2), frame)
+                ornaments += centered(AppFonts.FRAME.toString(), w, lineH * 0.92f, mid)
+                val frameH = minOf(lineH * 0.92f, w / 8.2f)
+                ornaments += centered(AppFonts.surahNameChar(line.surah).toString(), w * 0.30f, frameH * 0.62f, mid)
             }
-            PageLine.Basmala -> {
-                val glyphs = q.meta.basmala
-                val r = if (basmalaTf != null && glyphs != null) {
-                    measurer.measure(glyphs, style(px * 0.9f, FontFamily(Typeface(basmalaTf))), softWrap = false)
-                } else {
-                    measurer.measure(
-                        "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-                        with(density) { TextStyle(fontSize = (lineH * 0.38f).toSp(), textDirection = TextDirection.Rtl) },
-                    )
-                }
-                labels += PlacedLabel(r, Offset((w - r.size.width) / 2, mid - r.size.height / 2), null)
-            }
+            PageLine.Basmala -> ornaments += centered(AppFonts.BASMALA, w * 0.52f, lineH * 0.8f, mid)
             is PageLine.Text -> {
-                val measured = line.words.map { measurer.measure(it.glyph, st, softWrap = false, maxLines = 1) }
-                val natural = measured.sumOf { it.size.width }.toFloat()
-                val n = measured.size
-                val justify = page > 2 && n > 1 && natural + (n - 1) * minGap > w * 0.5f
-                val gap = if (justify) (w - natural) / (n - 1) else minGap * 2
-                val total = natural + gap * (n - 1)
-                var x = if (justify) w else (w + total) / 2 // right edge, reading right to left
-                measured.forEachIndexed { j, r ->
-                    val ww = r.size.width.toFloat()
+                val widths = line.words.map { probe.measureText(it.glyph) }
+                val natural = widths.sum()
+                val n = widths.size
+                val justify = page > 2 && n > 1 && natural >= w * 0.85f
+                val gap = if (justify) (w - natural) / (n - 1) else size * 0.12f
+                val total = natural + gap * (n - 1).coerceAtLeast(0)
+                var x = if (justify) w else (w + total) / 2f
+                val baseline = mid - (fm.ascent + fm.descent) / 2f
+                line.words.forEachIndexed { j, word ->
+                    val ww = widths[j]
                     val left = x - ww
-                    val tl = Offset(left, mid - r.size.height / 2f)
-                    val hit = Rect(left - gap / 2, top + lineH * 0.06f, x + gap / 2, top + lineH * 0.94f)
-                    words += PlacedWord(line.words[j].key, r, tl, hit)
+                    val hit = Rect(left - gap / 2f, top + lineH * 0.04f, x + gap / 2f, top + lineH * 0.96f)
+                    words += PlacedWord(word.key, word.glyph, left, baseline, hit)
                     x = left - gap
                 }
             }
         }
     }
-    return PageLayout(words, labels, lineH)
+    return PageLayout(size, words, ornaments)
 }
 
-/** A tall, scrollable version of the page for landscape. */
+/** The page at full width and taller than the screen, for reading in landscape. */
 @Composable
 fun MushafPageTall(
     q: QuranData,
     page: Int,
     selected: String?,
-    onTapVerse: (String) -> Unit,
-    onTapEmpty: () -> Unit,
-    width: androidx.compose.ui.unit.Dp,
+    onLongPressVerse: (String) -> Unit,
+    onTap: () -> Unit,
+    width: Dp,
 ) {
-    MushafPage(q, page, selected, onTapVerse, onTapEmpty, Modifier.fillMaxWidth().height(width * 1.55f))
+    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f))
+}
+
+/** Real mushaf surah frame (QCF_BSML) with the surah name, for the verse-by-verse list. */
+@Composable
+fun SurahFrame(surah: Int, modifier: Modifier = Modifier) {
+    val c = LocalColors.current
+    val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml } }
+    Canvas(modifier) {
+        paint.color = c.ink.toArgb()
+        val b = android.graphics.Rect()
+        val cw = size.width
+        val ch = size.height
+        fun draw(text: String, targetW: Float, maxH: Float) {
+            paint.textSize = 100f
+            paint.getTextBounds(text, 0, text.length, b)
+            var s = 100f * targetW / b.width().coerceAtLeast(1)
+            if (b.height() * s / 100f > maxH) s = 100f * maxH / b.height().coerceAtLeast(1)
+            paint.textSize = s
+            paint.getTextBounds(text, 0, text.length, b)
+            drawIntoCanvas {
+                it.nativeCanvas.drawText(text, (cw - b.width()) / 2f - b.left, ch / 2f - b.exactCenterY(), paint)
+            }
+        }
+        draw(AppFonts.FRAME.toString(), cw, ch)
+        draw(AppFonts.surahNameChar(surah).toString(), cw * 0.30f, minOf(ch, cw / 8.2f) * 0.62f)
+    }
 }

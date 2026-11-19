@@ -3,7 +3,14 @@ package com.kouwis.alzkr.ui
 import android.graphics.Typeface as AndroidTypeface
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDirection
+import com.kouwis.alzkr.data.AppFonts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +52,7 @@ import com.kouwis.alzkr.data.QuranData
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /** "Verse mode": every ayah on its own, one under the other, in large mushaf script. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VerseList(
     q: QuranData,
@@ -52,8 +60,10 @@ fun VerseList(
     selected: String?,
     startKey: String,
     onVisibleVerse: (Int, Int) -> Unit,
-    onSelect: (String) -> Unit,
+    onLongPress: (String) -> Unit,
+    onTap: () -> Unit,
 ) {
+    val haptics = LocalHapticFeedback.current
     val c = LocalColors.current
     val all = q.allVerses
     val start = remember {
@@ -66,7 +76,7 @@ fun VerseList(
             all.getOrNull(i)?.let { (s, a) -> onVisibleVerse(s, a) }
         }
     }
-    LazyColumn(state = state, modifier = Modifier.fillMaxSize().background(c.paper).navigationBarsPadding()) {
+    LazyColumn(state = state, modifier = Modifier.fillMaxSize().background(c.paper).displayCutoutPadding()) {
         items(all.size, key = { all[it].let { (s, a) -> "$s:$a" } }) { i ->
             val (s, a) = all[i]
             val key = "$s:$a"
@@ -82,7 +92,13 @@ fun VerseList(
                                 else -> c.paper
                             },
                         )
-                        .clickable { onSelect(key) }
+                        .combinedClickable(
+                            onClick = onTap,
+                            onLongClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onLongPress(key)
+                            },
+                        )
                         .padding(horizontal = 22.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -107,23 +123,15 @@ fun VerseList(
 @Composable
 private fun SurahHeader(q: QuranData, s: Int) {
     val c = LocalColors.current
-    Column(Modifier.fillMaxWidth().background(c.paper).padding(horizontal = 22.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(c.primarySoft)
-                .border(1.5.dp, c.primary, RoundedCornerShape(26.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("سورة ${q.surahName(s)}", color = c.primary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        }
+    Column(Modifier.fillMaxWidth().background(c.paper).padding(horizontal = 18.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        SurahFrame(s, Modifier.fillMaxWidth().height(56.dp))
         if (s != 1 && s != 9) {
-            Text("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", color = c.ink, fontSize = 22.sp, modifier = Modifier.padding(top = 12.dp))
+            Text(AppFonts.BASMALA, color = c.ink, fontSize = 34.sp, fontFamily = bsmlFamily, modifier = Modifier.padding(top = 8.dp), style = TextStyle(textDirection = TextDirection.Ltr))
         }
     }
 }
+
+private val bsmlFamily by lazy { FontFamily(Typeface(AppFonts.bsml)) }
 
 /** The verse in its mushaf glyphs (one font per page it spans); plain text until fonts are ready. */
 @Composable
@@ -131,15 +139,8 @@ private fun VerseGlyphs(q: QuranData, s: Int, a: Int) {
     val c = LocalColors.current
     val ctx = LocalContext.current
     val chunks = q.glyphs["$s:$a"].orEmpty()
-    val fonts by produceState<Map<Int, AndroidTypeface>?>(
-        chunks.mapNotNull { ch -> PageFonts.cached(ch.p)?.let { ch.p to it } }.toMap().takeIf { it.size == chunks.size },
-        s, a,
-    ) {
-        if (value == null) {
-            val m = HashMap<Int, AndroidTypeface>()
-            for (ch in chunks) PageFonts.get(ctx, ch.p)?.let { m[ch.p] = it }
-            value = if (m.size == chunks.size && chunks.isNotEmpty()) m else null
-        }
+    val fonts = remember(s, a) {
+        chunks.mapNotNull { ch -> PageFonts.get(ch.p)?.let { ch.p to it } }.toMap().takeIf { it.size == chunks.size && chunks.isNotEmpty() }
     }
     val f = fonts
     if (f == null) {

@@ -2,61 +2,55 @@ package com.kouwis.alzkr.data
 
 import android.content.Context
 import android.graphics.Typeface
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
+import androidx.compose.ui.text.font.FontFamily
 import java.util.concurrent.ConcurrentHashMap
+import androidx.compose.ui.text.font.Typeface as ComposeTypeface
 
 /**
- * The 604 KFGQPC QCF V2 page fonts (~200 MB together) are too big for the APK,
- * so each page font is downloaded once on first use and kept on the phone.
- * No server of ours: the files come straight from a public GitHub repository.
+ * KFGQPC fonts bundled in the APK (no internet needed):
+ * - 604 QCF V1 page fonts — the classic Madinah mushaf (1405 print), one font per page.
+ * - QCF_BSML — the real surah header frame, surah names and the basmala.
+ * - Uthman Taha Naskh — the complex's naskh font, used for headings.
  */
 object PageFonts {
-    private const val BASE = "https://raw.githubusercontent.com/nuqayah/qpc-fonts/master/mushaf-v2/QCF2%03d.ttf"
-
     private val typefaces = ConcurrentHashMap<Int, Typeface>()
-    private val locks = ConcurrentHashMap<Int, Mutex>()
+    private lateinit var appContext: Context
+
+    fun init(context: Context) { appContext = context.applicationContext }
 
     fun cached(page: Int): Typeface? = typefaces[page]
 
-    private fun dir(context: Context) = File(context.filesDir, "qcf").apply { mkdirs() }
+    /** Loads (and caches) the font of a mushaf page; returns null only if the asset is missing. */
+    fun get(page: Int): Typeface? = typefaces[page] ?: runCatching {
+        Typeface.createFromAsset(appContext.assets, "qcf/p$page.ttf")
+    }.getOrNull()?.also { typefaces[page] = it }
 
-    fun isDownloaded(context: Context, page: Int) = File(dir(context), "p$page.ttf").let { it.exists() && it.length() > 0 }
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun get(context: Context, page: Int): Typeface? = get(page)
+}
 
-    /** Returns the page's typeface, downloading it if needed; null when offline and not yet downloaded. */
-    suspend fun get(context: Context, page: Int): Typeface? {
-        typefaces[page]?.let { return it }
-        val lock = locks.getOrPut(page) { Mutex() }
-        return lock.withLock {
-            typefaces[page] ?: withContext(Dispatchers.IO) {
-                val file = File(dir(context), "p$page.ttf")
-                if (!file.exists() || file.length() == 0L) {
-                    if (!download(page, file)) return@withContext null
-                }
-                runCatching { Typeface.createFromFile(file) }
-                    .onFailure { file.delete() }
-                    .getOrNull()
-                    ?.also { typefaces[page] = it }
-            }
-        }
+object AppFonts {
+    private lateinit var ctx: Context
+    fun init(context: Context) { ctx = context.applicationContext; PageFonts.init(context) }
+
+    private fun asset(name: String): Typeface =
+        runCatching { Typeface.createFromAsset(ctx.assets, "fonts/$name") }.getOrDefault(Typeface.DEFAULT)
+
+    val bsml: Typeface by lazy { asset("bsml.ttf") }
+    val naskhTf: Typeface by lazy { asset("naskh.otf") }
+    val naskhBoldTf: Typeface by lazy { asset("naskh_bold.otf") }
+
+    val naskh: FontFamily by lazy { FontFamily(ComposeTypeface(naskhTf)) }
+    val naskhBold: FontFamily by lazy { FontFamily(ComposeTypeface(naskhBoldTf)) }
+
+    /** QCF_BSML character for a surah name glyph (verified against the font). */
+    fun surahNameChar(n: Int): Char = when (n) {
+        in 1..35 -> (0x5D + n - 1).toChar()
+        in 36..47 -> (0xA1 + n - 36).toChar()
+        in 48..56 -> (0xAE + n - 48).toChar()
+        else -> (0xB8 + n - 57).toChar()
     }
 
-    private fun download(page: Int, target: File): Boolean = runCatching {
-        val tmp = File(target.parentFile, target.name + ".part")
-        val conn = URL(BASE.format(page)).openConnection() as HttpURLConnection
-        conn.connectTimeout = 15000
-        conn.readTimeout = 30000
-        try {
-            if (conn.responseCode != 200) return false
-            conn.inputStream.use { input -> tmp.outputStream().use { input.copyTo(it) } }
-        } finally {
-            conn.disconnect()
-        }
-        tmp.renameTo(target)
-    }.getOrDefault(false)
+    const val FRAME = 'ò'
+    const val BASMALA = "#\"!"
 }

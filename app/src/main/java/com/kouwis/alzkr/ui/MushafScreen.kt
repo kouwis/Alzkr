@@ -71,9 +71,14 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.foundation.layout.displayCutoutPadding
+import com.kouwis.alzkr.data.AppFonts
+import kotlinx.coroutines.delay
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.ArabicText.num
-import com.kouwis.alzkr.data.PageFonts
 import com.kouwis.alzkr.data.Prefs
 import com.kouwis.alzkr.data.QuranData
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -89,83 +94,104 @@ fun MushafScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, startPag
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val clipboard = LocalClipboardManager.current
+
+    // Quran only on screen: keep it awake and hide the system bars while reading.
     DisposableEffect(view) {
         view.keepScreenOn = true
-        onDispose { view.keepScreenOn = false }
+        val window = (view.context as? android.app.Activity)?.window
+        val ctrl = window?.let { WindowCompat.getInsetsController(it, view) }
+        ctrl?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        ctrl?.hide(WindowInsetsCompat.Type.systemBars())
+        onDispose {
+            view.keepScreenOn = false
+            ctrl?.show(WindowInsetsCompat.Type.systemBars())
+        }
     }
 
     var selected by remember { mutableStateOf(startVerse) }
-    var barsVisible by remember { mutableStateOf(true) }
-    var dialog by remember { mutableStateOf<Pair<String, String>?>(null) } // (title, verse key) for "tafsir"/"translation"
+    var barsVisible by remember { mutableStateOf(false) }
+    var barsTick by remember { mutableIntStateOf(0) }
+    var dialog by remember { mutableStateOf<Pair<String, String>?>(null) }
     var currentPage by remember { mutableIntStateOf(startPage.coerceIn(1, 604)) }
     val verseMode = prefs.verseMode
 
-    // remember reading position + daily ward
+    // the top bar shows on tap and hides itself after a few seconds
+    LaunchedEffect(barsVisible, barsTick) {
+        if (barsVisible) {
+            delay(3500)
+            barsVisible = false
+        }
+    }
+    val showBars = { barsVisible = true; barsTick++ }
+    val onTap: () -> Unit = {
+        when {
+            selected != null -> selected = null
+            barsVisible -> barsVisible = false
+            else -> showBars()
+        }
+    }
+
     LaunchedEffect(currentPage) {
         val first = q.versesOnPage(currentPage).firstOrNull()
         val key = selected?.takeIf { parseKey(it)?.let { (s, a) -> q.pageOf(s, a) == currentPage } == true }
             ?: first?.let { "${it.first}:${it.second}" } ?: ""
         store.markRead(currentPage, key)
-        // prefetch neighbour page fonts
-        listOf(currentPage + 1, currentPage + 2, currentPage - 1).filter { it in 1..604 }.forEach { p ->
-            launch { PageFonts.get(ctx, p) }
-        }
     }
 
-    Box(Modifier.fillMaxSize().background(c.pageOuter)) {
-        Column(Modifier.fillMaxSize()) {
-            // top bar
-            AnimatedVisibility(visible = barsVisible || verseMode, enter = fadeIn(), exit = fadeOut()) {
-                TopBar(
-                    q, currentPage, verseMode,
-                    onBack = { nav.back() },
-                    onToggleMode = { scope.launch { store.setVerseMode(!verseMode) } },
-                    onTajweed = { Toast.makeText(ctx, "المصحف المجوّد — قريبًا إن شاء الله", Toast.LENGTH_SHORT).show() },
-                )
+    Box(Modifier.fillMaxSize().background(c.paper)) {
+        if (verseMode) {
+            VerseList(
+                q, prefs, selected,
+                startKey = selected ?: q.versesOnPage(currentPage).firstOrNull()?.let { "${it.first}:${it.second}" } ?: "1:1",
+                onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a) },
+                onLongPress = { selected = it },
+                onTap = onTap,
+            )
+        } else {
+            PagesPager(q, currentPage, selected,
+                onPage = { currentPage = it },
+                onLongPressVerse = { selected = it },
+                onTap = onTap,
+            )
+            if (prefs.tafsirOn || prefs.translationOn) {
+                StudyPanel(q, currentPage, prefs.tafsirOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
             }
-            if (!barsVisible && !verseMode) Box(Modifier.statusBarsPadding())
+        }
 
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                if (verseMode) {
-                    VerseList(
-                        q, prefs, selected,
-                        startKey = selected ?: q.versesOnPage(currentPage).firstOrNull()?.let { "${it.first}:${it.second}" } ?: "1:1",
-                        onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a) },
-                        onSelect = { selected = if (selected == it) null else it },
-                    )
-                } else {
-                    PagesPager(q, currentPage, selected,
-                        onPage = { currentPage = it },
-                        onTapVerse = { selected = if (selected == it) null else it },
-                        onTapEmpty = { if (selected != null) selected = null else barsVisible = !barsVisible },
-                    )
-                    if (prefs.tafsirOn || prefs.translationOn) {
-                        StudyPanel(q, currentPage, prefs.tafsirOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
+        AnimatedVisibility(
+            visible = barsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
+            TopBar(
+                q, currentPage, verseMode,
+                onBack = { nav.back() },
+                onToggleMode = { scope.launch { store.setVerseMode(!verseMode) }; showBars() },
+                onTajweed = { Toast.makeText(ctx, "المصحف المجوّد — قريبًا إن شاء الله", Toast.LENGTH_SHORT).show() },
+            )
+        }
+
+        val sel = selected
+        if (sel != null) {
+            AyahActions(
+                isFavorite = sel in prefs.favorites,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp),
+                onFavorite = { scope.launch { store.toggleFavorite(sel) } },
+                onTafsir = { dialog = "التفسير الميسر" to sel },
+                onTranslation = { dialog = "الترجمة (English)" to sel },
+                onCopy = {
+                    verseText(q, sel)?.let {
+                        clipboard.setText(AnnotatedString(it))
+                        Toast.makeText(ctx, "تم النسخ", Toast.LENGTH_SHORT).show()
                     }
-                }
-
-                val sel = selected
-                if (sel != null) {
-                    AyahActions(
-                        isFavorite = sel in prefs.favorites,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
-                        onFavorite = { scope.launch { store.toggleFavorite(sel) } },
-                        onTafsir = { dialog = "التفسير الميسر" to sel },
-                        onTranslation = { dialog = "الترجمة (English)" to sel },
-                        onCopy = {
-                            verseText(q, sel)?.let {
-                                clipboard.setText(AnnotatedString(it))
-                                Toast.makeText(ctx, "تم النسخ", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        onShare = {
-                            val text = verseText(q, sel) ?: return@AyahActions
-                            val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
-                            ctx.startActivity(Intent.createChooser(send, "مشاركة الآية"))
-                        },
-                    )
-                }
-            }
+                },
+                onShare = {
+                    val text = verseText(q, sel) ?: return@AyahActions
+                    val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
+                    ctx.startActivity(Intent.createChooser(send, "مشاركة الآية"))
+                },
+            )
         }
     }
 
@@ -203,8 +229,8 @@ private fun PagesPager(
     page: Int,
     selected: String?,
     onPage: (Int) -> Unit,
-    onTapVerse: (String) -> Unit,
-    onTapEmpty: () -> Unit,
+    onLongPressVerse: (String) -> Unit,
+    onTap: () -> Unit,
 ) {
     val state = rememberPagerState(initialPage = page - 1) { 604 }
     LaunchedEffect(state) {
@@ -217,12 +243,12 @@ private fun PagesPager(
         if (landscape) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val w = maxWidth
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding()) {
-                    MushafPageTall(q, p, sel, onTapVerse, onTapEmpty, w)
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w)
                 }
             }
         } else {
-            MushafPage(q, p, sel, onTapVerse, onTapEmpty, Modifier.fillMaxSize().navigationBarsPadding())
+            MushafPage(q, p, sel, onLongPressVerse, onTap, Modifier.fillMaxSize().displayCutoutPadding())
         }
     }
 }
@@ -237,30 +263,30 @@ private fun TopBar(
     onTajweed: () -> Unit,
 ) {
     val c = LocalColors.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(c.paper)
-            .statusBarsPadding()
-            .height(60.dp)
-            .padding(horizontal = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
-            Icon(Ic.back, "رجوع", tint = c.text, modifier = Modifier.size(22.dp))
+    Column(Modifier.fillMaxWidth().shadow(6.dp).background(c.card)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .height(60.dp)
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
+                Icon(Ic.back, "رجوع", tint = c.text, modifier = Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(q.surahName(q.surahOfPage(page)), color = c.text, fontSize = 18.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
+                Text(
+                    "صفحة ${num(page)} · الجزء ${num(q.juzOfPage(page))} · الحزب ${num(q.hizbOfPage(page))}",
+                    color = c.muted, fontSize = 11.sp, maxLines = 1,
+                )
+            }
+            RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
+            Segmented(listOf("عادي", "مجوّد"), 0, { if (it == 1) onTajweed() }, Modifier.width(112.dp), height = 32.dp)
         }
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(q.surahName(q.surahOfPage(page)), color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(
-                "صفحة ${num(page)} · الجزء ${num(q.juzOfPage(page))} · الحزب ${num(q.hizbOfPage(page))}",
-                color = c.muted, fontSize = 11.sp, maxLines = 1,
-            )
-        }
-        RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
-        Segmented(listOf("عادي", "مجوّد"), 0, { if (it == 1) onTajweed() }, Modifier.width(112.dp), height = 32.dp)
     }
-    HorizontalDivider(color = c.frame2)
 }
 
 @Composable

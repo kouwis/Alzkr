@@ -5,3 +5,5 @@ local.properties
 *.iml
 .data-cache/
 app/src/main/assets/data/
+app/src/main/assets/qcf/
+app/src/main/assets/fonts/

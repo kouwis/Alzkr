@@ -2,7 +2,8 @@
 """Builds the app's bundled Quran data into app/src/main/assets/data/.
 
 Sources (all public, fetched at build time — no server of our own):
-- Madani 15-line page layout + QCF V2 glyph codes: github.com/zonetecde/mushaf-layout
+- Madani 15-line page layout + QCF V1 (1405 print) glyph codes: github.com/zonetecde/mushaf-layout
+- KFGQPC fonts (604 QCF V1 page fonts, QCF_BSML ornaments, Uthman Taha Naskh): github.com/nuqayah/qpc-fonts
 - Surah/juz/hizb metadata, Quran text, التفسير الميسر, Sahih International: api.alquran.cloud
 """
 import json
@@ -17,6 +18,39 @@ CACHE = os.path.join(ROOT, ".data-cache")
 OUT = os.path.join(ROOT, "app", "src", "main", "assets", "data")
 LAYOUT_URL = "https://raw.githubusercontent.com/zonetecde/mushaf-layout/main/mushaf/page-{:03d}.json"
 ALQURAN = "https://api.alquran.cloud/v1/"
+FONTS = "https://raw.githubusercontent.com/nuqayah/qpc-fonts/master/"
+ASSETS = os.path.join(ROOT, "app", "src", "main", "assets")
+
+
+def fetch_file(url, target):
+    cache = os.path.join(CACHE, "files", os.path.basename(target))
+    if not (os.path.exists(cache) and os.path.getsize(cache) > 0):
+        last = None
+        for attempt in range(6):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "alzkr-build"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    raw = r.read()
+                os.makedirs(os.path.dirname(cache), exist_ok=True)
+                with open(cache, "wb") as f:
+                    f.write(raw)
+                break
+            except Exception as e:  # noqa: BLE001
+                last = e
+                time.sleep(2 * (attempt + 1))
+        else:
+            raise RuntimeError(f"failed {url}: {last}")
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    with open(cache, "rb") as src, open(target, "wb") as dst:
+        dst.write(src.read())
+
+
+def fetch_fonts():
+    for p in range(1, 605):
+        fetch_file(FONTS + f"mushaf/QCF_P{p:03d}.TTF", os.path.join(ASSETS, "qcf", f"p{p}.ttf"))
+    fetch_file(FONTS + "mushaf/QCF_BSML.TTF", os.path.join(ASSETS, "fonts", "bsml.ttf"))
+    fetch_file(FONTS + "various/UthmanTN1%20Ver10.otf", os.path.join(ASSETS, "fonts", "naskh.otf"))
+    fetch_file(FONTS + "various/UthmanTN1B%20Ver10.otf", os.path.join(ASSETS, "fonts", "naskh_bold.otf"))
 
 
 def fetch(url, cache_name):
@@ -76,12 +110,13 @@ def strip_basmala(texts, clean_texts):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    fetch_fonts()
+    print("fonts ok", file=sys.stderr)
 
     # ---------- page layout ----------
     pages = []
     verse_page = {}
     verse_glyphs = {}
-    basmala = None
     for p in range(1, 605):
         d = fetch(LAYOUT_URL.format(p), f"layout/page-{p:03d}.json")
         lines = []
@@ -95,7 +130,7 @@ def main():
                 ws = []
                 for w in ln.get("words", []):
                     loc = w["location"]
-                    g = w["qpcV2"]
+                    g = w["qpcV1"]
                     ws.append([loc, g])
                     s, a, _ = loc.split(":")
                     key = f"{s}:{a}"
@@ -105,8 +140,6 @@ def main():
                         chunks[-1]["g"] += " " + g
                     else:
                         chunks.append({"p": p, "g": g})
-                    if p == 1 and s == "1" and a == "1":
-                        basmala = (basmala + " " if basmala else "") + g.split(" ")[0]
                 lines.append({"t": "x", "w": ws})
         pages.append(lines)
     assert len(pages) == 604
@@ -157,7 +190,7 @@ def main():
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
 
     dump("pages.json", pages)
-    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "basmala": basmala})
+    dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub})
     dump("verses.json", {"page": vpage, "simple": simple, "clean": clean_norm})
     dump("glyphs.json", verse_glyphs)
     dump("tafsir_muyassar.json", tafsir)

@@ -1,6 +1,8 @@
 package com.kouwis.alzkr.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import com.kouwis.alzkr.data.AppFonts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +48,7 @@ import kotlinx.coroutines.launch
 
 private data class Row4(val n: String, val title: String, val sub: String, val page: Int)
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     val c = LocalColors.current
@@ -53,68 +56,64 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     val soon = soon()
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(c.bg)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        // Header
-        Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("القرآن الكريم", color = c.text, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                Text("مصحف المدينة · رواية حفص", color = c.muted, fontSize = 13.sp)
+    val rows = remember(tab) {
+        when (tab) {
+            0 -> q.surahs.map { Row4(num(it.n), it.name, "${it.type} · ${num(it.ayahs)} آية", it.page) }
+            1 -> q.meta.rub.map { r ->
+                val hizb = (r.n - 1) / 4 + 1
+                val quarter = listOf("", "ربع ", "نصف ", "ثلاثة أرباع ")[(r.n - 1) % 4]
+                Row4(num(r.n), r.text, "${quarter}الحزب ${num(hizb)} · ${q.surahName(r.s)} ${num(r.a)}", r.page)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RoundIconButton(Ic.search, "بحث", { nav.go(Screen.Search) })
-                RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
-                RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
-            }
+            2 -> q.meta.hizb.map { h -> Row4(num(h.n), "الحزب ${num(h.n)}", "يبدأ من ${q.surahName(h.s)} ${num(h.a)}", h.page) }
+            else -> q.meta.juz.map { j -> Row4(num(j.n), "الجزء ${num(j.n)}", "يبدأ من ${q.surahName(j.s)} ${num(j.a)}", j.page) }
         }
+    }
 
-        ContinueCard(q, prefs, nav,
-            onTafsir = { scope.launch { store.setTafsir(!prefs.tafsirOn) } },
-            onTranslation = { scope.launch { store.setTranslation(!prefs.translationOn) } },
-        )
-
-        // Daily ward
-        CardBox(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("وردك اليوم", color = c.text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                    val done = prefs.wardDone.coerceAtMost(prefs.wardTarget)
-                    Text(
-                        if (done >= prefs.wardTarget) "أتممت وردك ✓" else "${num(done)} من ${num(prefs.wardTarget)} صفحات",
-                        color = if (done >= prefs.wardTarget) c.primary else c.muted, fontSize = 13.sp,
+    Column(Modifier.fillMaxSize().background(c.bg).statusBarsPadding().navigationBarsPadding()) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+            item {
+                Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("القرآن الكريم", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
+                            Text("مصحف المدينة · رواية حفص", color = c.muted, fontSize = 13.sp)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            RoundIconButton(Ic.search, "بحث", { nav.go(Screen.Search) })
+                            RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
+                            RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
+                        }
+                    }
+                    ContinueCard(q, prefs, nav,
+                        onTafsir = { scope.launch { store.setTafsir(!prefs.tafsirOn) } },
+                        onTranslation = { scope.launch { store.setTranslation(!prefs.translationOn) } },
                     )
-                }
-                val frac = (prefs.wardDone.toFloat() / prefs.wardTarget).coerceIn(0f, 1f)
-                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.chip)) {
-                    Box(Modifier.fillMaxWidth(frac).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.gold))
+                    CardBox(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("وردك اليوم", color = c.text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                                val done = prefs.wardDone.coerceAtMost(prefs.wardTarget)
+                                Text(
+                                    if (done >= prefs.wardTarget) "أتممت وردك ✓" else "${num(done)} من ${num(prefs.wardTarget)} صفحات",
+                                    color = if (done >= prefs.wardTarget) c.primary else c.muted, fontSize = 13.sp,
+                                )
+                            }
+                            val frac = (prefs.wardDone.toFloat() / prefs.wardTarget).coerceIn(0f, 1f)
+                            Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.chip)) {
+                                Box(Modifier.fillMaxWidth(frac).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.gold))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(0.dp))
                 }
             }
-        }
-
-        Segmented(listOf("السور", "الأرباع", "الأحزاب", "الأجزاء"), tab, { tab = it }, Modifier.fillMaxWidth())
-
-        val rows = remember(tab) {
-            when (tab) {
-                0 -> q.surahs.map { Row4(num(it.n), it.name, "${it.type} · ${num(it.ayahs)} آية", it.page) }
-                1 -> q.meta.rub.map { r ->
-                    val hizb = (r.n - 1) / 4 + 1
-                    val quarter = listOf("", "ربع ", "نصف ", "ثلاثة أرباع ")[(r.n - 1) % 4]
-                    Row4(num(r.n), r.text, "${quarter}الحزب ${num(hizb)} · ${q.surahName(r.s)} ${num(r.a)}", r.page)
+            stickyHeader {
+                Box(Modifier.fillMaxWidth().background(c.bg).padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    Segmented(listOf("السور", "الأرباع", "الأحزاب", "الأجزاء"), tab, { tab = it }, Modifier.fillMaxWidth())
                 }
-                2 -> q.meta.hizb.map { h -> Row4(num(h.n), "الحزب ${num(h.n)}", "يبدأ من ${q.surahName(h.s)} ${num(h.a)}", h.page) }
-                else -> q.meta.juz.map { j -> Row4(num(j.n), "الجزء ${num(j.n)}", "يبدأ من ${q.surahName(j.s)} ${num(j.a)}", j.page) }
             }
-        }
-        CardBox(Modifier.fillMaxWidth().weight(1f)) {
-            LazyColumn {
-                items(rows, key = { "$tab-${it.n}" }) { r ->
+            items(rows, key = { "$tab-${it.n}" }) { r ->
+                Column(Modifier.padding(horizontal = 20.dp).background(c.card)) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -125,7 +124,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                     ) {
                         NumberBadge(r.n)
                         Column(Modifier.weight(1f)) {
-                            Text(r.title, color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text(r.title, color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
                             Text(r.sub, color = c.muted, fontSize = 12.sp, maxLines = 1)
                         }
                         Text("ص ${num(r.page)}", color = c.muted, fontSize = 13.sp)
@@ -133,13 +132,14 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                     HorizontalDivider(color = c.border.copy(alpha = 0.6f))
                 }
             }
+            item { Spacer(Modifier.height(12.dp)) }
         }
 
         // Section switcher
         Row(
             Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(bottom = 10.dp)
+                .padding(vertical = 8.dp)
                 .clip(RoundedCornerShape(24.dp))
                 .background(c.card)
                 .border(1.dp, c.border, RoundedCornerShape(24.dp))

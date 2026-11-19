@@ -5,11 +5,11 @@
 ## التحميل
 آخر نسخة تجريبية في صفحة [Releases](../../releases): حمّل ملف `alzkr-*.apk` وافتحه على الموبايل.
 
-> أول مرة تفتح صفحة في المصحف، التطبيق بينزّل خط الصفحة دي (مرة واحدة بس)، فمحتاج إنترنت أول مرة.
+> كل خطوط المصحف جوه التطبيق، فبيشتغل من غير إنترنت.
 
 ## مصادر البيانات
-- تخطيط مصحف المدينة (15 سطر) ورموز خطوط QCF V2: [zonetecde/mushaf-layout](https://github.com/zonetecde/mushaf-layout)
-- خطوط صفحات المصحف QCF V2 من مجمع الملك فهد: [nuqayah/qpc-fonts](https://github.com/nuqayah/qpc-fonts)
+- تخطيط مصحف المدينة (15 سطر) ورموز خطوط QCF: [zonetecde/mushaf-layout](https://github.com/zonetecde/mushaf-layout)
+- خطوط مجمع الملك فهد (صفحات المصحف QCF V1، وإطارات السور والبسملة QCF_BSML، وخط عثمان طه النسخ): [nuqayah/qpc-fonts](https://github.com/nuqayah/qpc-fonts)
 - نص القرآن، والتفسير الميسر، وترجمة Sahih International: [AlQuran Cloud](https://alquran.cloud)
 
 ## البناء
