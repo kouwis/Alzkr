@@ -153,9 +153,8 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     val labelRoom = w * 1.62f / 15f
     val blockH = minOf(h - 2f * labelRoom, w * 1.62f)
     val blockTop = (h - blockH) / 2f
-    val slots = if (page <= 2) lines.size + 3 else 15
-    val lineH = blockH / slots
-    val topPad = blockTop + if (page <= 2) lineH * 1.5f else 0f
+    val lineH = blockH / 15f
+    val opening = page <= 2 // al-Fatiha and the start of al-Baqara: short centred lines, set tight
     val labelSize = labelRoom * 0.42f
 
     // Every word and every ayah-number is its own unit, so spacing is the same everywhere.
@@ -185,9 +184,24 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     var fm = probe.fontMetrics
     val boxH = fm.descent - fm.ascent
     if (boxH > lineH * 1.3f) size *= lineH * 1.3f / boxH
-    if (page <= 2) size *= 0.92f
+    if (opening) size *= 1.12f
     probe.textSize = size
     fm = probe.fontMetrics
+
+    // Line positions: 15 equal lines on normal pages; on the two opening pages the lines sit
+    // close together (like the print) and the whole group is centred on the page.
+    val lineHeights = lines.map { line ->
+        when {
+            !opening -> lineH
+            line is PageLine.Header -> lineH * 1.35f
+            else -> (fm.descent - fm.ascent) * 0.95f
+        }
+    }
+    val lineTops = FloatArray(lines.size)
+    run {
+        var y = if (opening) blockTop + (blockH - lineHeights.sum()) / 2f else blockTop
+        lineHeights.forEachIndexed { i, lh -> lineTops[i] = y; y += lh }
+    }
 
     val words = ArrayList<PlacedWord>()
     val ornaments = ArrayList<PlacedGlyph>()
@@ -207,8 +221,9 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     }
 
     lines.forEachIndexed { i, line ->
-        val top = topPad + i * lineH
-        val mid = top + lineH / 2f
+        val top = lineTops[i]
+        val lh = lineHeights[i]
+        val mid = top + lh / 2f
         when (line) {
             is PageLine.Header -> {
                 ornaments += centered(AppFonts.FRAME.toString(), w, lineH * 1.3f, mid).let {
@@ -233,14 +248,14 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
                 val natural = widths.sum()
                 // justified edge to edge (like the print); only the short opening pages are centred
                 val justify = page > 2 && n > 1 && natural >= w * 0.6f
-                val gap = if (justify) (w - natural) / (n - 1) else size * 0.18f
+                val gap = if (justify) (w - natural) / (n - 1) else size * 0.07f
                 val total = natural + gap * (n - 1).coerceAtLeast(0)
                 var x = if (justify) w else (w + total) / 2f
                 val baseline = mid - (fm.ascent + fm.descent) / 2f
                 units.forEachIndexed { j, u ->
                     val ww = widths[j]
                     val left = x - ww
-                    val hit = Rect(left - gap / 2f, top + lineH * 0.04f, x + gap / 2f, top + lineH * 0.96f)
+                    val hit = Rect(left - gap / 2f, top + lh * 0.04f, x + gap / 2f, top + lh * 0.96f)
                     words += PlacedWord(u.key, u.glyph, left, baseline, hit, scaleX)
                     x = left - gap
                 }
