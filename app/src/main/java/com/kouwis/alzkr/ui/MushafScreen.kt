@@ -41,6 +41,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -261,18 +264,38 @@ private fun PagesPager(
         androidx.compose.runtime.snapshotFlow { state.currentPage }.distinctUntilChanged().collect { onPage(it + 1) }
     }
     val landscape = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
-    HorizontalPager(state = state, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1, key = { it }) { idx ->
+    HorizontalPager(
+        state = state,
+        modifier = Modifier.fillMaxSize(),
+        beyondViewportPageCount = 1,
+        key = { it },
+        flingBehavior = PagerDefaults.flingBehavior(
+            state = state,
+            snapAnimationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow),
+        ),
+    ) { idx ->
         val p = idx + 1
+        // a calm page turn: the page you leave settles back a little and dims while the
+        // next page glides over it
+        val turn = Modifier.graphicsLayer {
+            val offset = (state.currentPage - idx) + state.currentPageOffsetFraction
+            val o = kotlin.math.abs(offset).coerceIn(0f, 1f)
+            val scale = 1f - 0.05f * o
+            scaleX = scale
+            scaleY = scale
+            alpha = 1f - 0.25f * o
+            shadowElevation = 12f * (1f - o)
+        }
         val sel = selected?.takeIf { k -> parseKey(k)?.let { (s, a) -> q.pageOf(s, a) == p } == true }
         if (landscape) {
-            BoxWithConstraints(Modifier.fillMaxSize()) {
+            BoxWithConstraints(Modifier.fillMaxSize().then(turn)) {
                 val w = maxWidth
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     MushafPageTall(q, p, sel, onLongPressVerse, onTap, w)
                 }
             }
         } else {
-            MushafPage(q, p, sel, onLongPressVerse, onTap, Modifier.fillMaxSize().displayCutoutPadding())
+            MushafPage(q, p, sel, onLongPressVerse, onTap, Modifier.fillMaxSize().then(turn).displayCutoutPadding())
         }
     }
 }

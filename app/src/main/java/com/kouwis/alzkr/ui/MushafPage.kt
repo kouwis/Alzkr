@@ -21,6 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -62,7 +66,32 @@ fun MushafPage(
     modifier: Modifier = Modifier,
 ) {
     val c = LocalColors.current
-    Column(modifier.background(c.paper).padding(horizontal = 22.dp, vertical = 8.dp)) {
+    // Like an open mushaf: odd pages are right-hand pages (spine on their left, page edges on
+    // their right); even pages are left-hand pages (spine on their right, edges on their left).
+    val rightHand = page % 2 == 1
+    val dark = c.dark
+    Column(
+        modifier
+            .background(c.paper)
+            .drawBehind {
+                val spineW = 34.dp.toPx()
+                val shade = Color.Black.copy(alpha = if (dark) 0.35f else 0.11f)
+                val spine = if (rightHand) {
+                    Brush.horizontalGradient(listOf(shade, Color.Transparent), startX = 0f, endX = spineW)
+                } else {
+                    Brush.horizontalGradient(listOf(Color.Transparent, shade), startX = size.width - spineW, endX = size.width)
+                }
+                drawRect(spine)
+                // thin stacked page edges on the outer side
+                val edge = Color.Black.copy(alpha = if (dark) 0.30f else 0.10f)
+                val step = 2.5.dp.toPx()
+                for (k in 0 until 3) {
+                    val x = if (rightHand) size.width - step * (k + 0.5f) else step * (k + 0.5f)
+                    drawLine(edge.copy(alpha = edge.alpha * (1f - k * 0.25f)), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
+                }
+            }
+            .padding(horizontal = 22.dp, vertical = 8.dp),
+    ) {
         PageCanvas(q, page, selected, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
     }
 }
