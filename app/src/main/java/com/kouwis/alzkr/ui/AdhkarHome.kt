@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.Hijri
 import com.kouwis.alzkr.data.Locator
@@ -91,6 +92,7 @@ private fun clock(min: Int): String {
 /** "بعد ١:٥١" or "بعد ٢٥ دقيقة". */
 private fun after(mins: Int): String = if (mins < 60) "بعد ${ar(mins.toString())} دقيقة" else "بعد ${ar("%d:%02d".format(mins / 60, mins % 60))}"
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
     val c = LocalColors.current
