@@ -159,11 +159,17 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         onTajweed = {
                             if (!prefs.tajweedOn) {
                                 com.kouwis.alzkr.data.TajweedFonts.prefetchAll(context)
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "بننزّل مصحف التجويد مرة واحدة (حوالي ٧٠ ميجا)، والصفحات بتتلوّن أول ما توصل",
-                                    android.widget.Toast.LENGTH_LONG,
-                                ).show()
+                                // only tell the user about the download while it's actually needed
+                                scope.launch {
+                                    val have = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        com.kouwis.alzkr.data.TajweedFonts.downloadedCount(context)
+                                    }
+                                    if (have < 604) android.widget.Toast.makeText(
+                                        context,
+                                        "بننزّل مصحف التجويد مرة واحدة (حوالي ٧٠ ميجا)، والصفحات بتتلوّن أول ما توصل",
+                                        android.widget.Toast.LENGTH_LONG,
+                                    ).show()
+                                }
                             }
                             scope.launch { store.setTajweed(!prefs.tajweedOn) }
                         },
