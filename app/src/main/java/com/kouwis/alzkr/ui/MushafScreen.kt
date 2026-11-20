@@ -172,26 +172,19 @@ fun MushafScreen(
         }
     }
 
-    // a small, quiet note when you turn onto a page where a juz / hizb / quarter begins
+    // a small, quiet note when you turn onto a page where a juz or a hizb begins
     var markNote by remember { mutableStateOf<String?>(null) }
     var noteTick by remember { mutableIntStateOf(0) }
     var firstPageSeen by remember { mutableStateOf(false) }
     LaunchedEffect(currentPage) {
         if (!firstPageSeen) firstPageSeen = true
         else if (!verseMode) {
+            // only the start of a juz or a hizb (no quarters)
             val juz = q.meta.juz.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
-            val rub = q.meta.rub.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
+            val hizb = q.meta.hizb.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
             val note = when {
                 juz != null -> "بداية الجزء ${num(juz.n)}"
-                rub != null -> {
-                    val hizb = (rub.n - 1) / 4 + 1
-                    when ((rub.n - 1) % 4) {
-                        0 -> "بداية الحزب ${num(hizb)}"
-                        1 -> "ربع الحزب ${num(hizb)}"
-                        2 -> "نصف الحزب ${num(hizb)}"
-                        else -> "ثلاثة أرباع الحزب ${num(hizb)}"
-                    }
-                }
+                hizb != null -> "بداية الحزب ${num(hizb.n)}"
                 else -> null
             }
             if (note != null) { markNote = note; noteTick++ }

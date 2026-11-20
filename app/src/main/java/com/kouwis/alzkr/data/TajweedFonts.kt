@@ -34,7 +34,7 @@ object TajweedFonts {
 
     private fun dir(ctx: Context) = File(ctx.filesDir, "tajweed").apply { mkdirs() }
     private fun file(ctx: Context, page: Int) = File(dir(ctx), "p$page.ttf")
-    private fun darkFile(ctx: Context, page: Int) = File(dir(ctx), "p${page}_dark.ttf")
+    private fun darkFile(ctx: Context, page: Int) = File(dir(ctx), "p${page}_dark2.ttf") // v2: marker fill recoloured too
 
     fun cached(page: Int, dark: Boolean): Typeface? = faces["$page-$dark"]
 
@@ -93,6 +93,7 @@ object TajweedFonts {
         prefetch = scope.launch {
             kotlinx.coroutines.delay(1500)
             for (p in 1..604) {
+                File(dir(app), "p${p}_dark.ttf").delete() // old dark copies (marker digits were unreadable)
                 val f = file(app, p)
                 if (!(f.exists() && f.length() > 0)) download(app, p, f)
             }
@@ -135,7 +136,12 @@ object TajweedFonts {
                 val g = out[o + 1].toInt() and 0xFF
                 val r = out[o + 2].toInt() and 0xFF
                 if (r < 0x30 && g < 0x30 && bl < 0x30) {
+                    // black ink (letters, and the digits inside the ayah markers) -> light ink
                     out[o] = 0xD4.toByte(); out[o + 1] = 0xE2.toByte(); out[o + 2] = 0xE8.toByte()
+                } else if (r == 216 && g == 233 && bl == 216) {
+                    // the light fill of the ayah markers -> the font's own dark-theme fill,
+                    // so the now-light digits stay readable
+                    out[o] = 79; out[o + 1] = 84; out[o + 2] = 46
                 }
             }
         }
