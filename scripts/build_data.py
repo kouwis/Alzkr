@@ -16,7 +16,7 @@ import urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, ".data-cache")
 OUT = os.path.join(ROOT, "app", "src", "main", "assets", "data")
-LAYOUT_URL = "https://raw.githubusercontent.com/zonetecde/mushaf-layout/421e9eaa991897ecd50d7abb79160651a45976d3/mushaf/page-{:03d}.json"
+LAYOUT_URL = "https://raw.githubusercontent.com/zonetecde/mushaf-layout/72116ce4d405d67823804f0eed795c1e6409b4af/mushaf/page-{:03d}.json"
 ALQURAN = "https://api.alquran.cloud/v1/"
 FONTS = "https://raw.githubusercontent.com/nuqayah/qpc-fonts/8a4f39d563ea69c994416a1692827e38156c548d/"
 # quran.com's own database for the same QCF V1 fonts: every glyph with its page, line and verse.
