@@ -117,3 +117,46 @@ object Ic {
     val bookmarkFilled = make("bookmarkFilled", "M6 3h12v18l-6-4.5L6 21z", fill = true)
     val close = make("close", "M6 6l12 12M18 6L6 18")
 }
+
+/** The Adhkar section: the same look as the Quran section, blue instead of green. */
+@Composable
+fun AdhkarTheme(content: @Composable () -> Unit) {
+    val base = LocalColors.current
+    val c = if (base.dark) base.copy(
+        primary = Color(0xFF2C6496), primarySoft = Color(0xFF1D2B39), primaryLine = Color(0xFF4F8BC4),
+    ) else base.copy(
+        primary = Color(0xFF1E4E79), primarySoft = Color(0xFFE3ECF5), primaryLine = Color(0xFF3C6E9A),
+    )
+    CompositionLocalProvider(LocalColors provides c, content = content)
+}
+
+object AdhkarIc {
+    private fun make(name: String, d: String): ImageVector =
+        ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).addPath(
+            pathData = PathParser().parsePathString(d).toNodes(),
+            stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f,
+            strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
+        ).build()
+
+    val beads = make("beads", "M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM17.5 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM16 13.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM8 13.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6.5 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 17.5V22")
+    val qibla = make("qibla", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM15.5 8.5l-2 5-5 2 2-5z")
+    val sun = make("sun", "M12 3v2M12 19v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M3 12h2M19 12h2M4.6 19.4L6 18M18 6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z")
+    val rise = make("rise", "M12 3v5M9 6l3-3 3 3M4 18h16M7 18a5 5 0 0 1 10 0M3 22h18")
+    val set = make("set", "M12 8V3M9 5l3 3 3-3M4 18h16M7 18a5 5 0 0 1 10 0M3 22h18")
+    val cloud = make("cloud", "M7 18h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.4A3.3 3.3 0 0 0 7 18z")
+    val moon = make("moon", "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z")
+    val bed = make("bed", "M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 15h18M7 10V8a2 2 0 0 1 2-2h2")
+    val alarm = make("alarm", "M12 8v4l2 2M5 3L2 6M22 6l-3-3M12 5a8 8 0 1 0 0 16 8 8 0 0 0 0-16z")
+    val afterPrayer = make("afterPrayer", "M6 15l6-6 6 6M6 20l6-6 6 6")
+    val mosque = make("mosque", "M4 21V11a8 8 0 0 1 16 0v10M2 21h20M12 3v2M9 21v-5a3 3 0 0 1 6 0v5")
+    val star = make("star", "M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.4 7.2 17.9l.9-5.4L4.2 8.7l5.4-.8z")
+    val book = make("book", "M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2V5zM4 19a2 2 0 0 1 2-2h12")
+    val clock = make("clock", "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z")
+    val list = make("list", "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01")
+    val hands = make("hands", "M8 13V6a1.5 1.5 0 0 1 3 0v6M11 12V4.5a1.5 1.5 0 0 1 3 0V12M14 12V6a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1a5 5 0 0 1-4.2-2.3L4 13.5a1.5 1.5 0 0 1 2.5-1.6L8 14")
+    val sorrow = make("sorrow", "M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10zM9 12h6")
+    val shield = make("shield", "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z")
+    val istikhara = make("istikhara", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5M12 16h.01")
+    val sick = make("sick", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8")
+    val pin = make("pin", "M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z")
+}

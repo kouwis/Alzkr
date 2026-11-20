@@ -121,10 +121,14 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         ) { change, dx -> change.consume(); dragX += dx }
     }
     var sectionDrag by remember { mutableFloatStateOf(0f) }
+    val toAdhkar = {
+        scope.launch { store.setSection("adhkar") }
+        nav.setRoot(Screen.Adhkar)
+    }
     val swipeSection = Modifier.pointerInput(Unit) {
         detectHorizontalDragGestures(
             onDragEnd = {
-                if (sectionDrag > 70.dp.toPx()) { view.haptic(Haptic.Tick); soon("الأذكار") }
+                if (sectionDrag > 70.dp.toPx()) { view.haptic(Haptic.Tick); toAdhkar() }
                 sectionDrag = 0f
             },
             onDragCancel = { sectionDrag = 0f },
@@ -243,7 +247,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Pill("القرآن", true) {}
-            Pill("الأذكار", false) { soon("الأذكار") }
+            Pill("الأذكار", false) { toAdhkar() }
             Pill("الفقه", false) { soon("الفقه") }
         }
     }

@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -23,9 +25,12 @@ import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.Prefs
 import com.kouwis.alzkr.data.Quran
 import com.kouwis.alzkr.data.QuranData
+import kotlinx.coroutines.flow.first
 
 sealed interface Screen {
     data object Home : Screen
+    /** The Adhkar section's home. */
+    data object Adhkar : Screen
     data object Search : Screen
     data object Favorites : Screen
     data object Bookmarks : Screen
@@ -38,6 +43,8 @@ class Nav {
     val current: Screen get() = stack.last()
     fun go(s: Screen) { stack.add(s) }
     fun back(): Boolean = if (stack.size > 1) { stack.removeAt(stack.lastIndex); true } else false
+    /** Switch section: its home becomes the only screen. */
+    fun setRoot(s: Screen) { stack.clear(); stack.add(s) }
 }
 
 @Composable
@@ -49,10 +56,17 @@ fun AlzkrApp() {
         val state by prefs.flow.collectAsState(initial = AppPrefs())
         val data by produceState<QuranData?>(Quran.peek()) { value = Quran.load(context) }
         val nav = remember { Nav() }
+        // open on the section the user was last in
+        val firstPrefs by produceState<AppPrefs?>(null) { value = prefs.flow.first() }
+        var opened by remember { androidx.compose.runtime.mutableStateOf(false) }
+        LaunchedEffect(firstPrefs) {
+            val f = firstPrefs ?: return@LaunchedEffect
+            if (!opened) { opened = true; if (f.section == "adhkar") nav.setRoot(Screen.Adhkar) }
+        }
 
         Box(Modifier.fillMaxSize().background(c.bg)) {
             val q = data
-            if (q == null) {
+            if (q == null || !opened) {
                 Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = c.primary)
                     Text("جارٍ التحميل…", color = c.muted, modifier = Modifier.padding(top = 12.dp))
@@ -83,6 +97,7 @@ fun AlzkrApp() {
             ) { (_, screen) ->
                 when (screen) {
                     Screen.Home -> HomeScreen(q, state, prefs, nav)
+                    Screen.Adhkar -> AdhkarHomeScreen(q, state, prefs, nav)
                     Screen.Search -> SearchScreen(q, nav)
                     Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
                     Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)

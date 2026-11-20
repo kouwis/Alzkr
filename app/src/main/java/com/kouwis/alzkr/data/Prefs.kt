@@ -26,6 +26,12 @@ data class AppPrefs(
     val wardDone: Int = 0,
     val verseMode: Boolean = false,
     val tajweedOn: Boolean = false,
+    /** which section the app opens on: "quran" or "adhkar" */
+    val section: String = "quran",
+    /** the place prayer times are worked out for; null until the user shares a location */
+    val lat: Double? = null,
+    val lng: Double? = null,
+    val place: String = "",
 )
 
 class Prefs(private val context: Context) {
@@ -41,6 +47,10 @@ class Prefs(private val context: Context) {
         val wardPages = stringSetPreferencesKey("ward_pages")
         val verseMode = booleanPreferencesKey("verse_mode")
         val tajweed = booleanPreferencesKey("tajweed_on")
+        val section = stringPreferencesKey("section")
+        val lat = androidx.datastore.preferences.core.doublePreferencesKey("lat")
+        val lng = androidx.datastore.preferences.core.doublePreferencesKey("lng")
+        val place = stringPreferencesKey("place")
     }
 
     private fun today() = LocalDate.now().toString()
@@ -58,6 +68,10 @@ class Prefs(private val context: Context) {
             wardDone = if (sameDay) p[K.wardPages]?.size ?: 0 else 0,
             verseMode = p[K.verseMode] ?: false,
             tajweedOn = p[K.tajweed] ?: false,
+            section = p[K.section] ?: "quran",
+            lat = p[K.lat],
+            lng = p[K.lng],
+            place = p[K.place] ?: "",
         )
     }
 
@@ -65,6 +79,10 @@ class Prefs(private val context: Context) {
     suspend fun setTranslation(on: Boolean) = context.store.edit { it[K.translation] = on }
     suspend fun setVerseMode(on: Boolean) = context.store.edit { it[K.verseMode] = on }
     suspend fun setTajweed(on: Boolean) = context.store.edit { it[K.tajweed] = on }
+    suspend fun setSection(s: String) = context.store.edit { it[K.section] = s }
+    suspend fun setLocation(lat: Double, lng: Double, place: String) = context.store.edit {
+        it[K.lat] = lat; it[K.lng] = lng; it[K.place] = place
+    }
 
     suspend fun markRead(page: Int, verseKey: String) = context.store.edit { p ->
         p[K.lastPage] = page
