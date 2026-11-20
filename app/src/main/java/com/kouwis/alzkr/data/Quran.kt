@@ -71,26 +71,43 @@ class QuranData(
     fun tafsirOf(s: Int, a: Int) = tafsir.getOrNull(s - 1)?.getOrNull(a - 1).orEmpty()
     fun translationOf(s: Int, a: Int) = translation.getOrNull(s - 1)?.getOrNull(a - 1).orEmpty()
 
-    /** Verses (surah, ayah) shown on a page, in reading order. */
-    fun versesOnPage(page: Int): List<Pair<Int, Int>> {
+    /** True when the tajweed print (1421, its own page breaks) is what the reader sees. */
+    fun tajweedReady(tajweed: Boolean) = tajweed && pagesTajweed.size == 604
+
+    private fun pagesFor(tajweed: Boolean) = if (tajweedReady(tajweed)) pagesTajweed else pages
+
+    /** Verses (surah, ayah) shown on a page, in reading order (also those that only end or start there). */
+    fun versesOnPage(page: Int, tajweed: Boolean = false): List<Pair<Int, Int>> {
         val out = LinkedHashSet<Pair<Int, Int>>()
-        pages[page - 1].forEach { line ->
+        pagesFor(tajweed)[page - 1].forEach { line ->
             if (line is PageLine.Text) line.words.forEach { out.add(it.surah to it.ayah) }
         }
         return out.toList()
     }
 
+    private val tajweedVersePage: Map<String, Int> by lazy {
+        val m = HashMap<String, Int>()
+        pagesTajweed.forEachIndexed { i, lines ->
+            lines.forEach { l -> if (l is PageLine.Text) l.words.forEach { m.putIfAbsent(it.key, i + 1) } }
+        }
+        m
+    }
+
+    /** The page a verse starts on, in the print being read. */
+    fun pageOf(s: Int, a: Int, tajweed: Boolean): Int =
+        if (tajweedReady(tajweed)) tajweedVersePage["$s:$a"] ?: pageOf(s, a) else pageOf(s, a)
+
     /** The surah whose text dominates the top of a page. */
-    fun surahOfPage(page: Int): Int {
-        pages[page - 1].forEach { line ->
+    fun surahOfPage(page: Int, tajweed: Boolean = false): Int {
+        pagesFor(tajweed)[page - 1].forEach { line ->
             if (line is PageLine.Text && line.words.isNotEmpty()) return line.words.first().surah
             if (line is PageLine.Header) return line.surah
         }
         return 1
     }
 
-    fun juzOfPage(page: Int) = meta.juz.lastOrNull { it.page <= page }?.n ?: 1
-    fun hizbOfPage(page: Int) = meta.hizb.lastOrNull { it.page <= page }?.n ?: 1
+    fun juzOfPage(page: Int, tajweed: Boolean = false) = meta.juz.lastOrNull { pageOf(it.s, it.a, tajweed) <= page }?.n ?: 1
+    fun hizbOfPage(page: Int, tajweed: Boolean = false) = meta.hizb.lastOrNull { pageOf(it.s, it.a, tajweed) <= page }?.n ?: 1
 
     /** Flat list of all verses for the verse-by-verse mode. */
     val allVerses: List<Pair<Int, Int>> by lazy {

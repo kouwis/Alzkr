@@ -169,7 +169,8 @@ fun QuranVerse(
         }
     }
     if (text == null) {
-        Text(q.simple(s, a) + " ﴿${num(a)}﴾", color = color, fontSize = fontSize * 0.8f, lineHeight = fontSize * 1.6f, fontFamily = AppFonts.hafs, modifier = modifier)
+        // keep the space while the page font loads, but never show the verse in another script
+        Text(q.simple(s, a), color = Color.Transparent, fontSize = fontSize * 0.8f, lineHeight = fontSize * 1.6f, fontFamily = AppFonts.hafs, modifier = modifier)
     } else {
         Text(text, color = color, fontSize = fontSize, lineHeight = fontSize * 2f, modifier = modifier)
     }

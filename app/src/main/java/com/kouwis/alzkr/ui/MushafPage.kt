@@ -142,8 +142,8 @@ private fun PageCanvas(
         }
         val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml; strokeJoin = Paint.Join.ROUND } }
         val labelPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.naskhTf } }
-        val surahLabel = q.surahName(q.surahOfPage(page))
-        val juzLabel = "الجزء ${num(q.juzOfPage(page))}"
+        val surahLabel = q.surahName(q.surahOfPage(page, useTajweed))
+        val juzLabel = "الجزء ${num(q.juzOfPage(page, useTajweed))}"
         val pageLabel = num(page)
         Canvas(
             Modifier
@@ -300,7 +300,7 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
                 if (scaleX < 1f) widths = widths.map { it * scaleX }
                 val natural = widths.sum()
                 // justified edge to edge (like the print); only the short opening pages are centred
-                val justify = page > 2 && n > 1 && natural >= w * 0.6f
+                val justify = page > 2 && n > 1 && natural >= w * 0.8f
                 val gap = if (justify) (w - natural) / (n - 1) else size * 0.07f
                 val total = natural + gap * (n - 1).coerceAtLeast(0)
                 var x = if (justify) w else (w + total) / 2f

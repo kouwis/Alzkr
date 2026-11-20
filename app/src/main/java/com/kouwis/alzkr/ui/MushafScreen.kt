@@ -138,10 +138,15 @@ fun MushafScreen(
     var barsVisible by remember { mutableStateOf(false) }
     var barsTick by remember { mutableIntStateOf(0) }
     var dialog by remember { mutableStateOf<Pair<String, String>?>(null) }
-    var currentPage by remember { mutableIntStateOf(startPage.coerceIn(1, 604)) }
     val verseMode = prefs.verseMode
+    // the tajweed mushaf is the 1421 print: its page breaks differ a little from the normal one
+    val tj = q.tajweedReady(prefs.tajweedOn) && !verseMode
+    var currentPage by remember {
+        // opened at a verse: its page in the print being read
+        mutableIntStateOf((parseKey(startVerse)?.let { (s, a) -> q.pageOf(s, a, tj) } ?: startPage).coerceIn(1, 604))
+    }
     // page and ayah bookmarks are linked: an ayah mark lights the page's mark too
-    val ayahsOnPage = remember(currentPage) { q.versesOnPage(currentPage).map { "${it.first}:${it.second}" }.toSet() }
+    val ayahsOnPage = remember(currentPage, tj) { q.versesOnPage(currentPage, tj).map { "${it.first}:${it.second}" }.toSet() }
     val pageMarked = "p:$currentPage" in prefs.bookmarks || ayahsOnPage.any { "a:$it" in prefs.bookmarks }
 
     // system bars come back together with our top bar, so it sits in its normal place
@@ -174,8 +179,8 @@ fun MushafScreen(
     LaunchedEffect(currentPage) {
         if (!firstPageSeen) firstPageSeen = true
         else if (!verseMode) {
-            val juz = q.meta.juz.firstOrNull { it.page == currentPage }
-            val rub = q.meta.rub.firstOrNull { it.page == currentPage }
+            val juz = q.meta.juz.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
+            val rub = q.meta.rub.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
             val note = when {
                 juz != null -> "بداية الجزء ${num(juz.n)}"
                 rub != null -> {
@@ -197,23 +202,25 @@ fun MushafScreen(
     }
 
     LaunchedEffect(currentPage) {
-        val first = q.versesOnPage(currentPage).firstOrNull()
-        val key = selected?.takeIf { parseKey(it)?.let { (s, a) -> q.pageOf(s, a) == currentPage } == true }
+        val first = q.versesOnPage(currentPage, tj).firstOrNull()
+        val key = selected?.takeIf { it in ayahsOnPage }
             ?: first?.let { "${it.first}:${it.second}" } ?: ""
         store.markRead(currentPage, key)
     }
 
+    val pageVerses = { pg: Int -> q.versesOnPage(pg, q.tajweedReady(prefs.tajweedOn)).map { "${it.first}:${it.second}" } }
     Box(Modifier.fillMaxSize().background(c.paper)) {
         if (verseMode) {
             VerseList(
                 q, prefs, selected ?: focus,
-                startKey = selected ?: startVerse?.takeIf { parseKey(it)?.let { (s, a) -> q.pageOf(s, a) == currentPage } == true } ?: q.versesOnPage(currentPage).firstOrNull()?.let { "${it.first}:${it.second}" } ?: "1:1",
-                onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a) },
+                // currentPage is a page of the print the pages view shows (normal or tajweed)
+                startKey = selected ?: startVerse?.takeIf { it in pageVerses(currentPage) } ?: pageVerses(currentPage).firstOrNull() ?: "1:1",
+                onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a, q.tajweedReady(prefs.tajweedOn)) },
                 onLongPress = { selected = it },
                 onTap = onTap,
             )
         } else {
-            PagesPager(q, currentPage, selected, focus, prefs.bookmarks, prefs.tajweedOn,
+            PagesPager(q, currentPage, selected, focus, prefs.bookmarks, tj,
                 onPage = { currentPage = it },
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
@@ -224,7 +231,7 @@ fun MushafScreen(
                 exit = slideOutVertically(tween(350)) { it } + fadeOut(tween(350)),
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                StudyPanel(q, currentPage, prefs.tafsirOn || !prefs.translationOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
+                StudyPanel(q, currentPage, tj, prefs.tafsirOn || !prefs.translationOn, prefs.translationOn, selected, Modifier.align(Alignment.BottomCenter))
             }
         }
 
@@ -255,7 +262,7 @@ fun MushafScreen(
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
             TopBar(
-                q, currentPage, verseMode,
+                q, currentPage, verseMode, tj,
                 pageBookmarked = pageMarked,
                 onBookmarkPage = {
                     val wasOn = pageMarked
@@ -349,7 +356,7 @@ private fun PagesPager(
                 parts.size == 2 && parts[0] == "p" -> parts[1].toIntOrNull()
                 parts.size == 3 && parts[0] == "a" -> {
                     val s = parts[1].toIntOrNull(); val a = parts[2].toIntOrNull()
-                    if (s != null && a != null) runCatching { q.pageOf(s, a) }.getOrNull() else null
+                    if (s != null && a != null) runCatching { q.pageOf(s, a, tajweed) }.getOrNull() else null
                 }
                 else -> null
             }
@@ -362,8 +369,10 @@ private fun PagesPager(
     val landscape = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
     HorizontalPager(state = state, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1, key = { it }) { idx ->
         val p = idx + 1
-        val sel = selected?.takeIf { k -> parseKey(k)?.let { (s, a) -> q.pageOf(s, a) == p } == true }
-        val foc = focus?.takeIf { k -> parseKey(k)?.let { (s, a) -> q.pageOf(s, a) == p } == true }
+        // a verse that runs over two pages is lit on both
+        val onPage = remember(p, tajweed) { q.versesOnPage(p, tajweed).map { "${it.first}:${it.second}" }.toSet() }
+        val sel = selected?.takeIf { it in onPage }
+        val foc = focus?.takeIf { it in onPage }
         if (landscape) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val w = maxWidth
@@ -387,6 +396,7 @@ private fun TopBar(
     q: QuranData,
     page: Int,
     verseMode: Boolean,
+    tj: Boolean,
     pageBookmarked: Boolean,
     onBookmarkPage: () -> Unit,
     onBack: () -> Unit,
@@ -409,9 +419,9 @@ private fun TopBar(
                 Icon(Ic.back, "رجوع", tint = c.text, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(q.surahName(q.surahOfPage(page)), color = c.text, fontSize = 18.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
+                Text(q.surahName(q.surahOfPage(page, tj)), color = c.text, fontSize = 18.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
                 Text(
-                    "صفحة ${num(page)} · الجزء ${num(q.juzOfPage(page))} · الحزب ${num(q.hizbOfPage(page))}",
+                    "صفحة ${num(page)} · الجزء ${num(q.juzOfPage(page, tj))} · الحزب ${num(q.hizbOfPage(page, tj))}",
                     color = c.muted, fontSize = 11.sp, maxLines = 1,
                 )
             }
@@ -474,7 +484,7 @@ private fun RowScope.ActionItem(icon: ImageVector, label: String, tint: Color, o
  * small bar; tap (or drag) it to slide it up, tap again to bring it down.
  */
 @Composable
-private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Boolean, selected: String?, modifier: Modifier) {
+private fun StudyPanel(q: QuranData, page: Int, tj: Boolean, tafsir: Boolean, translation: Boolean, selected: String?, modifier: Modifier) {
     val c = LocalColors.current
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -497,7 +507,7 @@ private fun StudyPanel(q: QuranData, page: Int, tafsir: Boolean, translation: Bo
         val corner by animateDpAsState(if (state == 2) 0.dp else 24.dp, label = "corner")
         val bottomCorner by animateDpAsState(if (state == 0 && dragOffset == 0f) 24.dp else 0.dp, label = "bcorner")
         val expanded = state > 0
-        val verses = remember(page) { q.versesOnPage(page) }
+        val verses = remember(page, tj) { q.versesOnPage(page, tj) }
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         LaunchedEffect(selected, page) {
             val idx = verses.indexOfFirst { "${it.first}:${it.second}" == selected }

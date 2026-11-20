@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .data-cache
-          key: quran-data-v2
+          key: quran-data-v3
 
       - name: Build bundled Quran data
         run: |
