@@ -311,16 +311,100 @@ def qurancom_db():
             verses.setdefault(f"{int(r[2])}:{int(r[3])}", []).append((int(r[4]), code))
     verses = {k: [c for _, c in sorted(v)] for k, v in verses.items()}
     raw = {}
+    bsml = {}
     for r in rows("glyph_page_line"):
         f, code = glyph[int(r[1])]
         raw.setdefault((int(r[2]), int(r[3])), [r[5], []])
+        if f == "QCF_BSML.TTF":
+            bsml.setdefault((int(r[2]), int(r[3])), []).append((int(r[4]), code))
         if f.startswith("QCF_P") and not (int(r[2]) == 254 and code == 0xFC15):
             raw[(int(r[2]), int(r[3]))][1].append((int(r[4]), code))
     lines = {p: [(raw[(p, ln)][0], [c for _, c in sorted(raw[(p, ln)][1])]) for ln in range(1, 16) if (p, ln) in raw]
              for p in range(1, 605)}
     if len(verses) != 6236:
         raise SystemExit(f"quran.com data: {len(verses)} verses")
-    return {"verses": verses, "lines": lines}
+    bsml = {k: [c for _, c in sorted(v)] for k, v in sorted(bsml.items())}
+    return {"verses": verses, "lines": lines, "bsml": bsml}
+
+
+INFO_URL = "https://raw.githubusercontent.com/fawazahmed0/quran-api/93e6f64925ae76273520d636fcaaf061129f2316/info.json"
+# surah frames and basmala as the app draws them (QCF_BSML): the frame, the name glyph of
+# surah n, and the standard basmala (its three pieces A, B, C)
+APP_FRAME = 0xF2
+APP_BASMALA = [0x21, 0x22, 0x23]
+
+
+def app_surah_name_code(n):
+    if n <= 35:
+        return 0x5D + n - 1
+    if n <= 47:
+        return 0xA1 + n - 36
+    if n <= 56:
+        return 0xAE + n - 48
+    return 0xB8 + n - 57
+
+
+def verify_bsml(qc):
+    """The surah-name glyph the app draws in each frame, and the basmala, are the very glyphs
+    quran.com's data uses on those lines (compared outline by outline)."""
+    from fontTools.ttLib import TTFont
+    t = TTFont(os.path.join(ASSETS, "fonts", "bsml.ttf"))
+    cm, gl = t.getBestCmap(), t["glyf"]
+
+    def outline(code):
+        g = gl[cm[code]]
+        return (g.numberOfContours, tuple(g.getCoordinates(gl)[0]) if g.numberOfContours > 0 else ())
+
+    errs = []
+    heads = [cs for (p, ln), cs in qc["bsml"].items() if qc["lines"][p][ln - 1][0] == "sura"]
+    if len(heads) != 114:
+        errs.append(f"{len(heads)} frames in quran.com data")
+    for n, cs in enumerate(heads, start=1):
+        if outline(app_surah_name_code(n)) != outline(cs[-1]):
+            errs.append(f"surah {n}: name glyph in the frame differs")
+    std = 0
+    for (p, ln), cs in qc["bsml"].items():
+        if qc["lines"][p][ln - 1][0] == "bismillah" and len(cs) == 3 and [outline(c) for c in cs] == [outline(c) for c in APP_BASMALA]:
+            std += 1
+    # 109 lines use this basmala; pages 2, 597 and 598 use other drawings of the same words
+    if std != 109:
+        errs.append(f"standard basmala on {std} lines, expected 109")
+    if errs:
+        raise SystemExit("FRAME / BASMALA CHECK FAILED:\n" + "\n".join(errs))
+    print("frames: all 114 surah names and the basmala match quran.com's glyphs", file=sys.stderr)
+
+
+def verify_meta(meta, surahs, verse_page, uthmani):
+    """Second source for everything around the text: surah names and verse counts, juz and
+    quarter boundaries, the page every verse starts on, and the 15 sajdas."""
+    info = fetch(INFO_URL, "info.json")
+    errs = []
+    # other accepted names for the same surah: غافر/المؤمن, الإنسان/الدهر, الزلزلة/الزلزال,
+    # and «الَّيل» written with one lam in that source
+    name_aliases = {40, 76, 92, 99}
+    sk = lambda t: re.sub("[\u064B-\u065F\u0670\u06D6-\u06ED\u0640اٱأإآءى ي]", "",
+                          re.sub(r"^\s*سُ?وْ?رَ?ةُ?\s+", "", unicodedata.normalize("NFC", t)))
+    for s_, c in zip(surahs, info["chapters"]):
+        if sk(s_["name"]) != sk(c["arabicname"]) and s_["n"] not in name_aliases:
+            errs.append(f"surah {s_['n']}: name {s_['name']} vs {c['arabicname']}")
+        if s_["ayahs"] != len(c["verses"]) or s_["ayahs"] != len(uthmani[s_["n"] - 1]):
+            errs.append(f"surah {s_['n']}: verse count")
+        for v in c["verses"]:
+            if verse_page[f"{c['chapter']}:{v['verse']}"] != v["page"]:
+                errs.append(f"{c['chapter']}:{v['verse']}: page differs from {v['page']}")
+    ours_juz = [(r["surah"], r["ayah"]) for r in meta["juzs"]["references"]]
+    if ours_juz != [(r["start"]["chapter"], r["start"]["verse"]) for r in info["juzs"]["references"]]:
+        errs.append("juz boundaries differ")
+    ours_q = [(r["surah"], r["ayah"]) for r in meta["hizbQuarters"]["references"]]
+    if ours_q != [(r["start"]["chapter"], r["start"]["verse"]) for r in info["maqras"]["references"]]:
+        errs.append("hizb quarter boundaries differ")
+    sajda_text = [f"{s_ + 1}:{a + 1}" for s_, sura in enumerate(uthmani) for a, t in enumerate(sura) if "\u06E9" in t]
+    if sajda_text != [f"{r['chapter']}:{r['verse']}" for r in info["sajdas"]["references"]]:
+        errs.append(f"sajdas {sajda_text}")
+    if errs:
+        raise SystemExit("META CHECK FAILED:\n" + "\n".join(errs[:40]))
+    print("meta: 114 surah names and verse counts, 30 juz, 240 quarters, the page of all 6236 verses "
+          "and the 15 sajdas match a second source", file=sys.stderr)
 
 
 def verify_against_qurancom(pages_raw, qc):
@@ -633,6 +717,7 @@ def main():
     verify_plain(pages_raw)
     qc = qurancom_db()
     verify_against_qurancom(pages_raw, qc)
+    verify_bsml(qc)
     for p, d in enumerate(pages_raw, start=1):
         # the glyphs of the page in reading order, as drawing units (word / waqf mark / ayah marker
         # groups exactly as the source spaces them); words stay whole, a unit never spans two lines
@@ -726,8 +811,13 @@ def main():
     tafsir = edition("ar.muyassar")
     trans = edition("en.sahih")
 
+    uthmani = uthmani_text(pages_raw)
+
     def words_start(s, a, k=4):
-        return " ".join(clean[s - 1][a - 1].split(" ")[:k])
+        # the quarter's opening words in the KFGQPC Uthmani text, for the Uthmanic Hafs font
+        # (which takes the open tanween marks at their original KFGQPC code points)
+        t = " ".join(uthmani[s - 1][a - 1].split(" ")[:k])
+        return t.translate({0x08F0: 0x0657, 0x08F1: 0x065E, 0x08F2: 0x0656})
 
     juz = []
     for i, r in enumerate(meta["juzs"]["references"]):
@@ -763,8 +853,8 @@ def main():
     bold = page_weights()
     print("bold range", min(bold), max(bold), file=sys.stderr)
     dump("meta.json", {"surahs": surahs, "juz": juz, "hizb": hizb, "rub": rub, "bold": bold, "lineEm": lem, "lineEmTajweed": tj_em})
-    uthmani = uthmani_text(pages_raw)
     assert [len(x) for x in uthmani] == [len(x) for x in simple]
+    verify_meta(meta, surahs, verse_page, uthmani)
     dump("verses.json", {"page": vpage, "simple": uthmani, "clean": clean_norm})
     dump("glyphs.json", verse_glyphs)
     dump("tafsir_muyassar.json", tafsir)

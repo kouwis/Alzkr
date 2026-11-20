@@ -64,7 +64,7 @@ import com.kouwis.alzkr.data.Prefs
 import com.kouwis.alzkr.data.QuranData
 import kotlinx.coroutines.launch
 
-private data class Row4(val n: String, val title: String, val sub: String, val page: Int)
+private data class Row4(val n: String, val title: String, val sub: String, val page: Int, val verse: String? = null, val quran: Boolean = false)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -78,14 +78,14 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
 
     val rows = remember(tab) {
         when (tab) {
-            0 -> q.surahs.map { Row4(num(it.n), it.name, "${it.type} · ${num(it.ayahs)} آية", it.page) }
+            0 -> q.surahs.map { Row4(num(it.n), it.name, "${it.type} · ${num(it.ayahs)} آية", it.page, "${it.n}:1") }
             1 -> q.meta.rub.map { r ->
                 val hizb = (r.n - 1) / 4 + 1
                 val quarter = listOf("", "ربع ", "نصف ", "ثلاثة أرباع ")[(r.n - 1) % 4]
-                Row4(num(r.n), r.text, "${quarter}الحزب ${num(hizb)} · ${q.surahName(r.s)} ${num(r.a)}", r.page)
+                Row4(num(r.n), r.text, "${quarter}الحزب ${num(hizb)} · ${q.surahName(r.s)} ${num(r.a)}", r.page, "${r.s}:${r.a}", quran = true)
             }
-            2 -> q.meta.hizb.map { h -> Row4(num(h.n), "الحزب ${num(h.n)}", "يبدأ من ${q.surahName(h.s)} ${num(h.a)}", h.page) }
-            else -> q.meta.juz.map { j -> Row4(num(j.n), "الجزء ${num(j.n)}", "يبدأ من ${q.surahName(j.s)} ${num(j.a)}", j.page) }
+            2 -> q.meta.hizb.map { h -> Row4(num(h.n), "الحزب ${num(h.n)}", "يبدأ من ${q.surahName(h.s)} ${num(h.a)}", h.page, "${h.s}:${h.a}") }
+            else -> q.meta.juz.map { j -> Row4(num(j.n), "الجزء ${num(j.n)}", "يبدأ من ${q.surahName(j.s)} ${num(j.a)}", j.page, "${j.s}:${j.a}") }
         }
     }
 
@@ -210,14 +210,15 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable { nav.go(Screen.Mushaf(r.page)) }
+                            // by verse, so the tajweed print (own page breaks) opens on the right page too
+                            .clickable { nav.go(Screen.Mushaf(r.page, r.verse)) }
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
                         NumberBadge(r.n)
                         Column(Modifier.weight(1f)) {
-                            Text(r.title, color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
+                            Text(r.title, color = c.text, fontSize = 20.sp, fontFamily = if (r.quran) AppFonts.hafs else AppFonts.naskhBold, maxLines = 1)
                             Text(r.sub, color = c.muted, fontSize = 12.sp, maxLines = 1)
                         }
                         Text("ص ${num(r.page)}", color = c.muted, fontSize = 13.sp)
