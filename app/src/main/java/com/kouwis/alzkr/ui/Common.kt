@@ -89,7 +89,7 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, mod
         val segW = maxWidth / options.size
         val x by androidx.compose.animation.core.animateDpAsState(
             segW * selected,
-            androidx.compose.animation.core.spring(dampingRatio = 0.9f, stiffness = 320f),
+            androidx.compose.animation.core.tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing),
             label = "pill",
         )
         Box(

@@ -93,15 +93,16 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     val view = LocalView.current
     val density = LocalDensity.current
     var dragX by remember { mutableFloatStateOf(0f) }
-    val enter = remember { Animatable(0f) }
+    // calm switch: the new list fades in with a small slide, no bounce, no follow-the-finger
+    val enter = remember { Animatable(1f) }
     var lastTab by remember { mutableIntStateOf(tab) }
+    var dir by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(tab) {
         if (tab != lastTab) {
-            // swiping left-to-right goes forward, so the next list comes in from the left
-            val fromLeft = tab > lastTab
+            dir = if (tab > lastTab) -1f else 1f
             lastTab = tab
-            enter.snapTo((if (fromLeft) -1f else 1f) * with(density) { 120.dp.toPx() })
-            enter.animateTo(0f, spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow))
+            enter.snapTo(0f)
+            enter.animateTo(1f, androidx.compose.animation.core.tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing))
         }
     }
     val swipeTabs = Modifier.pointerInput(Unit) {
@@ -129,9 +130,11 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             onDragCancel = { sectionDrag = 0f },
         ) { change, dx -> change.consume(); sectionDrag += dx }
     }
+    val slidePx = with(density) { 14.dp.toPx() }
     val rowShift = Modifier.graphicsLayer {
-        translationX = dragX * 0.35f + enter.value
-        alpha = (1f - kotlin.math.abs(translationX) / (size.width.coerceAtLeast(1f))).coerceIn(0.4f, 1f)
+        val t = enter.value
+        translationX = dir * slidePx * (1f - t)
+        alpha = t
     }
 
     Column(Modifier.fillMaxSize().background(c.bg).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBarsIgnoringVisibility).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBarsIgnoringVisibility)) {
