@@ -102,7 +102,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             dir = if (tab > lastTab) -1f else 1f
             lastTab = tab
             enter.snapTo(0f)
-            enter.animateTo(1f, androidx.compose.animation.core.tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+            enter.animateTo(1f, androidx.compose.animation.core.tween(340, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
         }
     }
     val swipeTabs = Modifier.pointerInput(Unit) {
@@ -130,11 +130,10 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             onDragCancel = { sectionDrag = 0f },
         ) { change, dx -> change.consume(); sectionDrag += dx }
     }
-    val slidePx = with(density) { 14.dp.toPx() }
+    // movement only — no fading, so the list never blinks
+    val slidePx = with(density) { 56.dp.toPx() }
     val rowShift = Modifier.graphicsLayer {
-        val t = enter.value
-        translationX = dir * slidePx * (1f - t)
-        alpha = t
+        translationX = dir * slidePx * (1f - enter.value)
     }
 
     Column(Modifier.fillMaxSize().background(c.bg).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBarsIgnoringVisibility).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBarsIgnoringVisibility)) {
