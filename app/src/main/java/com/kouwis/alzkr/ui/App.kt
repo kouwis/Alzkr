@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.first
 
 sealed interface Screen {
     data object Home : Screen
-    /** The Adhkar section's home. */
-    data object Adhkar : Screen
     data object Search : Screen
     data object Favorites : Screen
     data object Bookmarks : Screen
@@ -43,8 +41,7 @@ class Nav {
     val current: Screen get() = stack.last()
     fun go(s: Screen) { stack.add(s) }
     fun back(): Boolean = if (stack.size > 1) { stack.removeAt(stack.lastIndex); true } else false
-    /** Switch section: its home becomes the only screen. */
-    fun setRoot(s: Screen) { stack.clear(); stack.add(s) }
+
 }
 
 @Composable
@@ -59,9 +56,11 @@ fun AlzkrApp() {
         // open on the section the user was last in
         val firstPrefs by produceState<AppPrefs?>(null) { value = prefs.flow.first() }
         var opened by remember { androidx.compose.runtime.mutableStateOf(false) }
+        // which section's home is showing (0 القرآن, 1 الأذكار); kept here so it survives a trip into the mushaf
+        var section by remember { androidx.compose.runtime.mutableIntStateOf(0) }
         LaunchedEffect(firstPrefs) {
             val f = firstPrefs ?: return@LaunchedEffect
-            if (!opened) { opened = true; if (f.section == "adhkar") nav.setRoot(Screen.Adhkar) }
+            if (!opened) { opened = true; section = if (f.section == "adhkar") 1 else 0 }
         }
 
         Box(Modifier.fillMaxSize().background(c.bg)) {
@@ -96,8 +95,7 @@ fun AlzkrApp() {
                 label = "screens",
             ) { (_, screen) ->
                 when (screen) {
-                    Screen.Home -> HomeScreen(q, state, prefs, nav)
-                    Screen.Adhkar -> AdhkarHomeScreen(q, state, prefs, nav)
+                    Screen.Home -> SectionsHost(q, state, prefs, nav, section) { section = it }
                     Screen.Search -> SearchScreen(q, nav)
                     Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
                     Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)

@@ -68,7 +68,7 @@ private data class Row4(val n: String, val title: String, val sub: String, val p
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
+fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionSwipe: (Int) -> Unit) {
     val c = LocalColors.current
     val scope = rememberCoroutineScope()
     val soon = soon()
@@ -121,10 +121,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         ) { change, dx -> change.consume(); dragX += dx }
     }
     var sectionDrag by remember { mutableFloatStateOf(0f) }
-    val toAdhkar = {
-        scope.launch { store.setSection("adhkar") }
-        nav.setRoot(Screen.Adhkar)
-    }
+    val toAdhkar = { onSectionSwipe(1) }
     val swipeSection = Modifier.pointerInput(Unit) {
         detectHorizontalDragGestures(
             onDragEnd = {
@@ -141,7 +138,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().background(c.bg).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBarsIgnoringVisibility).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBarsIgnoringVisibility)) {
-        LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = SectionBarSpace)) {
             item {
                 // swiping the top part (continue card, ward) moves between sections: القرآن → الأذكار
                 Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -235,21 +232,6 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
 
         if (showLegend) TajweedLegendDialog(onDismiss = { showLegend = false })
 
-        // Section switcher
-        Row(
-            Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(vertical = 8.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(c.card)
-                .border(1.dp, c.border, RoundedCornerShape(24.dp))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Pill("القرآن", true) {}
-            Pill("الأذكار", false) { toAdhkar() }
-            Pill("الفقه", false) { soon("الفقه") }
-        }
     }
 }
 

@@ -89,12 +89,24 @@ private fun clock(min: Int): String {
     return ar("%d:%02d".format(h12, min % 60))
 }
 
-/** "بعد ١:٥١" or "بعد ٢٥ دقيقة". */
-private fun after(mins: Int): String = if (mins < 60) "بعد ${ar(mins.toString())} دقيقة" else "بعد ${ar("%d:%02d".format(mins / 60, mins % 60))}"
+/** "١:٥١:٠٧" — hours, minutes and seconds to go, ticking. */
+private fun countdown(secs: Int): String = ar("%d:%02d:%02d".format(secs / 3600, secs / 60 % 60, secs % 60))
+
+/** The day's name written out in full, with its vowels and stretched (kashida) like a heading. */
+private fun longDay(name: String): String = when (name) {
+    "السبت" -> "السَّـبْـت"
+    "الأحد" -> "الأَحَـــد"
+    "الاثنين" -> "الاثْـنَـيْـن"
+    "الثلاثاء" -> "الثُّـلَاثَـاء"
+    "الأربعاء" -> "الأَرْبِـعَـاء"
+    "الخميس" -> "الخَـمِـيـس"
+    "الجُمُعة" -> "الجُـمُـعَـة"
+    else -> name
+}
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
+fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionSwipe: (Int) -> Unit) = AdhkarTheme {
     val c = LocalColors.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -103,7 +115,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = Ad
 
     // the clock moves the card on by itself
     var now by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) { while (true) { delay(20_000); now = LocalDateTime.now() } }
+    LaunchedEffect(Unit) { while (true) { delay(1_000 - System.currentTimeMillis() % 1_000); now = LocalDateTime.now() } }
 
     val hasPlace = prefs.lat != null && prefs.lng != null
     val lat = prefs.lat ?: CAIRO_LAT
@@ -117,40 +129,51 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = Ad
     val times = remember(today, lat, lng) { PrayerTimes.forDay(today, lat, lng) }
     val (current, next) = PrayerTimes.current(times, now)
     val minuteNow = now.hour * 60 + now.minute
-    val untilNext = (times.getValue(next) - minuteNow).let { if (it < 0) it + 1440 else it }
+    val secondNow = minuteNow * 60 + now.second
+    val untilNext = (times.getValue(next) * 60 - secondNow).let { if (it < 0) it + 86_400 else it }
     val hijri = remember(today) { Hijri.of(today) }
 
     var locating by remember { mutableStateOf(false) }
-    fun locateNow() {
+    fun toast(t: String) = android.widget.Toast.makeText(context, t, android.widget.Toast.LENGTH_LONG).show()
+    fun locateNow(quiet: Boolean = false) {
         locating = true
         scope.launch {
-            val fix = Locator.locate(context)
-            if (fix != null) store.setLocation(fix.lat, fix.lng, fix.place)
-            else android.widget.Toast.makeText(context, "معرفناش نحدد مكانك — شغّل الموقع وجرّب تاني", android.widget.Toast.LENGTH_LONG).show()
+            when (val r = Locator.locate(context)) {
+                is Locator.Result.Found -> {
+                    val f = r.fix
+                    val moved = prefs.lat == null || prefs.lng == null ||
+                        Locator.km(prefs.lat, prefs.lng, f.lat, f.lng) > 2.0
+                    // keep a known name if the lookup failed (no network) and we haven't moved
+                    val name = f.place.ifBlank { if (moved) "" else prefs.place }
+                    if (moved || name != prefs.place) store.setLocation(f.lat, f.lng, name)
+                    if (!quiet) toast(if (name.isNotBlank()) "المواقيت دلوقتي لـ $name" else "اتحدد مكانك")
+                }
+                Locator.Result.Off -> if (!quiet) toast("الموقع مقفول في الموبايل — افتحه وجرّب تاني")
+                Locator.Result.NotFound -> if (!quiet) toast("معرفناش نحدد مكانك دلوقتي — جرّب تاني بعد شوية")
+            }
             locating = false
         }
     }
+    fun granted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    // each time the Adhkar home opens, quietly check we're still where the times were worked out
+    LaunchedEffect(hasPlace) { if (hasPlace && granted()) locateNow(quiet = true) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) locateNow()
     }
     val askLocation = {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) locateNow()
-        else permission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (granted()) locateNow() else permission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
-    // swipe the top part to change section: right -> left goes back to القرآن
+    // swipe the top part to change section: right -> left goes back to القرآن, left -> right to الفقه
     var sectionDrag by remember { mutableFloatStateOf(0f) }
-    val toQuran = {
-        scope.launch { store.setSection("quran") }
-        nav.setRoot(Screen.Home)
-    }
+
     val swipeSection = Modifier.pointerInput(Unit) {
         detectHorizontalDragGestures(
             onDragEnd = {
                 val limit = 70.dp.toPx()
                 when {
-                    sectionDrag < -limit -> { view.haptic(Haptic.Tick); toQuran() }
-                    sectionDrag > limit -> { view.haptic(Haptic.Tick); soon("الفقه") }
+                    sectionDrag < -limit -> { view.haptic(Haptic.Tick); onSectionSwipe(-1) }
+                    sectionDrag > limit -> { view.haptic(Haptic.Tick); onSectionSwipe(1) }
                 }
                 sectionDrag = 0f
             },
@@ -212,7 +235,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = Ad
             .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility),
     ) {
-        LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = SectionBarSpace)) {
             item {
                 Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -221,7 +244,6 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = Ad
                             RoundIconButton(AdhkarIc.beads, "العداد", { soon("العداد") }, tint = c.primary)
                             RoundIconButton(AdhkarIc.qibla, "القبلة", { soon("القبلة") }, tint = c.primary)
                             RoundIconButton(Ic.search, "بحث", { soon("البحث في الأذكار") })
-                            RoundIconButton(Ic.heart, "المفضلة", { soon("مفضلة الأذكار") }, tint = c.heart)
                             RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
                         }
                     }
@@ -300,21 +322,6 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) = Ad
             item { Spacer(Modifier.height(14.dp)) }
         }
 
-        // Section switcher
-        Row(
-            Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(vertical = 8.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(c.card)
-                .border(1.dp, c.border, RoundedCornerShape(24.dp))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            SectionPill("القرآن", false) { toQuran() }
-            SectionPill("الأذكار", true) {}
-            SectionPill("الفقه", false) { soon("الفقه") }
-        }
     }
 }
 
@@ -413,7 +420,12 @@ private fun DayCard(
         Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 18.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(AdhkarIc.pin, null, tint = soft, modifier = Modifier.size(14.dp))
-                Text(place, color = soft, fontSize = 13.sp)
+                Text(
+                    if (locating && !placeIsDefault) "بنحدّث مكانك…" else place,
+                    color = soft, fontSize = 13.sp,
+                    // tap the place to locate again (after travelling, say)
+                    modifier = if (placeIsDefault) Modifier else Modifier.springClick(role = Role.Button, label = "حدّث مكانك", ripple = false) { if (!locating) onLocate() },
+                )
                 if (placeIsDefault) {
                     Text(
                         if (locating) "بنحدد مكانك…" else "استخدم موقعي",
@@ -426,7 +438,7 @@ private fun DayCard(
                     )
                 }
             }
-            Text(weekday, color = Color.White, fontSize = 44.sp, fontFamily = AppFonts.naskhBold, lineHeight = 56.sp)
+            Text(longDay(weekday), color = Color.White, fontSize = 50.sp, fontFamily = AppFonts.naskhBold, lineHeight = 74.sp)
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(hijriLine, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Text(gregorian, color = soft, fontSize = 13.sp)
@@ -442,13 +454,15 @@ private fun DayCard(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // the prayer that has come is done with: the strip is about the next one, live
             Column(Modifier.weight(1f)) {
-                Text(if (current == Prayer.Sunrise) "وقت الشروق" else "الصلاة الحالية", color = soft, fontSize = 12.sp)
-                Text("${current.ar} · ${clock(times.getValue(current))}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(if (next == Prayer.Sunrise) "الشروق" else "الصلاة الجاية", color = soft, fontSize = 12.sp)
+                Text("${next.ar} · ${clock(times.getValue(next))}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(next.ar, color = soft, fontSize = 12.sp)
-                Text(after(untilNext), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("باقي", color = soft, fontSize = 12.sp)
+                Text(countdown(untilNext), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                    style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
             }
         }
 
