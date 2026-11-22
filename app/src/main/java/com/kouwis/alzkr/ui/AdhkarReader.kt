@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kouwis.alzkr.data.Adhkar
+import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.AdhkarSection
 import com.kouwis.alzkr.data.ArabicText.num
 import com.kouwis.alzkr.data.Dhikr
@@ -69,6 +70,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** The adhkar of one section, one per page: tap the counter — or anywhere on the dhikr — to count. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AdhkarReaderScreen(q: QuranData, nav: Nav, id: String) = AdhkarTheme {
     val c = LocalColors.current
