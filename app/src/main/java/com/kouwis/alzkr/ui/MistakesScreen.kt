@@ -48,6 +48,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.ArabicText.num
 import com.kouwis.alzkr.data.PageFonts
@@ -150,6 +151,7 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
 }
 
 /** «التصحيح»: verses (and words) marked to review, newest first. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MistakesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
     val c = LocalColors.current
