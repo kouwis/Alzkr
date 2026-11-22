@@ -252,7 +252,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
             Item("الصلاة على النبي ﷺ", AdhkarIc.star, "salawat"), Item("سورة الكهف", AdhkarIc.book, "kahf"),
             Item("ساعة الإجابة", AdhkarIc.clock, "friday_hour"), Item("سنن الجمعة", AdhkarIc.list, "friday_sunan"),
         )),
-        Triple("المناسبات", "من الكتاب والسنة", listOf(
+        Triple("المناسبات", "", listOf(
             Item("رمضان", AdhkarIc.moon, "ramadan"), Item("عيد الفطر", AdhkarIc.star, "eid_fitr"),
             Item("العشر والأضحى", AdhkarIc.sheep, "dhul_hijja"), Item("يوم عرفة", AdhkarIc.sun, "arafa"),
             Item("الحج والعمرة", AdhkarIc.kaaba, "hajj_umrah"), Item("عاشوراء", AdhkarIc.calendar, "ashura"),
@@ -333,6 +333,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                     Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
                 }
             }
+            item { TrackerEntry(prefs, { nav.go(Screen.Tracker) }, Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp)) }
             groups.forEach { (title, note, items) ->
                 item {
                     Row(Modifier.padding(start = 24.dp, end = 24.dp, top = 22.dp, bottom = 10.dp), verticalAlignment = Alignment.Bottom) {

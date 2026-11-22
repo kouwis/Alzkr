@@ -42,6 +42,8 @@ data class AppPrefs(
     val mistakes: List<Pair<String, Set<Int>>> = emptyList(),
     /** when each adhkar section was last finished (epoch millis) */
     val adhkarDone: Map<String, Long> = emptyMap(),
+    /** «متابعة العبادات»: what was done on each day ("2026-11-23" -> ids), the last 90 days */
+    val track: Map<String, Set<String>> = emptyMap(),
     /** the tasbih counter's adhkar and how many times each round is; null = the default list */
     val tasbih: List<Pair<String, Int>>? = null,
 )
@@ -66,6 +68,7 @@ class Prefs(private val context: Context) {
         val place = stringPreferencesKey("place")
         val mistakes = stringPreferencesKey("mistakes") // "s:a|0.3;s:a|"
         val adhkarDone = stringPreferencesKey("adhkar_done") // "morning=1732300000000;sleep=…"
+        val track = stringPreferencesKey("track") // "2026-11-23=morning,qiyam;2026-11-22=…"
         val tasbih = stringPreferencesKey("tasbih") // "text\u001F33\u001Etext\u001F100"
     }
 
@@ -107,6 +110,7 @@ class Prefs(private val context: Context) {
                 val (k, v) = e.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
                 v.toLongOrNull()?.let { k to it }
             }.toMap(),
+            track = parseTrack(p[K.track]),
             tasbih = p[K.tasbih]?.split('\u001E')?.mapNotNull { e ->
                 val f = e.split('\u001F')
                 val t = f[0].trim()
@@ -128,6 +132,23 @@ class Prefs(private val context: Context) {
     suspend fun markAdhkarDone(id: String, at: Long = System.currentTimeMillis()) = context.store.edit { p ->
         val m = p[K.adhkarDone].orEmpty().split(';').filter { it.isNotBlank() && !it.startsWith("$id=") }
         p[K.adhkarDone] = (m + "$id=$at").joinToString(";")
+        // a section finished is ticked in the day's tracker too
+        p[K.track] = writeTrack(parseTrack(p[K.track]).let { t -> t + (today() to (t[today()].orEmpty() + id)) })
+    }
+
+    private fun parseTrack(raw: String?): Map<String, Set<String>> = raw.orEmpty().split(';').mapNotNull { e ->
+        val (d, ids) = e.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
+        d to ids.split(',').filter { it.isNotBlank() }.toSet()
+    }.toMap()
+
+    private fun writeTrack(t: Map<String, Set<String>>): String =
+        t.entries.sortedByDescending { it.key }.take(90).joinToString(";") { (d, ids) -> d + "=" + ids.joinToString(",") }
+
+    /** Ticks (or unticks) one deed for a day in «متابعة العبادات». */
+    suspend fun setTracked(day: String, id: String, on: Boolean) = context.store.edit { p ->
+        val t = parseTrack(p[K.track])
+        val ids = t[day].orEmpty().let { if (on) it + id else it - id }
+        p[K.track] = writeTrack(t + (day to ids))
     }
 
     suspend fun setTafsir(on: Boolean) = context.store.edit { it[K.tafsir] = on }

@@ -110,12 +110,12 @@ object PrayerTimes {
 
 /** Hijri date (Umm al-Qura calendar, built into Android). */
 object Hijri {
-    private val months = listOf(
+    val months = listOf(
         "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
         "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
     )
     private val weekdays = listOf("الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجُمُعة", "السبت", "الأحد")
-    private val gMonths = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
+    val gMonths = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
 
     data class Day(val weekday: String, val day: Int, val month: String, val year: Int, val gregorian: String, val friday: Boolean)
 

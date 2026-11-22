@@ -43,6 +43,8 @@ sealed interface Screen {
     data object AdhkarSearch : Screen
     /** every chapter of حصن المسلم */
     data object HisnIndex : Screen
+    /** «متابعتي»: the day's deeds, the week's progress, the Hijri calendar and the occasions */
+    data object Tracker : Screen
 }
 
 class Nav {
@@ -133,6 +135,7 @@ fun AlzkrApp() {
                     Screen.Qibla -> QiblaScreen(state, nav)
                     Screen.AdhkarSearch -> AdhkarSearchScreen(q, nav)
                     Screen.HisnIndex -> HisnIndexScreen(nav)
+                    Screen.Tracker -> TrackerScreen(state, prefs, nav)
                 } }
             }
         }
