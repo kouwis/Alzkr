@@ -183,3 +183,137 @@ SECTIONS = [
              src="أخرجه الترمذي وابن ماجه وصححه الألباني ، وانظر صحيح الترمذي 3/152وصحيح ابن ماجه 2/317"),
     ]),
 ]
+
+# ---------------------------------------------------------------------------------------------------------
+# Friday and the Islamic occasions. Each item is one of:
+#   h=(book, number), frm=…, to=…   the words of that hadith from «frm» to «to», taken from the hadith book itself
+#                                   (fawazahmed0/hadith-api) — the build stops if they are not there;
+#   a=(official chapter, index)     a dhikr of حصن المسلم with its own takhrij from the book;
+#   quran=(s, a1, a2)               verses, shown from the mushaf;
+#   ext=…, src=…                    a hadith outside the six books, text and grading as the source gives them
+#                                   (the source is named in a comment).
+# icon: a picture for the sunnah (see SunnahIcons in the app).
+# Not added, on purpose: a night or worship for الإسراء والمعراج, المولد, ليلة النصف من شعبان — no authentic
+# hadith sets a dhikr, prayer or fast for them.
+EXTRA_SECTIONS = [
+    dict(id="friday_hour", title="ساعة الإجابة", done="اللهم استجب", group="friday", items=[
+        dict(h=("bukhari", 935), frm="فيه ساعة", to="إلا أعطاه إياه", label="ساعة في يوم الجمعة", icon="clock"),
+        dict(h=("abudawud", 1048), frm="يوم الجمعة ثنتا عشرة", to="آخر ساعة بعد العصر", label="وقتها: آخر ساعة بعد العصر", icon="sunset"),
+        dict(h=("bukhari", 6389), frm="اللهم ربنا آتنا في الدنيا حسنة", to="عذاب النار", label="كان أكثر دعاء النبي ﷺ", icon="hands"),
+        dict(a=("الدعاء بعد التشهد الأخير قبل السلام", 3), label="من دعائه ﷺ", icon="hands"),
+        dict(h=("abudawud", 1047), frm="إن من أفضل أيامكم يوم الجمعة", to="فأكثروا علي من الصلاة فيه", label="وأكثر من الصلاة على النبي ﷺ", icon="star"),
+    ]),
+    dict(id="friday_sunan", title="سنن الجمعة", done="انتهت سنن الجمعة", group="friday", items=[
+        dict(h=("bukhari", 877), frm="إذا جاء أحدكم الجمعة", to="فليغتسل", label="الاغتسال", icon="shower"),
+        dict(h=("bukhari", 880), frm="الغسل يوم الجمعة واجب", to="طيبا إن وجد", label="السواك والطيب", icon="perfume"),
+        dict(h=("abudawud", 343), frm="من اغتسل يوم الجمعة ولبس من أحسن ثيابه", to="جمعته التي قبلها", label="لبس أحسن الثياب", icon="shirt"),
+        dict(h=("bukhari", 881), frm="من اغتسل يوم الجمعة غسل الجنابة ثم راح", to="فكأنما قرب بيضة", label="التبكير إلى المسجد", icon="walk"),
+        dict(h=("bukhari", 934), frm="إذا قلت لصاحبك يوم الجمعة أنصت", to="فقد لغوت", label="الإنصات للخطبة", icon="quiet"),
+        # https://dorar.net/hadith/sharh/146478 — البيهقي (6209) والحاكم (3392)، صححه الألباني
+        dict(ext="من قرأ سورة الكهف في يوم الجمعة أضاء له من النور ما بين الجمعتين", label="قراءة سورة الكهف", icon="book",
+             src="أخرجه البيهقي (6209) والحاكم (3392)، وصححه الألباني في صحيح الجامع (6470)"),
+        dict(h=("abudawud", 1047), frm="إن من أفضل أيامكم يوم الجمعة", to="فأكثروا علي من الصلاة فيه", label="الإكثار من الصلاة على النبي ﷺ", icon="star"),
+        dict(h=("bukhari", 935), frm="فيه ساعة", to="إلا أعطاه إياه", label="تحري ساعة الإجابة", icon="hands"),
+        dict(h=("muslim", 881), frm="إذا صلى أحدكم الجمعة", to="أربعا", label="أربع ركعات بعد الجمعة", icon="prayer"),
+    ]),
+    dict(id="ramadan", title="رمضان", done="انتهى باب رمضان", group="occasion", items=[
+        dict(a=("دعاء رؤية الهلال", 0), label="عند رؤية الهلال", icon="moon"),
+        dict(quran=(2, 183, 185), label="فرض الصيام", icon="book"),
+        dict(h=("bukhari", 38), frm="من صام رمضان إيمانا واحتسابا", to="ما تقدم من ذنبه", label="فضل صيامه", icon="star"),
+        dict(h=("bukhari", 37), frm="من قام رمضان إيمانا واحتسابا", to="ما تقدم من ذنبه", label="قيام رمضان", icon="prayer"),
+        dict(h=("bukhari", 1923), frm="تسحروا", to="بركة", label="السحور", icon="sunrise"),
+        dict(h=("bukhari", 1957), frm="لا يزال الناس بخير", to="ما عجلوا الفطر", label="تعجيل الفطر", icon="sunset"),
+        dict(a=("الدعاء عند إفطار الصائم", 0), label="عند الإفطار", icon="hands"),
+        dict(a=("الدعاء إذا أفطر عند أهل بيت", 0), label="إذا أفطر عند قوم", icon="hands"),
+        dict(a=("ما يقول الصائم إذا سابه أحد", 0), label="إذا سابّه أحد", icon="quiet"),
+        dict(h=("bukhari", 1902), frm="كان النبي صلى الله عليه وسلم أجود الناس", to="من الريح المرسلة", label="الجود ومدارسة القرآن", icon="book"),
+        dict(quran=(97, 1, 5), label="ليلة القدر", icon="moon"),
+        dict(h=("bukhari", 2017), frm="تحروا ليلة القدر", to="من العشر الأواخر من رمضان", label="تحرّي ليلة القدر", icon="moon"),
+        dict(h=("bukhari", 2024), frm="كان النبي صلى الله عليه وسلم إذا دخل العشر", to="وأيقظ أهله", label="العشر الأواخر", icon="prayer"),
+        dict(h=("ibnmajah", 3850), frm="اللهم إنك عفو", to="فاعف عني", label="دعاء ليلة القدر", icon="hands"),
+    ]),
+    dict(id="eid_fitr", title="عيد الفطر", done="تقبّل الله منا ومنكم", group="occasion", items=[
+        dict(h=("bukhari", 1503), frm="فرض رسول الله صلى الله عليه وسلم زكاة الفطر", to="إلى الصلاة", label="زكاة الفطر", icon="gift"),
+        dict(h=("bukhari", 953), frm="كان رسول الله صلى الله عليه وسلم لا يغدو يوم الفطر", to="حتى يأكل تمرات", label="الأكل قبل الصلاة", icon="dates"),
+        dict(h=("bukhari", 986), frm="كان النبي صلى الله عليه وسلم إذا كان يوم عيد", to="خالف الطريق", label="مخالفة الطريق", icon="walk"),
+        dict(h=("muslim", 1164), frm="من صام رمضان ثم أتبعه ستا من شوال", to="كصيام الدهر", label="صيام ست من شوال", icon="star"),
+    ]),
+    dict(id="dhul_hijja", title="العشر وعيد الأضحى", done="تقبّل الله منا ومنكم", group="occasion", items=[
+        dict(quran=(89, 1, 2), label="أقسم الله بها", icon="book"),
+        dict(h=("bukhari", 969), frm="ما العمل في أيام العشر", to="فلم يرجع بشيء", label="فضل العمل فيها", icon="star"),
+        dict(h=("muslim", 1977), frm="إذا دخلت العشر", to="شيئا", label="لمن أراد أن يضحي", icon="scissors"),
+        dict(h=("muslim", 1162), frm="صيام يوم عرفة", to="والسنة التي بعده", label="صيام يوم عرفة", icon="sun"),
+        dict(h=("bukhari", 5565), frm="ضحى النبي صلى الله عليه وسلم بكبشين", to="على صفاحهما", label="الأضحية", icon="sheep"),
+        dict(a=("ما يقول عند الذبح أو النحر", 0), label="عند الذبح", icon="hands"),
+        dict(h=("muslim", 1141), frm="أيام التشريق", to="أيام أكل وشرب", label="أيام التشريق", icon="dates"),
+    ]),
+    dict(id="arafa", title="يوم عرفة", done="اللهم تقبّل", group="occasion", items=[
+        dict(h=("muslim", 1348), frm="ما من يوم أكثر من أن يعتق الله فيه", to="ما أراد هؤلاء", label="فضله", icon="star"),
+        dict(h=("muslim", 1162), frm="صيام يوم عرفة", to="والسنة التي بعده", label="صيامه لغير الحاج", icon="sun"),
+        dict(a=("الدعاء يوم عرفة", 0), label="خير الدعاء", icon="hands"),
+    ]),
+    dict(id="hajj_umrah", title="الحج والعمرة", done="حجًّا مبرورًا وسعيًا مشكورًا", group="occasion", items=[
+        dict(h=("bukhari", 1521), frm="من حج لله", to="كيوم ولدته أمه", label="فضل الحج", icon="kaaba"),
+        dict(h=("bukhari", 1773), frm="العمرة إلى العمرة", to="إلا الجنة", label="فضل العمرة", icon="kaaba"),
+        dict(h=("bukhari", 1863), frm="فإن عمرة في رمضان", to="حجة معي", label="العمرة في رمضان", icon="moon"),
+        dict(a=("كيف يلبي المحرم في الحج أو العمرة ؟", 0), label="التلبية", icon="hands"),
+        dict(a=("التكبير إذا أتى الركن الأسود", 0), label="عند الحجر الأسود", icon="kaaba"),
+        dict(a=("الدعاء بين الركن اليماني والحجر الأسود", 0), label="بين الركنين", icon="kaaba"),
+        dict(a=("دعاء الوقوف على الصفا والمروة", 0), label="على الصفا والمروة", icon="walk"),
+        dict(a=("الدعاء يوم عرفة", 0), label="يوم عرفة", icon="sun"),
+        dict(a=("الذكر عند المشعر الحرام", 0), label="عند المشعر الحرام", icon="moon"),
+        dict(a=("التكبير عند رمي الجمار مع كل حصاة", 0), label="رمي الجمار", icon="pebbles"),
+        dict(a=("ما يقول عند الذبح أو النحر", 0), label="عند النحر", icon="sheep"),
+    ]),
+    dict(id="ashura", title="عاشوراء وتاسوعاء", done="انتهى باب عاشوراء", group="occasion", items=[
+        dict(h=("muslim", 1163), frm="أفضل الصيام بعد رمضان", to="شهر الله المحرم", label="شهر الله المحرم", icon="moon"),
+        dict(h=("bukhari", 2004), frm="قدم النبي صلى الله عليه وسلم المدينة", to="وأمر بصيامه", label="سبب صيامه", icon="book"),
+        dict(h=("muslim", 1162), frm="وصيام يوم عاشوراء", to="السنة التي قبله", label="فضل صيام عاشوراء", icon="star"),
+        dict(h=("muslim", 1134), frm="لئن بقيت إلى قابل", to="لأصومن التاسع", label="صيام التاسع معه", icon="sun"),
+    ]),
+]
+
+# chapters of the book shown as they are (every chapter not in SECTIONS above): fixes and skips after review
+# (where the footnote's wording differs from the hadith, the hadith is named by its number and a phrase of it)
+def _h(*refs):
+    return {"hadith": list(refs)}
+
+
+AUTO_FIX = {
+    ("دعاء رؤية الهلال", 0): _h(("tirmidhi", 3451, "اللهم أهلله علينا باليمن والإيمان")),
+    ("ما يقول عند الذبح أو النحر", 0): _h(("muslim", 1966, "وسمى وكبر"), ("muslim", 1967, "اللهم تقبل من محمد")),
+    ("التكبير عند رمي الجمار مع كل حصاة", 0): _h(("bukhari", 1753, "يكبر كلما رمى بحصاة")),
+    ("دعاء السجود", 2): _h(("muslim", 487, "سبوح قدوس رب الملائكة والروح")),
+    ("دعاء الجلسة بين السجدتين", 1): _h(("abudawud", 850, "اللهم اغفر لي وارحمني"), ("tirmidhi", 284, "اغفر لي وارحمني")),
+    ("ما يفعل من رأى الرؤيا أو الحلم", 0): _h(("muslim", 2262, "فليبصق عن يساره ثلاثا")),
+    ("ما يفعل من رأى الرؤيا أو الحلم", 1): _h(("muslim", 2263, "فليقم فليصل")),
+    ("الذكر عقب السلام من الوتر", 0): _h(("nasai", 1699, "سبحان الملك القدوس")),
+    ("دعاء من أصابه وسوسة في الإيمان", 0): _h(("bukhari", 3276, "فليستعذ بالله ولينته")),
+    ("دعاء من أصابه وسوسة في الإيمان", 1): _h(("muslim", 134, "فليقل آمنت بالله")),
+    ("دعاء الوسوسة في الصلاة و القراءة", 0): _h(("muslim", 2203, "يقال له خنزب")),
+    ("دعاء طرد الشيطان و وساوسه", 0): _h(("abudawud", 775, "أعوذ بالله السميع العليم من الشيطان الرجيم")),
+    ("دعاء طرد الشيطان و وساوسه", 1): _h(("bukhari", 608, "إذا نودي للصلاة أدبر الشيطان")),
+    ("دعاء طرد الشيطان و وساوسه", 2): _h(("muslim", 780, "إن الشيطان ينفر من البيت الذي تقرأ فيه سورة البقرة")),
+    ("تلقين المحتضر", 0): _h(("abudawud", 3116, "من كان آخر كلامه لا إله إلا الله دخل الجنة")),
+    ("الدعاء بعد دفن الميت", 0): _h(("abudawud", 3221, "استغفروا لأخيكم وسلوا له التثبيت")),
+    ("دعاء الريح", 0): _h(("abudawud", 5097, "الريح من روح الله")),
+    ("الدعاء إذا نزل المطر", 0): _h(("bukhari", 1032, "صيبا نافعا")),
+    ("الدعاء قبل الطعام", 0): _h(("abudawud", 3767, "فليذكر اسم الله تعالى فإن نسي")),
+    # takhrij outside the six books: only that part of the footnote is shown
+    ("دعاء كراهية الطيرة", 0): {"src": "أحمد 2/220 وابن السني برقم 292 وصححه الألباني في الأحاديث الصحيحة 3/54 رقم 1065"},
+    ("دعاء دخول القرية أو البلدة", 0): {"src": "الحاكم وصححه ووافقه الذهبي 2/100 وابن السني برقم 524وحسنه الحافظ في تخريج الأذكار 5/154"},
+    ("دعاء المسافر للمقيم", 0): _h(("ibnmajah", 2825, "أستودعك الله الذي لا تضيع ودائعه")),
+    ("دعاء المقيم للمسافر", 1): _h(("tirmidhi", 3444, "زودك الله التقوى")),
+    ("الدعاء إذا نزل مترلا في سفر أو غيره", 0): _h(("muslim", 2708, "أعوذ بكلمات الله التامات من شر ما خلق")),
+    ("كيف يرد السلام على الكافر إذا سلم", 0): _h(("bukhari", 6258, "إذا سلم عليكم أهل الكتاب فقولوا وعليكم")),
+    ("دعاء نباح الكلاب بالليل", 0): _h(("abudawud", 5103, "إذا سمعتم نباح الكلاب")),
+    ("فضل التسبيح و التحميد، و التهليل، و التكبير", 10): _h(("tirmidhi", 3383, "أفضل الذكر لا إله إلا الله وأفضل الدعاء الحمد لله")),
+    # chapters the book's copy lacks: the takhrij is the hadith itself, by number
+    ("التعريض بالدعاء لطلب الطعام أو الشراب", 0): {"src": "", **_h(("muslim", 2055, "اللهم أطعم من أطعمني"))},
+    ("كفارة اﻟﻤﺠلس", 0): {"src": "", **_h(("tirmidhi", 3433, "سبحانك اللهم وبحمدك أشهد أن لا إله إلا أنت أستغفرك وأتوب إليك"))},
+    ("كيف كان النبي يسبح؟", 0): {"src": "", **_h(("abudawud", 1502, "يعقد التسبيح"), ("tirmidhi", 3486, "يعقد التسبيح"))},
+}
+AUTO_SKIP = {
+    ("إفشاء السلام", 1),  # قول عمار، موقوف معلق في البخاري — not a hadith of the Prophet ﷺ
+}
+AUTO_TITLES = {}

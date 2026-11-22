@@ -41,6 +41,8 @@ sealed interface Screen {
     data object Mistakes : Screen
     data object Qibla : Screen
     data object AdhkarSearch : Screen
+    /** every chapter of حصن المسلم */
+    data object HisnIndex : Screen
 }
 
 class Nav {
@@ -87,6 +89,15 @@ fun AlzkrApp() {
                 return@Box
             }
             BackHandler(enabled = nav.stack.size > 1) { nav.back() }
+            // each screen keeps its scroll position (and other saved state) while it is in the stack,
+            // so going back lands where you were; a screen taken off the stack forgets it
+            val holder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+            val keys = remember { mutableSetOf<String>() }
+            LaunchedEffect(nav.stack.size) {
+                kotlinx.coroutines.delay(700) // after the screen change has finished animating
+                val live = nav.stack.mapIndexed { i, sc -> "${i + 1}:$sc" }.toSet()
+                keys.filter { it !in live }.forEach { holder.removeState(it); keys.remove(it) }
+            }
             // calm screen changes: the new screen fades in while easing up from 96%, the old one
             // fades out and settles back a little (and the reverse when going back)
             androidx.compose.animation.AnimatedContent(
@@ -107,8 +118,10 @@ fun AlzkrApp() {
                     }
                 },
                 label = "screens",
-            ) { (_, screen) ->
-                when (screen) {
+            ) { (depth, screen) ->
+                val key = "$depth:$screen"
+                keys += key
+                holder.SaveableStateProvider(key) { when (screen) {
                     Screen.Home -> SectionsHost(q, state, prefs, nav, section) { section = it }
                     Screen.Search -> SearchScreen(q, nav)
                     Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
@@ -119,7 +132,8 @@ fun AlzkrApp() {
                     is Screen.Adhkar -> AdhkarReaderScreen(q, state, prefs, nav, screen.id, screen.start)
                     Screen.Qibla -> QiblaScreen(state, nav)
                     Screen.AdhkarSearch -> AdhkarSearchScreen(q, nav)
-                }
+                    Screen.HisnIndex -> HisnIndexScreen(nav)
+                } }
             }
         }
     }

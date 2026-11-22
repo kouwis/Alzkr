@@ -80,13 +80,19 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
                     d.parts.firstNotNullOfOrNull { it.q }?.takeIf { d.parts.none { p -> p.t != null && !p.t.startsWith("بِسْمِ") } }
                         ?.let { (s, a1, a2) -> "سورة ${q.surahName(s)} " + if (a1 == a2) num(a1) else "${num(a1)}–${num(a2)}" } ?: ""
                 }
-                AdhkarHit(sec.id, sec.title, i, title, body, d.count) to ArabicText.normalize("$title $body ${d.fadl}")
+                AdhkarHit(sec.id, sec.title, i, title, body, d.count) to ArabicText.normalize("${sec.title} $title $body ${d.fadl}")
             }
         }.orEmpty()
     }
     val needle = remember(query) { ArabicText.normalize(query) }
-    val hits = remember(needle, index) {
-        if (needle.length < 2) emptyList() else index.filter { it.second.contains(needle) }.map { it.first }.take(80)
+    val tokens = remember(needle) { searchTokens(needle) }
+    fun matches(text: String) = tokens.isNotEmpty() && tokens.all { alts -> alts.any { text.contains(it) } }
+    // chapters whose name answers the search come first («المطر» → «الدعاء إذا نزل المطر»)
+    val chapterHits = remember(tokens, sections) {
+        sections?.values?.filter { matches(ArabicText.normalize(it.title)) }.orEmpty()
+    }
+    val hits = remember(tokens, index) {
+        if (tokens.isEmpty()) emptyList() else index.filter { matches(it.second) }.map { it.first }.take(80)
     }
 
     Column(
@@ -120,15 +126,19 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
             }
         }
         when {
-            needle.length < 2 -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text("اكتب كلمة من الذكر، مثل «الكرب» أو «أصبحنا»", color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center)
+            tokens.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text("اكتب ما تبحث عنه، مثل «المطر» أو «السفر» أو «السوق» أو «الكرب»", color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp)
             }
-            hits.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            hits.isEmpty() && chapterHits.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("لا يوجد ذكر فيه «$query»", color = c.muted, fontSize = 15.sp)
             }
             else -> {
-                Text("${num(hits.size)} نتيجة", color = c.muted, fontSize = 13.sp)
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (chapterHits.isNotEmpty()) {
+                        item { Text("الأبواب", color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                        items(chapterHits, key = { "sec:" + it.id }) { sec -> ChapterRow(sec.title, sec.items.size) { nav.go(Screen.Adhkar(sec.id)) } }
+                    }
+                    if (hits.isNotEmpty()) item { Text("الأذكار · ${num(hits.size)}", color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp)) }
                     items(hits, key = { "${it.sectionId}:${it.index}" }) { h ->
                         CardBox(Modifier.fillMaxWidth()) {
                             Column(
@@ -152,6 +162,111 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
                     }
                 }
             }
+        }
+    }
+}
+
+
+private val STOP = setOf("دعاء", "الدعاء", "ادعيه", "الادعيه", "اذكار", "الاذكار", "ذكر", "الذكر", "عند", "في", "من", "اذا", "ما", "يقول", "على", "الى", "عن", "او", "و")
+
+/** What a word in the search may also be written as in the book («التسوق» is in «دعاء دخول السوق»). */
+private val SYNONYMS = mapOf(
+    "تسوق" to listOf("السوق"), "التسوق" to listOf("السوق"), "سوق" to listOf("السوق"),
+    "مسافر" to listOf("السفر", "المسافر"), "المسافر" to listOf("السفر", "المسافر"), "سفر" to listOf("السفر"),
+    "اكل" to listOf("الطعام", "اكل"), "الاكل" to listOf("الطعام", "اكل"), "طعام" to listOf("الطعام"), "اكله" to listOf("الطعام"),
+    "مطر" to listOf("المطر"), "الامطار" to listOf("المطر"), "امطار" to listOf("المطر"),
+    "زواج" to listOf("المتزوج", "الزوجه"), "الزواج" to listOf("المتزوج", "الزوجه"),
+    "نوم" to listOf("النوم"), "مريض" to listOf("المريض"), "مرض" to listOf("المريض", "وجعا"), "وجع" to listOf("وجعا"), "الم" to listOf("وجعا", "تالم"),
+    "ميت" to listOf("الميت"), "جنازه" to listOf("الميت"), "الجنازه" to listOf("الميت"), "موت" to listOf("الميت", "المحتضر"), "قبر" to listOf("القبر", "القبور"),
+    "حمام" to listOf("الخلاء"), "الحمام" to listOf("الخلاء"), "بيت" to listOf("المنزل"), "البيت" to listOf("المنزل"),
+    "لبس" to listOf("الثوب"), "ملابس" to listOf("الثوب"), "الملابس" to listOf("الثوب"), "هدوم" to listOf("الثوب"),
+    "رعد" to listOf("الرعد"), "ريح" to listOf("الريح"), "رياح" to listOf("الريح"), "الرياح" to listOf("الريح"),
+    "عطس" to listOf("العطاس", "عطس"), "عطاس" to listOf("العطاس"), "غضب" to listOf("الغضب"),
+    "حزن" to listOf("الحزن"), "هم" to listOf("الهم"), "ضيق" to listOf("الكرب", "الهم"), "كرب" to listOf("الكرب"),
+    "دين" to listOf("الدين"), "ديون" to listOf("الدين"), "قرض" to listOf("الدين", "اقرض"),
+    "سياره" to listOf("الركوب", "المركوب"), "ركوب" to listOf("الركوب"), "صيام" to listOf("الصائم", "صيام"), "صوم" to listOf("الصائم", "صوم"),
+    "فطار" to listOf("افطار"), "الفطار" to listOf("افطار"), "سحور" to listOf("السحور"), "صلاه" to listOf("الصلاه"),
+    "وضوء" to listOf("الوضوء"), "مسجد" to listOf("المسجد"), "اذان" to listOf("الاذان", "الاذان"), "خوف" to listOf("خاف", "الفزع"), "خايف" to listOf("خاف", "الفزع"),
+    "عين" to listOf("بعينه", "العين"), "حسد" to listOf("بعينه", "حاسد"), "رقيه" to listOf("الرقيه", "يعوذ"), "شيطان" to listOf("الشيطان"),
+    "مولود" to listOf("المولود"), "طفل" to listOf("المولود", "الاولاد"), "اولاد" to listOf("الاولاد"), "هلال" to listOf("الهلال"),
+    "حج" to listOf("الحج", "الحاج"), "عمره" to listOf("العمره"), "استغفار" to listOf("الاستغفار"), "توبه" to listOf("التوبه"),
+)
+
+/** The words of a search, each with the ways it may be written; small words like «دعاء» or «عند» are left out. */
+fun searchTokens(needle: String): List<List<String>> = needle.split(' ')
+    .filter { it.length >= 2 && it !in STOP }
+    .map { w ->
+        val bare = if (w.startsWith("ال") && w.length > 3) w.drop(2) else w
+        (listOf(w, bare) + SYNONYMS[w].orEmpty() + SYNONYMS[bare].orEmpty()).distinct()
+    }
+
+@Composable
+private fun ChapterRow(title: String, count: Int, onClick: () -> Unit) {
+    val c = LocalColors.current
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(16.dp))
+            .springClick(label = title, pressedScale = 0.98f, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.size(34.dp).background(c.primarySoft, RoundedCornerShape(17.dp)), contentAlignment = Alignment.Center) {
+            Icon(AdhkarIc.books, null, tint = c.primary, modifier = Modifier.size(17.dp))
+        }
+        Text(title, color = c.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(if (count == 1) "ذكر واحد" else "${num(count)} أذكار", color = c.muted, fontSize = 12.sp)
+        Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(16.dp))
+    }
+}
+
+/** Every chapter of حصن المسلم and the app's sections, with a filter. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+fun HisnIndexScreen(nav: Nav) = AdhkarTheme {
+    val c = LocalColors.current
+    val context = LocalContext.current
+    val sections by produceState(Adhkar.peek()) { value = Adhkar.load(context) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val tokens = remember(query) { searchTokens(ArabicText.normalize(query)) }
+    val list = remember(sections, tokens) {
+        val all = sections?.values?.filter { it.group == "" || it.group == "hisn" }.orEmpty()
+        if (tokens.isEmpty()) all
+        else all.filter { s -> val t = ArabicText.normalize(s.title); tokens.all { alts -> alts.any { t.contains(it) } } }
+    }
+    Column(
+        Modifier.fillMaxSize().background(c.bg)
+            .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+            .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility).imePadding()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            Column {
+                Text("حصن المسلم", color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold)
+                Text("${num(list.size)} بابًا", color = c.muted, fontSize = 13.sp)
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(23.dp)).background(c.card)
+                .border(1.dp, c.border, RoundedCornerShape(23.dp)).padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(Ic.search, null, tint = c.muted, modifier = Modifier.size(18.dp))
+            BasicTextField(
+                value = query, onValueChange = { query = it }, singleLine = true,
+                textStyle = TextStyle(color = c.text, fontSize = 15.sp), cursorBrush = SolidColor(c.primary),
+                modifier = Modifier.weight(1f),
+                decorationBox = { inner ->
+                    if (query.isEmpty()) Text("ابحث في الأبواب: السفر، المطر، الطعام…", color = c.muted, fontSize = 15.sp)
+                    inner()
+                },
+            )
+        }
+        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(list, key = { it.id }) { sec -> ChapterRow(sec.title, sec.items.size) { nav.go(Screen.Adhkar(sec.id)) } }
+            item { androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp)) }
         }
     }
 }

@@ -112,19 +112,26 @@ class Quran:
         return None
 
     def part(self, seg):
-        """A run of words inside one verse: (s, a, Uthmani words) or None."""
+        """A run of words of the mushaf (inside one verse, or running on into the next): (s, a, Uthmani words) or None."""
         g = skel(seg)
-        for i, k in enumerate(self.sk):
-            if g in k:
-                ws = self.v[self.keys[i]].split(" ")
-                for a in range(len(ws)):
-                    acc = ""
-                    for b in range(a, len(ws)):
-                        acc += skel(ws[b])
-                        if acc == g:
-                            return self.keys[i][0], self.keys[i][1], " ".join(ws[a:b + 1])
-                        if not g.startswith(acc):
-                            break
+        if len(g) < 6:
+            return None
+        if not hasattr(self, "_surah_words"):
+            self._surah_words = {}
+            for (s_, a_), t in self.v.items():
+                self._surah_words.setdefault(s_, []).extend((a_, w) for w in t.split(" "))
+        for s_, ws in self._surah_words.items():
+            whole = "".join(skel(w) for _, w in ws)
+            if g not in whole:
+                continue
+            for i in range(len(ws)):
+                acc = ""
+                for j in range(i, len(ws)):
+                    acc += skel(ws[j][1])
+                    if acc == g:
+                        return s_, ws[i][0], " ".join(w for _, w in ws[i:j + 1])
+                    if not g.startswith(acc):
+                        break
         return None
 
 
@@ -204,6 +211,7 @@ def strip_wrap(t):
 class Hadith:
     def __init__(self):
         self.books = {}
+        self.raw = {}
         for b in BOOKS:
             d = fetch(HADITH.format(b), f"hadith-{b}.json")["hadiths"]
             by_num, by_ar = {}, {}
@@ -214,6 +222,11 @@ class Hadith:
                 if an.isdigit():
                     by_ar.setdefault(int(an), []).append(sk)
             self.books[b] = (by_num, by_ar, "\n".join(s for v in by_num.values() for s in v))
+            raw = {}
+            for h in d:
+                key = int(str(h.get("arabicnumber", "")).split(".")[0]) if b == "muslim" and str(h.get("arabicnumber", "")).split(".")[0].isdigit() else int(float(h["hadithnumber"]))
+                raw.setdefault(key, []).append(h["text"])
+            self.raw[b] = raw
         self._common = {}
 
     @staticmethod
@@ -233,6 +246,13 @@ class Hadith:
                     if re.search("(ضعيف|إلى)\\s*$", before):
                         continue
                     marks.append((m.start(), m.end(), b))
+        # «أصحاب السنن» / «أهل السنن» name the four Sunan (less any «إلا …» after it)
+        m = re.search("(أصحاب|أهل) السنن", src)
+        if m:
+            tail = src[m.end():m.end() + 30]
+            for b in ("abudawud", "tirmidhi", "nasai", "ibnmajah"):
+                if not (b == "nasai" and "إلا النسائي" in tail) and not (b == "ibnmajah" and "إلا ابن ماجه" in tail):
+                    marks.append((m.start(), m.start(), b))
         marks.sort()
         found = []
         for k, (st, en, b) in enumerate(marks):
@@ -268,9 +288,13 @@ class Hadith:
             ws = [w for w in ws if w]
             n = min(size, len(ws))
             grams += ["".join(ws[i:i + n]) for i in range(0, max(1, len(ws) - n + 1)) if ws]
+        short = "".join(skel(w) for w in words(re.sub(r"\([^()]{0,30}\)|\[[^\]]{0,30}\]|«|»", " ", text)))
         grams = [g for g in dict.fromkeys(grams) if len(g) >= 8 and self.common(g) <= 60]
         if not grams:
-            return []
+            # a dhikr of a word or two («بسم الله»، «غفرانك»): the named book must hold it word for word
+            if len(short) < 4:
+                return []
+            return [BOOK_AR[b] for b, _ in named if short in self.books[b][2]]
         need = min(3, len(grams))
         hits = []
         for b, nums in named:
@@ -285,6 +309,26 @@ class Hadith:
         return hits
 
 
+def hadith_extract(hadith, book, num, frm, to):
+    """The words of hadith [book] [num] from the phrase [frm] to the phrase [to], with their vowels as in the book."""
+    by_num, by_ar, _ = hadith.books[book]
+    texts = hadith.raw[book].get(num, [])
+    f, t = skel(frm), skel(to)
+    for txt in texts:
+        ws = txt.replace("\u200f", "").replace('"', " ").split()
+        for i in range(len(ws)):
+            if not skel(" ".join(ws[i:i + 40])).startswith(f):
+                continue
+            for j in range(i, min(len(ws), i + 400)):
+                seg = " ".join(ws[i:j + 1])
+                sk = skel(seg)
+                if sk.endswith(t) and len(sk) >= len(f):
+                    return tidy(seg).strip(" ،,.")
+                if len(sk) > len(skel(txt)):
+                    break
+    raise SystemExit(f"HADITH TEXT NOT FOUND: {book} {num} «{frm}» … «{to}»")
+
+
 # ---------------------------------------------------------------- the content
 def main():
     official = {c["category"]: c["array"] for c in fetch(OFFICIAL, "adhkar-official.json")}
@@ -293,15 +337,67 @@ def main():
     quran = Quran(load_quran())
     hadith = Hadith()
     from adhkar_spec import SECTIONS, MORNING_SKIP, MORNING_KNOWN, MORNING_HADITH, UNCHECKED_OK
+    from adhkar_spec import EXTRA_SECTIONS, AUTO_FIX, AUTO_SKIP, AUTO_TITLES
+
+    # ---- every other chapter of the book, item by item, each with the footnote that is its takhrij
+    curated = {"أذكار الصباح والمساء"} | {it["a"][0] for sc in SECTIONS for it in sc.get("items", []) if "a" in it}
+    bookkey = {skel(k): k for k in book}
+    SRCLIKE = re.compile(r"البخاري|مسلم|داود|الترمذي|النسائي|ماجه|ماجة|أحمد|الحاكم|السني|مالك|السنن|\\d")
+
+    def book_chapter(ch):
+        k = bookkey.get(skel(ch))
+        if not k:
+            m = difflib.get_close_matches(skel(ch), list(bookkey), 1, 0.75)
+            k = bookkey[m[0]] if m else None
+        return k
+
+    def auto_src(ch, i):
+        """The book chapter and the footnote that gives the takhrij of official item [i] of chapter [ch]."""
+        k = book_chapter(ch)
+        if not k:
+            return None, ""
+        texts = book[k]["text"]
+        fn = [f.strip() for f in book[k]["footnote"] if f.strip() and not f.strip().startswith("*") and SRCLIKE.search(f)]
+        arr = official[ch]
+        if fn and len(fn) == len(texts):
+            j = max(range(len(texts)), key=lambda j: difflib.SequenceMatcher(None, skel(texts[j]), skel(arr[i]["text"])).ratio())
+            return k, fn[j]
+        if len(fn) == len(arr):
+            return k, fn[i]
+        return k, " — ".join(fn)
+
+    fails = []
+    auto_sections = []
+    for ci, (ch, arr) in enumerate(official.items()):
+        if ch in curated:
+            continue
+        title = AUTO_TITLES.get(ch, re.sub(r"\s+", " ", ch.replace("ُ", "").replace("ﺗﻬ", "تهـ").replace("اﻟﻤﺠ", "المج")).strip(" ؟?"))
+        its = []
+        for i in range(len(arr)):
+            if (ch, i) in AUTO_SKIP:
+                continue
+            k, src = auto_src(ch, i)
+            if not k and (ch, i) not in AUTO_FIX:
+                fails.append(f"NO BOOK CHAPTER for «{ch}» #{i}: add it to AUTO_FIX (book chapter + takhrij) or AUTO_SKIP")
+                continue
+            it = dict(a=(ch, i), src=src)
+            if k and k != ch:
+                it["book"] = k
+            it.update(AUTO_FIX.get((ch, i), {}))
+            its.append(it)
+        if its:
+            auto_sections.append(dict(id=f"hisn_{ci}", title=title, done=f"انتهى باب «{title}»", group="hisn", items=its))
+    ALL = list(SECTIONS) + list(EXTRA_SECTIONS) + auto_sections
 
     def book_all(ch):
+        if ch not in book:
+            return ""
         b = book[ch]
         return " ".join(b["text"] + b["footnote"])
 
-    fails = []
     report = {"hadith_ok": 0, "other_books": [], "quran": 0}
     sections = []
-    for sec in SECTIONS:
+    for sec in ALL:
         items = []
         if sec["id"] in ("morning", "evening"):
             want = {"morning": (0, 1), "evening": (0, 2)}[sec["id"]]
@@ -342,6 +438,23 @@ def main():
                                   quran=x["order"] in (4, 5, 6), verified=extra))
         else:
             for it in sec["items"]:
+                if "a" in it and "src" not in it:  # a dhikr of the book used elsewhere: its own takhrij
+                    k, src = auto_src(*it["a"])
+                    it = dict(it, src=src, **({"book": k} if k and k != it["a"][0] else {}))
+                    it.update(AUTO_FIX.get(tuple(it["a"]), {}))
+                if "h" in it:  # words of a hadith, taken from the hadith book itself
+                    hb, hn = it["h"]
+                    t = hadith_extract(hadith, hb, hn, it["frm"], it["to"])
+                    t = re.sub(r"^وَ(?=\S)", "", t)  # «وَصِيَامُ …» cut from the middle of a sentence
+                    items.append(dict(parts=[{"t": "«" + t + "»"}], count=it.get("count", 1), label=it.get("label", ""),
+                                      icon=it.get("icon", ""), fadl=it.get("fadl", ""), note=it.get("note", ""),
+                                      src=f"رواه {BOOK_AR[hb]} ({hn})" + (" — " + it["more"] if it.get("more") else ""),
+                                      where=f"{sec['id']} {hb} {hn}", hadithed=f"{BOOK_AR[hb]} {hn}"))
+                    continue
+                if "ext" in it:  # outside the six books: the text and takhrij as given by the source named in the spec
+                    items.append(dict(parts=[{"t": "«" + it["ext"] + "»"}], count=it.get("count", 1), label=it.get("label", ""),
+                                      icon=it.get("icon", ""), src=it["src"], where=f"{sec['id']} ext", external=True))
+                    continue
                 extra = []  # hadith checked by number in the six books: (book, number, phrase)
                 for hb, hn, phrase in it.get("hadith", []):
                     by_num, by_ar, _ = hadith.books[hb]
@@ -353,7 +466,7 @@ def main():
                     parts = ([{"t": it["pre"]}] if it.get("pre") else []) + [{"q": [s, a1, a2]}]
                     items.append(dict(parts=parts, count=it.get("count", 1), src=" — ".join(extra),
                                       label=it.get("label", ""), where=f"{sec['id']} {s}:{a1}", mushaf=True,
-                                      verified=extra))
+                                      verified=extra, icon=it.get("icon", ""), note=it.get("note", "")))
                     continue
                 ch, i = it["a"]
                 where = f"{sec['id']} «{ch}» #{i}"
@@ -391,8 +504,8 @@ def main():
                 cnt = it.get("count", official[ch][i]["count"])
                 src = " — ".join([it.get("src", "")] + extra) if it.get("src") else " — ".join(extra)
                 items.append(dict(text=t, count=cnt, fadl=it.get("fadl", ""), note=it.get("note", ""),
-                                  src=src, label=it.get("label", ""), where=where, verified=extra,
-                                  hadith_text=full if "text" in it else None))
+                                  src=src, label=it.get("label", ""), where=where, verified=extra, icon=it.get("icon", ""),
+                                  hadith_text=it.get("probe") or (full if "text" in it else None)))
         out_items = []
         for x in items:
             if "parts" in x:
@@ -404,7 +517,13 @@ def main():
             else:
                 parts = to_parts(strip_wrap(x["text"]), quran, x["where"], force_quran=x.get("quran", False))
             report["quran"] += sum(1 for p in parts if "q" in p or "u" in p)
-            if x.get("mushaf"):
+            if x.get("hadithed"):
+                check = x["hadithed"]
+                report["hadith_ok"] += 1
+            elif x.get("external"):
+                check = "external"
+                report["other_books"].append(f"{x['where']}: {x['src'][:90]}")
+            elif x.get("mushaf"):
                 check = "، ".join(["القرآن"] + x.get("verified", []))
             else:
                 body = " ".join(p.get("t", "") for p in parts) if any("t" in p for p in parts) else ""
@@ -435,12 +554,13 @@ def main():
                                  f"do not hold «{probe[:70]}» — src: {x['src'][:120]}")
                     check = "failed"
             o = {"parts": parts, "count": x["count"]}
-            for k in ("label", "fadl", "note", "src"):
+            for k in ("label", "fadl", "note", "src", "icon"):
                 if x.get(k):
                     o[k] = tidy(x[k])
             o["check"] = check
             out_items.append(o)
-        sections.append({"id": sec["id"], "title": sec["title"], "done": sec["done"], "items": out_items})
+        sections.append({"id": sec["id"], "title": sec["title"], "done": sec["done"], "group": sec.get("group", ""),
+                         "items": out_items})
 
     if fails:
         raise SystemExit("\n".join(fails))
@@ -448,6 +568,7 @@ def main():
     with open(os.path.join(OUT, "adhkar.json"), "w", encoding="utf-8") as f:
         json.dump({"sections": sections}, f, ensure_ascii=False, separators=(",", ":"))
     n = sum(len(s["items"]) for s in sections)
+    print(f"adhkar: {len(auto_sections)} more chapters of the book, all of it but {len(AUTO_SKIP)} items", file=sys.stderr)
     print(f"adhkar: {len(sections)} sections, {n} adhkar; wording matches the official text; every takhrij is "
           f"word for word from the book; {report['quran']} Quran passages matched to the mushaf letter by letter; "
           f"{report['hadith_ok']} takhrijs found in the named hadith book", file=sys.stderr)

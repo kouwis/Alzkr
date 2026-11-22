@@ -332,9 +332,14 @@ private fun DhikrPage(
                         "سورة ${q.surahName(s)} · " + if (a1 == a2) "الآية ${num(a1)}" else "الآيات ${num(a1)}–${num(a2)}"
                     } else ""
                 }
+                AdhkarIc.byName(d.icon)?.let { pic ->
+                    Box(Modifier.size(76.dp).clip(CircleShape).background(c.primarySoft), contentAlignment = Alignment.Center) {
+                        Icon(pic, null, tint = c.primary, modifier = Modifier.size(38.dp))
+                    }
+                }
                 if (caption.isNotBlank()) {
                     Text(
-                        caption, color = c.primary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        caption, color = c.primary, fontSize = if (d.icon.isNotBlank()) 18.sp else 13.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(c.primarySoft).padding(horizontal = 12.dp, vertical = 5.dp),
                     )
                 }

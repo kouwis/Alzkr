@@ -221,6 +221,24 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                 nav.go(Screen.Mushaf(kahfPage, "18:1"))
             })
         }
+        // the hour of answer: the last hour of Friday before Maghrib
+        val maghrib = times.getValue(Prayer.Maghrib)
+        if (dow == DayOfWeek.FRIDAY && minuteNow in (maghrib - 60) until maghrib) {
+            add(0, Suggestion("ساعة الإجابة", "آخر ساعة من يوم الجمعة، حتى أذان المغرب (${clock(maghrib)})", AdhkarIc.clock) {
+                nav.go(Screen.Adhkar("friday_hour"))
+            })
+        }
+        // the occasions of the Hijri year, while they are on
+        val hd = java.time.chrono.HijrahDate.from(today)
+        val hMonth = hd.get(java.time.temporal.ChronoField.MONTH_OF_YEAR)
+        val hDay = hd.get(java.time.temporal.ChronoField.DAY_OF_MONTH)
+        when {
+            hMonth == 9 -> add(Suggestion("رمضان", "الصيام والقيام وليلة القدر", AdhkarIc.moon) { nav.go(Screen.Adhkar("ramadan")) })
+            hMonth == 10 && hDay <= 3 -> add(Suggestion("عيد الفطر", "زكاة الفطر وسنن العيد وصيام ست من شوال", AdhkarIc.star) { nav.go(Screen.Adhkar("eid_fitr")) })
+            hMonth == 12 && hDay == 9 -> add(Suggestion("يوم عرفة", "خير الدعاء دعاء يوم عرفة", AdhkarIc.sun) { nav.go(Screen.Adhkar("arafa")) })
+            hMonth == 12 && hDay <= 13 -> add(Suggestion("العشر وعيد الأضحى", "أفضل أيام الدنيا، والأضحية وأيام التشريق", AdhkarIc.sheep) { nav.go(Screen.Adhkar("dhul_hijja")) })
+            hMonth == 1 && hDay <= 10 -> add(Suggestion("عاشوراء وتاسوعاء", "صيام التاسع والعاشر من المحرم", AdhkarIc.moon) { nav.go(Screen.Adhkar("ashura")) })
+        }
     }
 
     data class Item(val name: String, val icon: ImageVector, val id: String? = null)
@@ -232,7 +250,12 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         )),
         Triple("الجمعة", "", listOf(
             Item("الصلاة على النبي ﷺ", AdhkarIc.star, "salawat"), Item("سورة الكهف", AdhkarIc.book, "kahf"),
-            Item("ساعة الإجابة", AdhkarIc.clock), Item("سنن الجمعة", AdhkarIc.list),
+            Item("ساعة الإجابة", AdhkarIc.clock, "friday_hour"), Item("سنن الجمعة", AdhkarIc.list, "friday_sunan"),
+        )),
+        Triple("المناسبات", "من الكتاب والسنة", listOf(
+            Item("رمضان", AdhkarIc.moon, "ramadan"), Item("عيد الفطر", AdhkarIc.star, "eid_fitr"),
+            Item("العشر والأضحى", AdhkarIc.sheep, "dhul_hijja"), Item("يوم عرفة", AdhkarIc.sun, "arafa"),
+            Item("الحج والعمرة", AdhkarIc.kaaba, "hajj_umrah"), Item("عاشوراء", AdhkarIc.calendar, "ashura"),
         )),
         Triple("الأدعية", "", listOf(
             Item("أدعية من القرآن", AdhkarIc.book, "quran_duas"), Item("أدعية نبوية", AdhkarIc.hands, "prophetic"),
@@ -345,6 +368,26 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                             }
                         }
                     }
+                }
+            }
+            // every other chapter of the book
+            item {
+                Row(
+                    Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp).fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(20.dp))
+                        .springClick(role = Role.Button, label = "كل أبواب حصن المسلم", pressedScale = 0.98f) { nav.go(Screen.HisnIndex) }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.size(44.dp).clip(CircleShape).background(c.primarySoft), contentAlignment = Alignment.Center) {
+                        Icon(AdhkarIc.books, null, tint = c.primary, modifier = Modifier.size(21.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("كل أبواب حصن المسلم", color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("السفر والطعام والمطر والسوق والمرض وغيرها", color = c.muted, fontSize = 12.sp)
+                    }
+                    Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
                 }
             }
             item { Spacer(Modifier.height(14.dp)) }

@@ -25,10 +25,19 @@ data class Dhikr(
     val note: String = "",
     val src: String = "",
     val check: String = "",
+    /** a picture for a sunnah (see SunnahIcon) */
+    val icon: String = "",
 )
 
 @Serializable
-data class AdhkarSection(val id: String, val title: String, val done: String, val items: List<Dhikr>)
+data class AdhkarSection(
+    val id: String,
+    val title: String,
+    val done: String,
+    val items: List<Dhikr>,
+    /** "" for the main sections, "friday", "occasion", or "hisn" for the other chapters of حصن المسلم */
+    val group: String = "",
+)
 
 @Serializable
 private data class AdhkarFile(val sections: List<AdhkarSection>)

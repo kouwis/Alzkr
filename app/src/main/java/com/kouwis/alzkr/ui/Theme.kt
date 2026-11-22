@@ -162,4 +162,28 @@ object AdhkarIc {
     val istikhara = make("istikhara", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5M12 16h.01")
     val sick = make("sick", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8")
     val pin = make("pin", "M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z")
+    // pictures for the sunan and the occasions
+    val shower = make("shower", "M5 21V8a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v1M11 9h8M13 13v1M16 13v1M19 13v1M14.5 16.5v1M17.5 16.5v1M16 20v1")
+    val perfume = make("perfume", "M10 3h4M10.5 3v3M13.5 3v3M8 8.5A2.5 2.5 0 0 1 10.5 6h3A2.5 2.5 0 0 1 16 8.5V19a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2zM10 13h4M18 5l1.5-1.5M18 8h2")
+    val shirt = make("shirt", "M8 3L3 6l2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z")
+    val walk = make("walk", "M13 3.5a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zM9.5 21l2.2-6 2.8 3v3M11.7 15l1.3-5.5-3.2 1.8L8 14.5M13 9.5l2.5 3 3 1")
+    val quiet = make("quiet", "M4 9.5v5h3.5L12 18.5V5.5L7.5 9.5zM16 9.5l5 5M21 9.5l-5 5")
+    val prayer = make("prayer", "M6 21V9a6 6 0 0 1 12 0v12zM9 21v-7.5a3 3 0 0 1 6 0V21M4 21h16")
+    val gift = make("gift", "M4 9.5h16v4H4zM5.5 13.5h13V21h-13zM12 9.5V21M12 9.5S10.5 5 8 5.5 7.5 9.5 12 9.5zm0 0S13.5 5 16 5.5s.5 4-4 4z")
+    val dates = make("dates", "M8.5 4C11.5 4 13 7 13 10.5S11.5 18 8.5 18 4 14 4 10.5 5.5 4 8.5 4zM15.5 8c2.6 0 4.5 2.6 4.5 5.8S18.1 20 15.5 20s-3.7-2.4-3.7-4.5M8.5 4V2.5")
+    val scissors = make("scissors", "M6 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6 15.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8.2 7.2L20 17M8.2 16.8L20 7")
+    val sheep = make("sheep", "M7 10a3 3 0 0 1 5-2.2 3 3 0 0 1 5 1.2 3 3 0 0 1 .8 5.5 3 3 0 0 1-4 2.3 3 3 0 0 1-5 0 3 3 0 0 1-2.8-4 3 3 0 0 1 1-2.8zM9 17v3.5M15 17v3.5M18 9.5l2.5-.5v3.5l-2 .5")
+    val kaaba = make("kaaba", "M12 3l8 4v10l-8 4-8-4V7zM4 7l8 4 8-4M12 11v10M4 10.5l8 4 8-4")
+    val pebbles = make("pebbles", "M7 13.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM16 12.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM11 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z")
+    val calendar = make("calendar", "M4 6h16v15H4zM4 10.5h16M8 3v5M16 3v5M14.5 15a2 2 0 1 1-2-2 2.6 2.6 0 0 0 2 2z")
+    val books = make("books", "M4 4h4v16H4zM9 4h4v16H9zM14.5 5l3.8-1 3.2 15.5-3.8 1z")
+
+    /** The picture of a sunnah by the name used in adhkar.json. */
+    fun byName(n: String): ImageVector? = when (n) {
+        "clock" -> clock; "sunset" -> set; "sunrise" -> rise; "hands" -> hands; "star" -> star; "book" -> book
+        "moon" -> moon; "sun" -> sun; "shower" -> shower; "perfume" -> perfume; "shirt" -> shirt; "walk" -> walk
+        "quiet" -> quiet; "prayer" -> prayer; "gift" -> gift; "dates" -> dates; "scissors" -> scissors; "sheep" -> sheep
+        "kaaba" -> kaaba; "pebbles" -> pebbles
+        else -> null
+    }
 }
