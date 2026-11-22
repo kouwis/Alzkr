@@ -44,7 +44,7 @@ private val ITEM_W = 92.dp
 
 /** The two homes line up: same header height and same top-card height, so switching
  *  section leaves the card exactly where it was. */
-val HomeHeaderHeight = 64.dp
+val HomeHeaderHeight = 76.dp
 val HomeCardHeight = 384.dp
 
 /**

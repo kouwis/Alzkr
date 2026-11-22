@@ -339,6 +339,23 @@ private fun ContinueCard(
                 Box(Modifier.fillMaxWidth(frac).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFE2C48F)))
             }
         }
+        // the khatma: how far the reading place is through the mushaf, and when the ward would finish it
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val left = 604 - page
+            val pct = (page * 100) / 604
+            val days = if (prefs.wardTarget > 0) (left + prefs.wardTarget - 1) / prefs.wardTarget else 0
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("الختمة · ${num(pct)}٪", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(
+                    if (left <= 0) "ختمت المصحف ✓" else "بوردك هتختم بعد ${num(days)} يوم",
+                    color = Color(0xFFE3EEEA), fontSize = 12.sp,
+                )
+            }
+            val kfrac by androidx.compose.animation.core.animateFloatAsState(page / 604f, label = "khatma")
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.primaryLine)) {
+                Box(Modifier.fillMaxWidth(kfrac).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.85f)))
+            }
+        }
         Spacer(Modifier.weight(1f))
         HorizontalDivider(color = c.primaryLine)
         Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -1,5 +1,7 @@
 package com.kouwis.alzkr.data
 
+import kotlin.math.abs
+
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -28,7 +30,8 @@ data class AppPrefs(
     val tajweedOn: Boolean = false,
     /** which section the app opens on: "quran" or "adhkar" */
     val section: String = "quran",
-    /** the last places read, newest first, one per surah: (page, "s:a") — at most 3 */
+    /** the last places read, newest first: (page, "s:a") — at most 3. Reading on page by page
+     *  moves the same place along; jumping somewhere else starts a new one (even in the same surah). */
     val recent: List<Pair<Int, String>> = emptyList(),
     /** the place prayer times are worked out for; null until the user shares a location */
     val lat: Double? = null,
@@ -95,10 +98,11 @@ class Prefs(private val context: Context) {
     suspend fun markRead(page: Int, verseKey: String) = context.store.edit { p ->
         p[K.lastPage] = page
         p[K.lastVerse] = verseKey
-        // newest first, one place per surah, three places
-        val surah = verseKey.substringBefore(':')
+        // newest first, three places; turning to a nearby page continues the same place
         val old = parseRecent(p[K.recent])
-        val list = (listOf(page to verseKey) + old.filter { it.second.substringBefore(':') != surah }).take(3)
+        val same = old.withIndex().filter { abs(it.value.first - page) <= 3 }.minByOrNull { abs(it.value.first - page) }?.index
+        val rest = old.filterIndexed { i, _ -> i != same }
+        val list = (listOf(page to verseKey) + rest).take(3)
         p[K.recent] = list.joinToString(";") { "${it.first}|${it.second}" }
         val day = today()
         val pages = if (p[K.wardDay] == day) p[K.wardPages].orEmpty() else emptySet()
