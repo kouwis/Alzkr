@@ -95,13 +95,18 @@ class Prefs(private val context: Context) {
         it[K.lat] = lat; it[K.lng] = lng; it[K.place] = place
     }
 
-    suspend fun markRead(page: Int, verseKey: String) = context.store.edit { p ->
+    /**
+     * [newSession]: the mushaf was just opened. Opening it on a page that is already one of the
+     * places continues that place; anywhere else starts a new place (same surah or not). After
+     * that, turning pages moves the current place along with the reader.
+     */
+    suspend fun markRead(page: Int, verseKey: String, newSession: Boolean = false) = context.store.edit { p ->
         p[K.lastPage] = page
         p[K.lastVerse] = verseKey
-        // newest first, three places; turning to a nearby page continues the same place
+        // newest first, three places
         val old = parseRecent(p[K.recent])
-        val same = old.withIndex().filter { abs(it.value.first - page) <= 3 }.minByOrNull { abs(it.value.first - page) }?.index
-        val rest = old.filterIndexed { i, _ -> i != same }
+        val rest = if (newSession) old.filter { abs(it.first - page) > 1 } // reopening a place picks it up
+        else old.drop(1).filter { it.first != page } // still reading: the newest place moves on
         val list = (listOf(page to verseKey) + rest).take(3)
         p[K.recent] = list.joinToString(";") { "${it.first}|${it.second}" }
         val day = today()

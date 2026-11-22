@@ -61,6 +61,19 @@ fun SearchScreen(q: QuranData, nav: Nav) {
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
     val needle = remember(query) { ArabicText.normalize(query) }
+    // a page number ("٢٥"، "25"، "ص ٢٥"، "صفحة 25") goes straight to that page
+    val pageHit = remember(query) {
+        val digits = query.trim()
+            .removePrefix("صفحة").removePrefix("صفحه").removePrefix("ص").trim()
+            .map { ch ->
+                when (ch) {
+                    in '٠'..'٩' -> '0' + (ch - '٠')
+                    in '۰'..'۹' -> '0' + (ch - '۰')
+                    else -> ch
+                }
+            }.joinToString("")
+        digits.takeIf { it.isNotEmpty() && it.all(Char::isDigit) && it.length <= 3 }?.toInt()?.takeIf { it in 1..604 }
+    }
     val surahHits = remember(needle) {
         if (needle.isEmpty()) emptyList()
         else q.surahs.filter { ArabicText.normalize(it.name).contains(needle) || it.n.toString() == needle }
@@ -106,9 +119,10 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                     textStyle = TextStyle(color = c.text, fontSize = 16.sp),
                     cursorBrush = SolidColor(c.primary),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { pageHit?.let { nav.go(Screen.Mushaf(it)) } }),
                     modifier = Modifier.weight(1f).focusRequester(focus),
                     decorationBox = { inner ->
-                        if (query.isEmpty()) Text("ابحث عن سورة أو كلمة", color = c.muted, fontSize = 16.sp)
+                        if (query.isEmpty()) Text("سورة، كلمة، أو رقم صفحة", color = c.muted, fontSize = 16.sp)
                         inner()
                     },
                 )
@@ -119,7 +133,26 @@ fun SearchScreen(q: QuranData, nav: Nav) {
         }
 
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (needle.isNotEmpty() && surahHits.isEmpty() && verseHits.isEmpty()) {
+            if (pageHit != null) {
+                item { SectionTitle("الصفحة") }
+                item(key = "page") {
+                    CardBox(Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.clickable { nav.go(Screen.Mushaf(pageHit)) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            NumberBadge(num(pageHit))
+                            Column(Modifier.weight(1f)) {
+                                Text("صفحة ${num(pageHit)}", color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text("سورة ${q.surahName(q.surahOfPage(pageHit))} · الجزء ${num(q.juzOfPage(pageHit))}", color = c.muted, fontSize = 12.sp)
+                            }
+                            Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            }
+            if (needle.isNotEmpty() && pageHit == null && surahHits.isEmpty() && verseHits.isEmpty()) {
                 item { Text("لا توجد نتائج", color = c.muted, modifier = Modifier.padding(top = 24.dp).fillMaxWidth()) }
             }
             if (surahHits.isNotEmpty()) {

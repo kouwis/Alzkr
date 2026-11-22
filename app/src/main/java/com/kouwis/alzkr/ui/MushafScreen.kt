@@ -194,11 +194,13 @@ fun MushafScreen(
         if (markNote != null) { delay(2600); markNote = null }
     }
 
+    var readingStarted by remember { mutableStateOf(false) }
     LaunchedEffect(currentPage) {
         val first = q.versesOnPage(currentPage, tj).firstOrNull()
         val key = selected?.takeIf { it in ayahsOnPage }
             ?: first?.let { "${it.first}:${it.second}" } ?: ""
-        store.markRead(currentPage, key)
+        store.markRead(currentPage, key, newSession = !readingStarted)
+        readingStarted = true
     }
 
     val pageVerses = { pg: Int -> q.versesOnPage(pg, q.tajweedReady(prefs.tajweedOn)).map { "${it.first}:${it.second}" } }
