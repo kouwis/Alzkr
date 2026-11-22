@@ -42,6 +42,11 @@ val SectionBarSpace = 84.dp
 
 private val ITEM_W = 92.dp
 
+/** The two homes line up: same header height and same top-card height, so switching
+ *  section leaves the card exactly where it was. */
+val HomeHeaderHeight = 64.dp
+val HomeCardHeight = 384.dp
+
 /**
  * The sections' homes side by side, like tabs of one app: the bar at the bottom stays put and
  * its pill slides (and changes colour) with the page while the homes slide under it.

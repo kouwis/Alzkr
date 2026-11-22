@@ -142,7 +142,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
             item {
                 // swiping the top part (continue card, ward) moves between sections: القرآن → الأذكار
                 Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp).height(HomeHeaderHeight), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("القرآن الكريم", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
                             Text("مصحف المدينة · رواية حفص", color = c.muted, fontSize = 13.sp)
@@ -258,6 +258,7 @@ private fun ContinueCard(
     Column(
         Modifier
             .fillMaxWidth()
+            .height(HomeCardHeight)
             .clip(RoundedCornerShape(24.dp))
             .background(c.primary)
             .mosqueBackdrop()
@@ -287,7 +288,18 @@ private fun ContinueCard(
         }
         // the two other places read lately (one per surah)
         val others = prefs.recent.drop(1).take(2)
-        if (others.isNotEmpty()) {
+        if (others.isEmpty()) {
+            // until a second surah is read, keep the row so the card's layout doesn't jump
+            Row(
+                Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, c.primaryLine, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Ic.bookmark, null, tint = Color(0xFFCFE3DD), modifier = Modifier.size(15.dp))
+                Text("آخر ٣ أماكن قريت فيها هتظهر هنا", color = Color(0xFFCFE3DD), fontSize = 13.sp, maxLines = 1)
+            }
+        } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 others.forEach { (pg, vk) ->
                     val s = vk.substringBefore(':').toIntOrNull() ?: q.surahOfPage(pg)
@@ -327,6 +339,7 @@ private fun ContinueCard(
                 Box(Modifier.fillMaxWidth(frac).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFE2C48F)))
             }
         }
+        Spacer(Modifier.weight(1f))
         HorizontalDivider(color = c.primaryLine)
         Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("اعرض أسفل الصفحة أثناء القراءة", color = Color(0xFFCFE3DD), fontSize = 12.sp, modifier = Modifier.weight(1f))

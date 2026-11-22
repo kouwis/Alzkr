@@ -238,8 +238,11 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = SectionBarSpace)) {
             item {
                 Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("الأذكار", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold, modifier = Modifier.weight(1f))
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp).height(HomeHeaderHeight), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("الأذكار", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
+                            Text("حصن المسلم · مواقيت الصلاة", color = c.muted, fontSize = 13.sp)
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             RoundIconButton(AdhkarIc.beads, "العداد", { soon("العداد") }, tint = c.primary)
                             RoundIconButton(AdhkarIc.qibla, "القبلة", { soon("القبلة") }, tint = c.primary)
@@ -405,6 +408,7 @@ private fun DayCard(
     Column(
         Modifier
             .fillMaxWidth()
+            .height(HomeCardHeight)
             .clip(RoundedCornerShape(24.dp))
             .drawBehind {
                 drawRect(Brush.verticalGradient(0f to top, 0.58f to mid, 1f to bottom))
@@ -445,9 +449,10 @@ private fun DayCard(
             }
         }
 
+        Spacer(Modifier.weight(1f))
         Row(
             Modifier
-                .padding(start = 14.dp, end = 14.dp, top = 14.dp)
+                .padding(start = 14.dp, end = 14.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0x470A1628))
