@@ -28,6 +28,8 @@ data class AppPrefs(
     val tajweedOn: Boolean = false,
     /** which section the app opens on: "quran" or "adhkar" */
     val section: String = "quran",
+    /** the last places read, newest first, one per surah: (page, "s:a") — at most 3 */
+    val recent: List<Pair<Int, String>> = emptyList(),
     /** the place prayer times are worked out for; null until the user shares a location */
     val lat: Double? = null,
     val lng: Double? = null,
@@ -48,6 +50,7 @@ class Prefs(private val context: Context) {
         val verseMode = booleanPreferencesKey("verse_mode")
         val tajweed = booleanPreferencesKey("tajweed_on")
         val section = stringPreferencesKey("section")
+        val recent = stringPreferencesKey("recent_reads")
         val lat = androidx.datastore.preferences.core.doublePreferencesKey("lat")
         val lng = androidx.datastore.preferences.core.doublePreferencesKey("lng")
         val place = stringPreferencesKey("place")
@@ -69,6 +72,11 @@ class Prefs(private val context: Context) {
             verseMode = p[K.verseMode] ?: false,
             tajweedOn = p[K.tajweed] ?: false,
             section = p[K.section] ?: "quran",
+            recent = parseRecent(p[K.recent]).ifEmpty {
+                // before this list existed only the last place was kept
+                val lp = p[K.lastPage] ?: 0
+                if (lp in 1..604) listOf(lp to (p[K.lastVerse] ?: "")) else emptyList()
+            },
             lat = p[K.lat],
             lng = p[K.lng],
             place = p[K.place] ?: "",
@@ -87,6 +95,11 @@ class Prefs(private val context: Context) {
     suspend fun markRead(page: Int, verseKey: String) = context.store.edit { p ->
         p[K.lastPage] = page
         p[K.lastVerse] = verseKey
+        // newest first, one place per surah, three places
+        val surah = verseKey.substringBefore(':')
+        val old = parseRecent(p[K.recent])
+        val list = (listOf(page to verseKey) + old.filter { it.second.substringBefore(':') != surah }).take(3)
+        p[K.recent] = list.joinToString(";") { "${it.first}|${it.second}" }
         val day = today()
         val pages = if (p[K.wardDay] == day) p[K.wardPages].orEmpty() else emptySet()
         p[K.wardDay] = day
@@ -112,4 +125,10 @@ class Prefs(private val context: Context) {
         val list = p[K.favorites]?.split(',')?.filter { it.isNotBlank() }.orEmpty()
         p[K.favorites] = (if (key in list) list - key else listOf(key) + list).joinToString(",")
     }
+
+    private fun parseRecent(raw: String?): List<Pair<Int, String>> =
+        raw.orEmpty().split(';').mapNotNull { e ->
+            val page = e.substringBefore('|').toIntOrNull() ?: return@mapNotNull null
+            if (page !in 1..604) null else page to e.substringAfter('|', "")
+        }
 }

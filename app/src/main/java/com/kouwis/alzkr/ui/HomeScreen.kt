@@ -141,7 +141,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = SectionBarSpace)) {
             item {
                 // swiping the top part (continue card, ward) moves between sections: القرآن → الأذكار
-                Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("القرآن الكريم", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
@@ -176,22 +176,6 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                         },
                         onLegend = { showLegend = true },
                     )
-                    CardBox(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("وردك اليوم", color = c.text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                                val done = prefs.wardDone.coerceAtMost(prefs.wardTarget)
-                                Text(
-                                    if (done >= prefs.wardTarget) "أتممت وردك ✓" else "${num(done)} من ${num(prefs.wardTarget)} صفحات",
-                                    color = if (done >= prefs.wardTarget) c.primary else c.muted, fontSize = 13.sp,
-                                )
-                            }
-                            val frac = (prefs.wardDone.toFloat() / prefs.wardTarget).coerceIn(0f, 1f)
-                            Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.chip)) {
-                                Box(Modifier.fillMaxWidth(frac).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.gold))
-                            }
-                        }
-                    }
                     Spacer(Modifier.height(0.dp))
                 }
             }
@@ -274,7 +258,7 @@ private fun ContinueCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(c.primary)
             .mosqueBackdrop()
             .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 8.dp),
@@ -299,6 +283,48 @@ private fun ContinueCard(
             ) {
                 Text("متابعة", color = LightColors.primary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 Icon(Ic.forward, null, tint = LightColors.primary, modifier = Modifier.size(16.dp))
+            }
+        }
+        // the two other places read lately (one per surah)
+        val others = prefs.recent.drop(1).take(2)
+        if (others.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                others.forEach { (pg, vk) ->
+                    val s = vk.substringBefore(':').toIntOrNull() ?: q.surahOfPage(pg)
+                    Row(
+                        Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White.copy(alpha = 0.12f))
+                            .springClick(role = Role.Button, label = q.surahName(s), pressedScale = 0.96f, ripple = false) {
+                                nav.go(Screen.Mushaf(pg, vk.ifBlank { null }))
+                            }
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Ic.bookmark, null, tint = Color(0xFFCFE3DD), modifier = Modifier.size(15.dp))
+                        Text(q.surahName(s), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f))
+                        Text("ص ${num(pg)}", color = Color(0xFFCFE3DD), fontSize = 12.sp, maxLines = 1)
+                    }
+                }
+                if (others.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+        // today's ward, inside the card
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val done = prefs.wardDone.coerceAtMost(prefs.wardTarget)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("وردك اليوم", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(
+                    if (done >= prefs.wardTarget) "أتممت وردك ✓" else "${num(done)} من ${num(prefs.wardTarget)} صفحات",
+                    color = Color(0xFFE3EEEA), fontSize = 12.sp,
+                )
+            }
+            val frac by androidx.compose.animation.core.animateFloatAsState((prefs.wardDone.toFloat() / prefs.wardTarget).coerceIn(0f, 1f), label = "ward")
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.primaryLine)) {
+                Box(Modifier.fillMaxWidth(frac).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFE2C48F)))
             }
         }
         HorizontalDivider(color = c.primaryLine)
