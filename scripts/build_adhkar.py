@@ -358,6 +358,20 @@ def main():
                 ch, i = it["a"]
                 where = f"{sec['id']} «{ch}» #{i}"
                 full = official[ch][i]["text"]
+                if "quran" in it:  # one surah of an official dhikr that holds several, shown on its own
+                    qs = to_parts(strip_wrap(full), quran, where)
+                    if list(it["quran"]) not in [p.get("q") for p in qs]:
+                        raise SystemExit(f"TEXT CHECK FAILED {where}: {it['quran']} is not in the official text")
+                    bt = book_all(it.get("book", ch))
+                    for key in ("src", "note"):
+                        for piece in [p for p in it.get(key, "").split(" — ") if p]:
+                            if skeld(piece) not in skeld(bt):
+                                raise SystemExit(f"SOURCE CHECK FAILED {where}: {key} «{piece[:60]}» is not in the book")
+                    parts = ([{"t": it["pre"]}] if it.get("pre") else []) + [{"q": list(it["quran"])}]
+                    items.append(dict(parts=parts, count=it.get("count", 1), note=it.get("note", ""),
+                                      src=" — ".join([it["src"]] + extra), label=it.get("label", ""), where=where,
+                                      mushaf=True, verified=extra))
+                    continue
                 t = it.get("text", full)
                 if not has(full, t):
                     raise SystemExit(f"TEXT CHECK FAILED {where}: «{t[:50]}» is not in the official text")

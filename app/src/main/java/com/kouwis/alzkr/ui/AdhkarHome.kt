@@ -189,15 +189,23 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
 
     data class Suggestion(val title: String, val sub: String, val icon: ImageVector, val onClick: () -> Unit)
     val beforeFajr = minuteNow < times.getValue(Prayer.Fajr)
+    // adhkar already finished in their time are taken off the suggestions
+    fun at(day: java.time.LocalDate, minute: Int) =
+        day.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() + minute * 60_000L
+    val night = if (beforeFajr) today.minusDays(1) else today // the evening/night the reader is in
+    fun doneSince(id: String, from: Long) = (prefs.adhkarDone[id] ?: 0L) >= from
+    val morningDone = doneSince("morning", at(today, times.getValue(Prayer.Fajr)))
+    val eveningDone = doneSince("evening", at(night, times.getValue(Prayer.Asr)))
+    val sleepDone = doneSince("sleep", at(night, times.getValue(Prayer.Isha)))
     val suggestions = buildList {
         when {
             current == Prayer.Isha || beforeFajr -> {
-                add(Suggestion("أذكار النوم", "قبل ما تنام", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
-                add(Suggestion("أذكار المساء", "لو لسه مقرأتهاش", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+                if (!sleepDone) add(Suggestion("أذكار النوم", "قبل ما تنام", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "لو لسه مقرأتهاش", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
             }
             current == Prayer.Asr || current == Prayer.Maghrib ->
-                add(Suggestion("أذكار المساء", "من العصر للمغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
-            else -> add(Suggestion("أذكار الصباح", "وقتها لحد قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "من العصر للمغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "وقتها لحد قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
         }
         if (fridayTime) {
             add(Suggestion("الصلاة على النبي ﷺ", "يوم الجمعة · أكثِر منها", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
@@ -267,6 +275,9 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         onPick = { p -> view.haptic(Haptic.Tick); preview = if (p == current) null else p },
                     )
                     Text("مقترح لك الآن", color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp))
+                    if (suggestions.isEmpty()) {
+                        Text("خلّصت أذكار الوقت ده، الحمد لله", color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+                    }
                 }
             }
             items(suggestions.size) { i ->

@@ -109,6 +109,34 @@ class QuranData(
     fun juzOfPage(page: Int, tajweed: Boolean = false) = meta.juz.lastOrNull { pageOf(it.s, it.a, tajweed) <= page }?.n ?: 1
     fun hizbOfPage(page: Int, tajweed: Boolean = false) = meta.hizb.lastOrNull { pageOf(it.s, it.a, tajweed) <= page }?.n ?: 1
 
+    /** For each page of a print: the number of each verse's words that are on pages before it. */
+    private fun wordStarts(src: List<List<PageLine>>): List<Map<String, Int>> {
+        val seen = HashMap<String, Int>()
+        return src.map { lines ->
+            val here = HashMap<String, Int>()
+            lines.forEach { l -> if (l is PageLine.Text) l.words.forEach { w -> here.putIfAbsent(w.key, seen[w.key] ?: 0) } }
+            lines.forEach { l -> if (l is PageLine.Text) l.words.forEach { w -> seen[w.key] = (seen[w.key] ?: 0) + 1 } }
+            here
+        }
+    }
+    private val wordStartsPlain by lazy { wordStarts(pages) }
+    private val wordStartsTajweed by lazy { wordStarts(pagesTajweed) }
+
+    /** How many words of verse [key] come before [page] (so a word's index in its verse is this + its place on the page). */
+    fun wordsBefore(page: Int, key: String, tajweed: Boolean): Int =
+        (if (tajweedReady(tajweed)) wordStartsTajweed else wordStartsPlain).getOrNull(page - 1)?.get(key) ?: 0
+
+    private val verseWordsMap: Map<String, List<Pair<Int, String>>> by lazy {
+        val m = HashMap<String, MutableList<Pair<Int, String>>>()
+        pages.forEachIndexed { i, lines ->
+            lines.forEach { l -> if (l is PageLine.Text) l.words.forEach { w -> m.getOrPut(w.key) { ArrayList() }.add(i + 1 to w.glyph) } }
+        }
+        m
+    }
+
+    /** The words of a verse in the mushaf, (page, QCF glyphs) — the last one is the ayah-number. */
+    fun verseWords(s: Int, a: Int): List<Pair<Int, String>> = verseWordsMap["$s:$a"].orEmpty()
+
     /** Flat list of all verses for the verse-by-verse mode. */
     val allVerses: List<Pair<Int, Int>> by lazy {
         buildList { meta.surahs.forEach { s -> for (a in 1..s.ayahs) add(s.n to a) } }

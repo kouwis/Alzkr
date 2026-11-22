@@ -133,6 +133,9 @@ fun MushafScreen(
 
     // opening at a verse only positions the reader there; selecting is a long-press
     var selected by remember { mutableStateOf<String?>(null) }
+    // «التصحيح»: the verse whose wrong words are being picked
+    var picking by remember { mutableStateOf<String?>(null) }
+    val mistakesMap = remember(prefs.mistakes) { prefs.mistakes.toMap() }
     var showLegend by remember { mutableStateOf(false) }
     LaunchedEffect(prefs.tajweedOn) { if (prefs.tajweedOn) com.kouwis.alzkr.data.TajweedFonts.prefetchAll(ctx) }
     var barsVisible by remember { mutableStateOf(false) }
@@ -215,7 +218,7 @@ fun MushafScreen(
                 onTap = onTap,
             )
         } else {
-            PagesPager(q, currentPage, selected, focus, prefs.bookmarks, tj,
+            PagesPager(q, currentPage, selected, focus, prefs.bookmarks, tj, mistakesMap,
                 onPage = { currentPage = it },
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
@@ -276,6 +279,8 @@ fun MushafScreen(
         if (sel != null) {
             AyahActions(
                 isFavorite = sel in prefs.favorites,
+                isMistake = mistakesMap.containsKey(sel),
+                onMistake = { picking = sel },
                 isBookmarked = "a:$sel" in prefs.bookmarks,
                 onBookmark = {
                     val wasOn = "a:$sel" in prefs.bookmarks
@@ -302,6 +307,16 @@ fun MushafScreen(
     }
 
     if (showLegend) TajweedLegendDialog(onDismiss = { showLegend = false })
+
+    picking?.let { key ->
+        val (s, a) = parseKey(key) ?: return@let
+        MistakePicker(q, s, a, mistakesMap[key], onDismiss = { picking = null }, onSave = { words ->
+            scope.launch { store.setMistake(key, words) }
+            Toast.makeText(ctx, if (words == null) "اتشالت من التصحيح" else "اتضافت للتصحيح", Toast.LENGTH_SHORT).show()
+            picking = null
+            selected = null
+        })
+    }
 
     dialog?.let { (title, key) ->
         val (s, a) = parseKey(key) ?: return@let
@@ -339,6 +354,7 @@ private fun PagesPager(
     focus: String?,
     bookmarks: List<String>,
     tajweed: Boolean,
+    mistakes: Map<String, Set<Int>>,
     onPage: (Int) -> Unit,
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
@@ -372,7 +388,7 @@ private fun PagesPager(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val w = maxWidth
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w, foc, tajweed)
+                    MushafPageTall(q, p, sel, onLongPressVerse, onTap, w, foc, tajweed, mistakes)
                 }
             }
         } else {
@@ -381,6 +397,7 @@ private fun PagesPager(
                 Modifier.fillMaxSize().background(LocalColors.current.paper).pageEdges(p, LocalColors.current.dark, bookmarked = p in marked, ribbon = LocalColors.current.gold).displayCutoutPadding(),
                 focus = foc,
                 tajweed = tajweed,
+                mistakes = mistakes,
             )
         }
     }
@@ -434,6 +451,8 @@ private fun TopBar(
 @Composable
 private fun AyahActions(
     isFavorite: Boolean,
+    isMistake: Boolean,
+    onMistake: () -> Unit,
     isBookmarked: Boolean,
     onBookmark: () -> Unit,
     modifier: Modifier,
@@ -454,6 +473,7 @@ private fun AyahActions(
     ) {
         ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
         ActionItem(if (isFavorite) Ic.heart else Ic.heartOutline, if (isFavorite) "محفوظة" else "مفضلة", Color(0xFFF3A6AF), onFavorite, Haptic.Confirm)
+        ActionItem(Ic.pen, "تصحيح", if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
         ActionItem(Ic.book, "تفسير", Color.White, onTafsir)
         ActionItem(Ic.translate, "ترجمة", Color.White, onTranslation)
         ActionItem(Ic.copy, "نسخ", Color.White, onCopy)

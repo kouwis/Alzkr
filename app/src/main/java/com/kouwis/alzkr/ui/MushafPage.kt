@@ -43,7 +43,7 @@ import com.kouwis.alzkr.data.PageFonts
 import com.kouwis.alzkr.data.PageLine
 import com.kouwis.alzkr.data.QuranData
 
-private class PlacedWord(val key: String, val text: String, val x: Float, val baseline: Float, val hit: Rect, val scaleX: Float = 1f)
+private class PlacedWord(val key: String, val text: String, val x: Float, val baseline: Float, val hit: Rect, val scaleX: Float = 1f, val wi: Int = 0)
 private class PlacedGlyph(val text: String, val x: Float, val baseline: Float, val size: Float, val bold: Boolean = true)
 private class PageLayout(
     val textSize: Float,
@@ -69,6 +69,7 @@ fun MushafPage(
     modifier: Modifier = Modifier,
     focus: String? = null,
     tajweed: Boolean = false,
+    mistakes: Map<String, Set<Int>> = emptyMap(),
 ) {
     val c = LocalColors.current
     Column(
@@ -76,7 +77,7 @@ fun MushafPage(
             .background(c.paper)
             .padding(horizontal = 22.dp, vertical = 8.dp),
     ) {
-        PageCanvas(q, page, selected, focus, tajweed, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth())
+        PageCanvas(q, page, selected, focus, tajweed, onLongPressVerse, onTap, Modifier.weight(1f).fillMaxWidth(), mistakes)
     }
 }
 
@@ -90,6 +91,7 @@ private fun PageCanvas(
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
     modifier: Modifier,
+    mistakes: Map<String, Set<Int>> = emptyMap(),
 ) {
     val c = LocalColors.current
     val haptics = LocalHapticFeedback.current
@@ -166,6 +168,14 @@ private fun PageCanvas(
                     drawRoundRect(glow, it.hit.topLeft, it.hit.size, CornerRadius(10f, 10f))
                 }
             }
+            // «التصحيح»: the words marked to review sit on a soft red (the whole verse when no word was picked)
+            if (mistakes.isNotEmpty()) {
+                val mark = c.heart.copy(alpha = if (c.dark) 0.30f else 0.18f)
+                layout.words.forEach { wd ->
+                    val ws = mistakes[wd.key] ?: return@forEach
+                    if (ws.isEmpty() || wd.wi in ws) drawRoundRect(mark, wd.hit.topLeft, wd.hit.size, CornerRadius(10f, 10f))
+                }
+            }
             if (selected != null) {
                 layout.words.filter { it.key == selected }.forEach {
                     drawRoundRect(c.highlight, it.hit.topLeft, it.hit.size, CornerRadius(10f, 10f))
@@ -211,9 +221,15 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
     val labelSize = labelRoom * 0.42f
 
     // Every word and every ayah-number is its own unit, so spacing is the same everywhere.
-    class Glyph(val key: String, val glyph: String)
+    // wi: the word's place in its verse (counting the verse's words on earlier pages too)
+    class Glyph(val key: String, val glyph: String, val wi: Int)
+    val nth = HashMap<String, Int>()
     val lineUnits = lines.map { line ->
-        if (line is PageLine.Text) line.words.flatMap { wd -> wd.glyph.split(' ').filter { it.isNotEmpty() }.map { Glyph(wd.key, it) } }
+        if (line is PageLine.Text) line.words.flatMap { wd ->
+            val wi = nth.getOrPut(wd.key) { q.wordsBefore(page, wd.key, tajweed) }
+            nth[wd.key] = wi + 1
+            wd.glyph.split(' ').filter { it.isNotEmpty() }.map { Glyph(wd.key, it, wi) }
+        }
         else emptyList()
     }
 
@@ -309,7 +325,7 @@ private fun layoutPage(q: QuranData, page: Int, tf: Typeface, w: Float, h: Float
                     val ww = widths[j]
                     val left = x - ww
                     val hit = Rect(left - gap / 2f, top + lh * 0.04f, x + gap / 2f, top + lh * 0.96f)
-                    words += PlacedWord(u.key, u.glyph, left, baseline, hit, scaleX)
+                    words += PlacedWord(u.key, u.glyph, left, baseline, hit, scaleX, u.wi)
                     x = left - gap
                 }
             }
@@ -365,8 +381,9 @@ fun MushafPageTall(
     width: Dp,
     focus: String? = null,
     tajweed: Boolean = false,
+    mistakes: Map<String, Set<Int>> = emptyMap(),
 ) {
-    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f), focus, tajweed)
+    MushafPage(q, page, selected, onLongPressVerse, onTap, Modifier.fillMaxWidth().height(width * 1.6f), focus, tajweed, mistakes)
 }
 
 /** Real mushaf surah frame (QCF_BSML) with the surah name, for the verse-by-verse list. */

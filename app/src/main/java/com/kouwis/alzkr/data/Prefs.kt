@@ -37,6 +37,11 @@ data class AppPrefs(
     val lat: Double? = null,
     val lng: Double? = null,
     val place: String = "",
+    /** verses (and words in them) marked to review — «التصحيح»: newest first, ("s:a", word indexes;
+     *  empty = the whole verse). Word indexes count the verse's words in the mushaf from 0. */
+    val mistakes: List<Pair<String, Set<Int>>> = emptyList(),
+    /** when each adhkar section was last finished (epoch millis) */
+    val adhkarDone: Map<String, Long> = emptyMap(),
 )
 
 class Prefs(private val context: Context) {
@@ -57,7 +62,18 @@ class Prefs(private val context: Context) {
         val lat = androidx.datastore.preferences.core.doublePreferencesKey("lat")
         val lng = androidx.datastore.preferences.core.doublePreferencesKey("lng")
         val place = stringPreferencesKey("place")
+        val mistakes = stringPreferencesKey("mistakes") // "s:a|0.3;s:a|"
+        val adhkarDone = stringPreferencesKey("adhkar_done") // "morning=1732300000000;sleep=…"
     }
+
+    private fun parseMistakes(raw: String?): List<Pair<String, Set<Int>>> = raw.orEmpty().split(';').mapNotNull { e ->
+        val parts = e.split('|')
+        val key = parts[0].takeIf { Regex("\\d+:\\d+").matches(it) } ?: return@mapNotNull null
+        key to parts.getOrNull(1).orEmpty().split('.').mapNotNull { it.toIntOrNull() }.toSet()
+    }
+
+    private fun writeMistakes(list: List<Pair<String, Set<Int>>>) =
+        list.joinToString(";") { (k, w) -> k + "|" + w.sorted().joinToString(".") }
 
     private fun today() = LocalDate.now().toString()
 
@@ -83,7 +99,23 @@ class Prefs(private val context: Context) {
             lat = p[K.lat],
             lng = p[K.lng],
             place = p[K.place] ?: "",
+            mistakes = parseMistakes(p[K.mistakes]),
+            adhkarDone = p[K.adhkarDone].orEmpty().split(';').mapNotNull { e ->
+                val (k, v) = e.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
+                v.toLongOrNull()?.let { k to it }
+            }.toMap(),
         )
+    }
+
+    /** Marks a verse (words = which words; empty = the whole verse) to review; empty set + [remove] takes it off. */
+    suspend fun setMistake(key: String, words: Set<Int>?, ) = context.store.edit { p ->
+        val list = parseMistakes(p[K.mistakes]).filter { it.first != key }
+        p[K.mistakes] = writeMistakes(if (words == null) list else listOf(key to words) + list)
+    }
+
+    suspend fun markAdhkarDone(id: String, at: Long = System.currentTimeMillis()) = context.store.edit { p ->
+        val m = p[K.adhkarDone].orEmpty().split(';').filter { it.isNotBlank() && !it.startsWith("$id=") }
+        p[K.adhkarDone] = (m + "$id=$at").joinToString(";")
     }
 
     suspend fun setTafsir(on: Boolean) = context.store.edit { it[K.tafsir] = on }

@@ -37,6 +37,8 @@ sealed interface Screen {
     /** The adhkar of one section (see assets/data/adhkar.json). */
     data class Adhkar(val id: String) : Screen
     data object Tasbih : Screen
+    /** «التصحيح»: verses marked to review */
+    data object Mistakes : Screen
 }
 
 class Nav {
@@ -103,8 +105,9 @@ fun AlzkrApp() {
                     Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
                     Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)
                     is Screen.Mushaf -> MushafScreen(q, state, prefs, nav, screen.page, screen.verse, screen.highlight)
-                    is Screen.Adhkar -> AdhkarReaderScreen(q, nav, screen.id)
                     Screen.Tasbih -> TasbihScreen(nav)
+                    Screen.Mistakes -> MistakesScreen(q, state, prefs, nav)
+                    is Screen.Adhkar -> AdhkarReaderScreen(q, state, prefs, nav, screen.id)
                 }
             }
         }

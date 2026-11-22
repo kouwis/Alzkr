@@ -60,7 +60,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import com.kouwis.alzkr.data.Adhkar
+import com.kouwis.alzkr.data.AppPrefs
+import com.kouwis.alzkr.data.Prefs
 import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.AdhkarSection
 import com.kouwis.alzkr.data.ArabicText.num
@@ -72,7 +83,7 @@ import kotlinx.coroutines.launch
 /** The adhkar of one section, one per page: tap the counter — or anywhere on the dhikr — to count. */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun AdhkarReaderScreen(q: QuranData, nav: Nav, id: String) = AdhkarTheme {
+fun AdhkarReaderScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, id: String) = AdhkarTheme {
     val c = LocalColors.current
     val context = LocalContext.current
     val sections by produceState(Adhkar.peek()) { value = Adhkar.load(context) }
@@ -85,42 +96,87 @@ fun AdhkarReaderScreen(q: QuranData, nav: Nav, id: String) = AdhkarTheme {
         if (sec == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = c.primary) }
         } else {
-            Reader(q, nav, sec)
+            Reader(q, store, nav, sec)
         }
     }
 }
 
+/** The dhikr as plain text, for copying and sharing. */
+private fun plainText(q: QuranData, d: Dhikr, sec: AdhkarSection): String = buildString {
+    d.parts.forEach { p ->
+        when {
+            p.q != null -> {
+                val (s, a1, a2) = p.q
+                append((a1..a2).joinToString(" ") { "${q.simple(s, it)} ﴿${num(it)}﴾" })
+                append(" [سورة ${q.surahName(s)}]")
+            }
+            p.u != null -> append("﴿${p.u}﴾")
+            p.t != null -> append(p.t)
+        }
+        append("\n")
+    }
+    if (d.count > 1) append("(${num(d.count)} مرات)\n")
+    if (d.fadl.isNotBlank()) append("\nفضله: ${d.fadl}\n")
+    if (d.src.isNotBlank()) append("\n${d.src.replace(" — ", "\n")}\n")
+    append("\n— ${sec.title} · تطبيق الذِّكر")
+}
+
+/** How long the dhikr is, to pick a text size that fits the page without scrolling. */
+private fun Dhikr.weight(): Int = parts.sumOf { p ->
+    when {
+        p.q != null -> (p.q[2] - p.q[1] + 1) * 90
+        p.u != null -> p.u.length
+        else -> p.t!!.length
+    }
+}
+
 @Composable
-private fun Reader(q: QuranData, nav: Nav, sec: AdhkarSection) {
+private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection) {
     val c = LocalColors.current
     val view = LocalView.current
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val n = sec.items.size
     val counts = remember(sec.id) { mutableStateListOf(*Array(n) { 0 }) }
     val pager = rememberPagerState { n }
     var finished by remember(sec.id) { mutableStateOf(false) }
+    var showList by remember { mutableStateOf(false) }
+    var info by remember { mutableStateOf<Dhikr?>(null) }
     fun target(i: Int) = sec.items[i].count
     fun complete(i: Int) = target(i) > 0 && counts[i] >= target(i)
     val doneCount = (0 until n).count { complete(it) }
+
+    fun afterComplete(i: Int) {
+        view.haptic(Haptic.Confirm)
+        val next = ((i + 1 until n) + (0 until i)).firstOrNull { !complete(it) }
+        scope.launch {
+            delay(420)
+            if (next == null) {
+                finished = true
+                store.markAdhkarDone(sec.id)
+            } else pager.animateScrollToPage(next)
+        }
+    }
 
     fun tap(i: Int) {
         if (finished) return
         val t = target(i)
         if (t == 0) { counts[i] = counts[i] + 1; view.haptic(Haptic.Tick); return }
         if (counts[i] >= t) {
-            // already counted: take the reader on to the next one still to say
+            // already said: take the reader on to the next one still to say
             val next = ((i + 1 until n) + (0 until i)).firstOrNull { !complete(it) }
             if (next != null) scope.launch { pager.animateScrollToPage(next) }
             return
         }
         counts[i] = counts[i] + 1
-        if (counts[i] < t) { view.haptic(Haptic.Tick); return }
-        view.haptic(Haptic.Confirm)
-        val next = ((i + 1 until n) + (0 until i)).firstOrNull { !complete(it) }
-        scope.launch {
-            delay(420)
-            if (next == null) finished = true else pager.animateScrollToPage(next)
-        }
+        if (counts[i] < t) view.haptic(Haptic.Tick) else afterComplete(i)
+    }
+
+    fun completeNow(i: Int) {
+        if (finished || target(i) == 0 || complete(i)) return
+        counts[i] = target(i)
+        afterComplete(i)
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -129,7 +185,7 @@ private fun Reader(q: QuranData, nav: Nav, sec: AdhkarSection) {
             Row(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 RoundIconButton(Ic.back, "رجوع", { nav.back() })
                 Column(Modifier.weight(1f)) {
@@ -140,12 +196,13 @@ private fun Reader(q: QuranData, nav: Nav, sec: AdhkarSection) {
                     )
                 }
                 if (counts.any { it > 0 }) {
-                    RoundIconButton(Ic.refresh, "من الأول", {
+                    RoundIconButton(Ic.refresh, "كله من الأول", {
                         for (k in 0 until n) counts[k] = 0
                         finished = false
                         scope.launch { pager.animateScrollToPage(0) }
                     }, haptic = Haptic.Delete)
                 }
+                if (n > 1) RoundIconButton(Ic.lines, "قائمة الأذكار", { showList = true }, tint = c.primary)
             }
             if (n > 1 && sec.items.any { it.count > 0 }) {
                 val p by animateFloatAsState(doneCount / n.toFloat(), tween(400), label = "progress")
@@ -160,16 +217,43 @@ private fun Reader(q: QuranData, nav: Nav, sec: AdhkarSection) {
             }
 
             HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), beyondViewportPageCount = 1) { i ->
-                DhikrPage(q, sec.items[i], complete(i), Modifier.pointerInput(i) { detectTapGestures { tap(i) } })
+                val d = sec.items[i]
+                DhikrPage(
+                    q, d, complete(i),
+                    onInfo = { info = d },
+                    onCopy = {
+                        clipboard.setText(AnnotatedString(plainText(q, d, sec)))
+                        Toast.makeText(context, "تم النسخ", Toast.LENGTH_SHORT).show()
+                    },
+                    onShare = {
+                        val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, plainText(q, d, sec)) }
+                        context.startActivity(Intent.createChooser(send, "مشاركة الذكر"))
+                    },
+                    modifier = Modifier.pointerInput(i) { detectTapGestures { tap(i) } },
+                )
             }
 
-            // the counter
+            // the counter, with «reset this one» and «I've said it» beside it
             val i = pager.currentPage.coerceIn(0, n - 1)
-            DhikrCounter(
-                count = counts[i], target = target(i), done = complete(i),
-                onTap = { tap(i) },
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 10.dp, bottom = 18.dp),
-            )
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp, start = 24.dp, end = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    if (counts[i] > 0) SmallAction(Ic.refresh, "صفّر") { counts[i] = 0; finished = false; view.haptic(Haptic.Delete) }
+                }
+                DhikrCounter(count = counts[i], target = target(i), done = complete(i), onTap = { tap(i) })
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    if (target(i) > 0 && !complete(i)) SmallAction(Ic.check, "أكملته") { completeNow(i) }
+                }
+            }
+        }
+
+        AnimatedVisibility(showList, enter = fadeIn(tween(200)), exit = fadeOut(tween(160))) {
+            AdhkarList(q, sec, counts, current = pager.currentPage, onClose = { showList = false }) { k ->
+                showList = false
+                scope.launch { pager.scrollToPage(k) }
+            }
         }
 
         AnimatedVisibility(finished, enter = fadeIn(tween(300)) + scaleIn(tween(380), initialScale = 0.94f), exit = fadeOut(tween(200))) {
@@ -180,70 +264,184 @@ private fun Reader(q: QuranData, nav: Nav, sec: AdhkarSection) {
             })
         }
     }
+
+    info?.let { d ->
+        AlertDialog(
+            onDismissRequest = { info = null },
+            containerColor = c.card,
+            confirmButton = { TextButton(onClick = { info = null }) { Text("تم", color = c.primary) } },
+            title = { Text("الفضل والتخريج", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text) },
+            text = {
+                Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (d.fadl.isNotBlank()) Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.goldSoft).padding(12.dp),
+                    ) {
+                        Text("فضله", color = c.goldText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(d.fadl, color = c.text, fontSize = 15.sp, lineHeight = 26.sp)
+                    }
+                    if (d.src.isNotBlank()) Column {
+                        Text("التخريج", color = c.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(d.src.replace(" — ", "\n"), color = c.text, fontSize = 14.sp, lineHeight = 24.sp)
+                    }
+                }
+            },
+        )
+    }
 }
 
 @Composable
-private fun DhikrPage(q: QuranData, d: Dhikr, done: Boolean, modifier: Modifier) {
+private fun SmallAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    val c = LocalColors.current
+    Column(
+        Modifier.clip(RoundedCornerShape(16.dp)).springClick(label = label, haptic = Haptic.None, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(44.dp).clip(CircleShape).background(c.card).border(1.dp, c.border, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = c.primary, modifier = Modifier.size(20.dp))
+        }
+        Text(label, color = c.muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+/** The dhikr on the page itself: centred, sized to fit; it only scrolls when it is really long. */
+@Composable
+private fun DhikrPage(
+    q: QuranData, d: Dhikr, done: Boolean,
+    onInfo: () -> Unit, onCopy: () -> Unit, onShare: () -> Unit,
+    modifier: Modifier,
+) {
     val c = LocalColors.current
     val textColor by androidx.compose.animation.animateColorAsState(if (done) c.muted else c.text, tween(300), label = "ink")
-    Box(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    val w = remember(d) { d.weight() }
+    val textSize = when { w < 120 -> 26.sp; w < 260 -> 23.sp; w < 450 -> 21.sp; w < 700 -> 19.sp; else -> 18.sp }
+    val quranSize = when { w < 200 -> 27.sp; w < 450 -> 24.sp; w < 800 -> 22.sp; else -> 21.sp }
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier.fillMaxSize()) {
+        val minH = maxHeight
         Column(
-            Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)).background(c.card)
-                .border(1.dp, c.border, RoundedCornerShape(24.dp))
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         ) {
-            val onlyQuran = d.parts.all { it.q != null || it.t != null && it.t.startsWith("بِسْمِ") } && d.parts.any { it.q != null }
-            val caption = d.label.ifBlank {
-                if (onlyQuran) d.parts.firstNotNullOf { it.q }.let { (s, a1, a2) ->
-                    "سورة ${q.surahName(s)} · " + if (a1 == a2) "الآية ${num(a1)}" else "الآيات ${num(a1)}–${num(a2)}"
-                } else ""
-            }
-            if (caption.isNotBlank()) {
-                Text(
-                    caption, color = c.primary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(c.primarySoft).padding(horizontal = 12.dp, vertical = 5.dp),
-                )
-            }
-            Spacer(Modifier.height(2.dp))
-            d.parts.forEach { p ->
-                when {
-                    p.q != null -> QuranPassage(q, p.q[0], p.q[1], p.q[2], fontSize = 25.sp, color = if (done) c.muted else c.ink)
-                    p.u != null -> Text(
-                        "﴿${p.u}﴾", color = if (done) c.muted else c.ink, fontSize = 23.sp, lineHeight = 44.sp,
-                        fontFamily = AppFonts.hafs, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
-                    )
-                    p.t != null -> Text(
-                        p.t, color = textColor, fontSize = 22.sp, lineHeight = 42.sp, fontFamily = AppFonts.naskh,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            Column(
+                Modifier.fillMaxWidth().heightIn(min = minH).padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            ) {
+                val onlyQuran = d.parts.any { it.q != null } && d.parts.all { it.q != null || it.t?.startsWith("بِسْمِ") == true }
+                val caption = d.label.ifBlank {
+                    if (onlyQuran) d.parts.firstNotNullOf { it.q }.let { (s, a1, a2) ->
+                        "سورة ${q.surahName(s)} · " + if (a1 == a2) "الآية ${num(a1)}" else "الآيات ${num(a1)}–${num(a2)}"
+                    } else ""
+                }
+                if (caption.isNotBlank()) {
+                    Text(
+                        caption, color = c.primary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(c.primarySoft).padding(horizontal = 12.dp, vertical = 5.dp),
                     )
                 }
-            }
-            if (d.note.isNotBlank()) {
-                Text(d.note, color = c.muted, fontSize = 14.sp, lineHeight = 24.sp, textAlign = TextAlign.Center)
-            }
-            if (d.fadl.isNotBlank()) {
-                Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.goldSoft).padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text("فضله", color = c.goldText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text(d.fadl, color = c.text, fontSize = 15.sp, lineHeight = 26.sp)
+                d.parts.forEach { p ->
+                    when {
+                        p.q != null -> QuranPassage(q, p.q[0], p.q[1], p.q[2], fontSize = quranSize, color = if (done) c.muted else c.ink)
+                        p.u != null -> Text(
+                            "﴿${p.u}﴾", color = if (done) c.muted else c.ink, fontSize = textSize * 1.05f, lineHeight = textSize * 2f,
+                            fontFamily = AppFonts.hafs, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                        )
+                        p.t != null -> Text(
+                            p.t, color = textColor, fontSize = textSize, lineHeight = textSize * 1.85f, fontFamily = AppFonts.naskh,
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
-            }
-            if (d.src.isNotBlank()) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("التخريج", color = c.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text(d.src.replace(" — ", "\n"), color = c.muted, fontSize = 13.sp, lineHeight = 22.sp)
+                if (d.note.isNotBlank()) {
+                    Text(d.note, color = c.muted, fontSize = 14.sp, lineHeight = 24.sp, textAlign = TextAlign.Center)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (d.fadl.isNotBlank() || d.src.isNotBlank()) {
+                        Text(
+                            if (d.fadl.isNotBlank()) "الفضل والتخريج" else "التخريج", color = c.goldText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.goldSoft)
+                                .springClick(label = "الفضل والتخريج", pressedScale = 0.95f, onClick = onInfo)
+                                .padding(horizontal = 12.dp, vertical = 7.dp),
+                        )
+                    }
+                    MiniIcon(Ic.copy, "نسخ", onCopy)
+                    MiniIcon(Ic.share, "مشاركة", onShare)
                 }
             }
         }
     }
 }
 
-/** A round counter: the number left (or counted, for an open counter) inside a ring that fills as you go. */
+@Composable
+private fun MiniIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    val c = LocalColors.current
+    Box(
+        Modifier.size(34.dp).clip(CircleShape).background(c.chip).springClick(label = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, tint = c.muted, modifier = Modifier.size(16.dp)) }
+}
+
+/** All the adhkar of the section in a list: tick for the ones said, tap one to go to it. */
+@Composable
+private fun AdhkarList(q: QuranData, sec: AdhkarSection, counts: List<Int>, current: Int, onClose: () -> Unit, onPick: (Int) -> Unit) {
+    val c = LocalColors.current
+    Box(
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).pointerInput(Unit) { detectTapGestures { onClose() } },
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().fillMaxHeight(0.78f)
+                .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(c.bg)
+                .pointerInput(Unit) { detectTapGestures { } }
+                .padding(top = 10.dp),
+        ) {
+            Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.border))
+            Text(
+                sec.title, color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold,
+                modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
+            )
+            val listState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = (current - 2).coerceAtLeast(0))
+            androidx.compose.foundation.lazy.LazyColumn(
+                state = listState,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(sec.items.size) { k ->
+                    val d = sec.items[k]
+                    val said = d.count > 0 && counts[k] >= d.count
+                    val title = d.label.ifBlank {
+                        d.parts.firstOrNull { it.t != null && !it.t.startsWith("بِسْمِ") }?.t?.let { if (it.length > 70) it.take(70) + "…" else it }
+                            ?: d.parts.firstNotNullOfOrNull { it.q }?.let { (s, a1, a2) ->
+                                "سورة ${q.surahName(s)} " + if (a1 == a2) num(a1) else "${num(a1)}–${num(a2)}"
+                            } ?: ""
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                            .background(if (k == current) c.primarySoft else c.card)
+                            .springClick(label = title, pressedScale = 0.98f) { onPick(k) }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(
+                            Modifier.size(30.dp).clip(CircleShape).background(if (said) c.primary else c.primarySoft),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (said) Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(16.dp))
+                            else Text(num(k + 1), color = c.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Text(
+                            title, color = if (said) c.muted else c.text, fontSize = 15.sp, fontFamily = AppFonts.naskh,
+                            maxLines = 2, modifier = Modifier.weight(1f),
+                        )
+                        if (d.count > 1) Text("× ${num(d.count)}", color = c.muted, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A round counter: counts up from 0 to the target inside a ring that fills as you go. */
 @Composable
 fun DhikrCounter(count: Int, target: Int, done: Boolean, onTap: () -> Unit, modifier: Modifier = Modifier) {
     val c = LocalColors.current
@@ -267,8 +465,8 @@ fun DhikrCounter(count: Int, target: Int, done: Boolean, onTap: () -> Unit, modi
             Icon(Ic.check, "تم", tint = c.onPrimary, modifier = Modifier.size(40.dp))
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(num(if (target > 0) target - count else count), color = c.text, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                if (target > 1) Text("من ${num(target)}", color = c.muted, fontSize = 11.sp)
+                Text(num(count), color = c.text, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                if (target > 0) Text("من ${num(target)}", color = c.muted, fontSize = 11.sp)
             }
         }
     }
