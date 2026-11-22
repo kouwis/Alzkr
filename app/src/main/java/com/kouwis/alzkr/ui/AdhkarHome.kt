@@ -208,16 +208,16 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val suggestions = buildList {
         when {
             current == Prayer.Isha || beforeFajr -> {
-                if (!sleepDone) add(Suggestion("أذكار النوم", "قبل النوم", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
-                if (!eveningDone) add(Suggestion("أذكار المساء", "إن لم تقرأها بعد", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+                if (!sleepDone) add(Suggestion("أذكار النوم", "تُقال عند الاضطجاع للنوم", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "وقتها من العصر إلى المغرب، إن لم تقرأها بعد", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
             }
             current == Prayer.Asr || current == Prayer.Maghrib ->
-                if (!eveningDone) add(Suggestion("أذكار المساء", "من العصر إلى المغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
-            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "وقتها إلى ما قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "تُقال من العصر (${clock(times.getValue(Prayer.Asr))}) إلى المغرب (${clock(times.getValue(Prayer.Maghrib))})", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "تُقال من الفجر (${clock(times.getValue(Prayer.Fajr))}) إلى ما قبل العصر (${clock(times.getValue(Prayer.Asr))})", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
         }
         if (fridayTime) {
-            add(Suggestion("الصلاة على النبي ﷺ", "يوم الجمعة · أكثِر منها", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
-            add(Suggestion("سورة الكهف", "يوم الجمعة · تُفتح في المصحف", AdhkarIc.book) {
+            add(Suggestion("الصلاة على النبي ﷺ", "يُكثَر منها ليلة الجمعة ويومها، من مغرب الخميس إلى مغرب الجمعة", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
+            add(Suggestion("سورة الكهف", "تُقرأ يوم الجمعة، من مغرب الخميس إلى مغرب الجمعة", AdhkarIc.book) {
                 nav.go(Screen.Mushaf(kahfPage, "18:1"))
             })
         }
