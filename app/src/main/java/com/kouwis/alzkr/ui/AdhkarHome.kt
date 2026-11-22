@@ -192,36 +192,36 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val suggestions = buildList {
         when {
             current == Prayer.Isha || beforeFajr -> {
-                add(Suggestion("أذكار النوم", "قبل ما تنام", AdhkarIc.bed) { soon("أذكار النوم") })
-                add(Suggestion("أذكار المساء", "لو لسه مقرأتهاش", AdhkarIc.moon) { soon("أذكار المساء") })
+                add(Suggestion("أذكار النوم", "قبل ما تنام", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
+                add(Suggestion("أذكار المساء", "لو لسه مقرأتهاش", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
             }
             current == Prayer.Asr || current == Prayer.Maghrib ->
-                add(Suggestion("أذكار المساء", "من العصر للمغرب", AdhkarIc.moon) { soon("أذكار المساء") })
-            else -> add(Suggestion("أذكار الصباح", "وقتها لحد قبل العصر", AdhkarIc.sun) { soon("أذكار الصباح") })
+                add(Suggestion("أذكار المساء", "من العصر للمغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+            else -> add(Suggestion("أذكار الصباح", "وقتها لحد قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
         }
         if (fridayTime) {
-            add(Suggestion("الصلاة على النبي ﷺ", "يوم الجمعة · بتفتح في العداد", AdhkarIc.star) { soon("العداد") })
+            add(Suggestion("الصلاة على النبي ﷺ", "يوم الجمعة · أكثِر منها", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
             add(Suggestion("سورة الكهف", "يوم الجمعة · بتفتح في المصحف", AdhkarIc.book) {
                 nav.go(Screen.Mushaf(kahfPage, "18:1"))
             })
         }
     }
 
-    data class Item(val name: String, val icon: ImageVector)
+    data class Item(val name: String, val icon: ImageVector, val id: String? = null)
     val groups = listOf(
         Triple("الأذكار", "اليوم والليلة", listOf(
-            Item("أذكار الصباح", AdhkarIc.sun), Item("أذكار المساء", AdhkarIc.moon),
-            Item("أذكار النوم", AdhkarIc.bed), Item("أذكار الاستيقاظ", AdhkarIc.alarm),
-            Item("بعد الصلاة", AdhkarIc.afterPrayer), Item("المسجد والأذان", AdhkarIc.mosque),
+            Item("أذكار الصباح", AdhkarIc.sun, "morning"), Item("أذكار المساء", AdhkarIc.moon, "evening"),
+            Item("أذكار النوم", AdhkarIc.bed, "sleep"), Item("أذكار الاستيقاظ", AdhkarIc.alarm, "waking"),
+            Item("بعد الصلاة", AdhkarIc.afterPrayer, "after_prayer"), Item("المسجد والأذان", AdhkarIc.mosque, "mosque"),
         )),
         Triple("الجمعة", "", listOf(
-            Item("الصلاة على النبي ﷺ", AdhkarIc.star), Item("سورة الكهف", AdhkarIc.book),
+            Item("الصلاة على النبي ﷺ", AdhkarIc.star, "salawat"), Item("سورة الكهف", AdhkarIc.book, "kahf"),
             Item("ساعة الإجابة", AdhkarIc.clock), Item("سنن الجمعة", AdhkarIc.list),
         )),
         Triple("الأدعية", "", listOf(
-            Item("أدعية من القرآن", AdhkarIc.book), Item("أدعية نبوية", AdhkarIc.hands),
-            Item("الهم والكرب", AdhkarIc.sorrow), Item("الرقية الشرعية", AdhkarIc.shield),
-            Item("الاستخارة", AdhkarIc.istikhara), Item("المريض", AdhkarIc.sick),
+            Item("أدعية من القرآن", AdhkarIc.book, "quran_duas"), Item("أدعية نبوية", AdhkarIc.hands, "prophetic"),
+            Item("الهم والكرب", AdhkarIc.sorrow, "worry"), Item("الرقية الشرعية", AdhkarIc.shield, "ruqya"),
+            Item("الاستخارة", AdhkarIc.istikhara, "istikhara"), Item("المريض", AdhkarIc.sick, "sick"),
         )),
     )
 
@@ -244,7 +244,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                             Text("حصن المسلم · مواقيت الصلاة", color = c.muted, fontSize = 13.sp)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            RoundIconButton(AdhkarIc.beads, "العداد", { soon("العداد") }, tint = c.primary)
+                            RoundIconButton(AdhkarIc.beads, "العداد", { nav.go(Screen.Tasbih) }, tint = c.primary)
                             RoundIconButton(AdhkarIc.qibla, "القبلة", { soon("القبلة") }, tint = c.primary)
                             RoundIconButton(Ic.search, "بحث", { soon("البحث في الأذكار") })
                             RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
@@ -308,7 +308,13 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                                     .clip(RoundedCornerShape(27.dp))
                                     .background(c.card)
                                     .border(1.dp, c.border, RoundedCornerShape(27.dp))
-                                    .springClick(role = Role.Button, label = it.name, pressedScale = 0.97f) { soon(it.name) }
+                                    .springClick(role = Role.Button, label = it.name, pressedScale = 0.97f) {
+                                        when (it.id) {
+                                            null -> soon(it.name)
+                                            "kahf" -> nav.go(Screen.Mushaf(kahfPage, "18:1"))
+                                            else -> nav.go(Screen.Adhkar(it.id))
+                                        }
+                                    }
                                     .padding(start = 6.dp, end = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),

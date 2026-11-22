@@ -22,12 +22,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .data-cache
-          key: quran-data-v3
+          key: quran-data-v4
 
       - name: Build bundled Quran data
         run: |
           pip install fonttools
           python3 scripts/build_data.py
+          python3 scripts/build_adhkar.py
 
       - uses: actions/setup-java@v4
         with:

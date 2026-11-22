@@ -116,6 +116,7 @@ object Ic {
     val bookmark = make("bookmark", "M6 3h12v18l-6-4.5L6 21z")
     val bookmarkFilled = make("bookmarkFilled", "M6 3h12v18l-6-4.5L6 21z", fill = true)
     val close = make("close", "M6 6l12 12M18 6L6 18")
+    val refresh = make("refresh", "M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5")
 }
 
 /** The Adhkar section: the same look as the Quran section, blue instead of green. */

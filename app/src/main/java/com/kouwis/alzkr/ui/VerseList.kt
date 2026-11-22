@@ -176,6 +176,45 @@ fun QuranVerse(
     }
 }
 
+/** Consecutive verses [a1]..[a2] of surah [s] as one paragraph in real mushaf script (each word from its page font). */
+@Composable
+fun QuranPassage(
+    q: QuranData,
+    s: Int,
+    a1: Int,
+    a2: Int,
+    fontSize: TextUnit = 26.sp,
+    color: Color = LocalColors.current.ink,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+) {
+    val chunks = remember(s, a1, a2) { (a1..a2).flatMap { q.glyphs["$s:$it"].orEmpty() } }
+    val pages = remember(chunks) { chunks.map { it.p }.toSet() }
+    val fontsLoaded by androidx.compose.runtime.produceState<Map<Int, android.graphics.Typeface>?>(
+        pages.mapNotNull { p -> PageFonts.cached(p)?.let { p to it } }.toMap().takeIf { it.size == pages.size },
+        s, a1, a2,
+    ) {
+        if (value == null) value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            pages.mapNotNull { p -> PageFonts.get(p)?.let { p to it } }.toMap()
+        }
+    }
+    val text = remember(chunks, fontsLoaded) {
+        val fonts = fontsLoaded ?: emptyMap()
+        if (chunks.isEmpty() || fonts.size != pages.size) null
+        else buildAnnotatedString {
+            chunks.forEachIndexed { i, ch ->
+                withStyle(SpanStyle(fontFamily = FontFamily(Typeface(fonts.getValue(ch.p))))) { append(ch.g) }
+                if (i < chunks.lastIndex) append(" ")
+            }
+        }
+    }
+    if (text == null) {
+        val plain = (a1..a2).joinToString(" ") { q.simple(s, it) }
+        Text(plain, color = Color.Transparent, fontSize = fontSize * 0.8f, lineHeight = fontSize * 1.6f, fontFamily = AppFonts.hafs, modifier = modifier)
+    } else {
+        Text(text, color = color, fontSize = fontSize, lineHeight = fontSize * 1.9f, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = modifier)
+    }
+}
+
 @Composable
 private fun Inline(label: String, accent: Color, body: String) {
     val c = LocalColors.current
