@@ -83,7 +83,7 @@ import kotlinx.coroutines.launch
 /** The adhkar of one section, one per page: tap the counter — or anywhere on the dhikr — to count. */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun AdhkarReaderScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, id: String) = AdhkarTheme {
+fun AdhkarReaderScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, id: String, start: Int = 0) = AdhkarTheme {
     val c = LocalColors.current
     val context = LocalContext.current
     val sections by produceState(Adhkar.peek()) { value = Adhkar.load(context) }
@@ -96,7 +96,7 @@ fun AdhkarReaderScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, id
         if (sec == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = c.primary) }
         } else {
-            Reader(q, store, nav, sec)
+            Reader(q, store, nav, sec, start)
         }
     }
 }
@@ -131,7 +131,7 @@ private fun Dhikr.weight(): Int = parts.sumOf { p ->
 }
 
 @Composable
-private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection) {
+private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, start: Int) {
     val c = LocalColors.current
     val view = LocalView.current
     val context = LocalContext.current
@@ -139,7 +139,7 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection) {
     val scope = rememberCoroutineScope()
     val n = sec.items.size
     val counts = remember(sec.id) { mutableStateListOf(*Array(n) { 0 }) }
-    val pager = rememberPagerState { n }
+    val pager = rememberPagerState(initialPage = start.coerceIn(0, n - 1)) { n }
     var finished by remember(sec.id) { mutableStateOf(false) }
     var showList by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<Dhikr?>(null) }
@@ -514,64 +514,3 @@ private fun Pill(label: String, filled: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** A free tasbih counter: pick a dhikr, tap anywhere to count. */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-fun TasbihScreen(nav: Nav) = AdhkarTheme {
-    val c = LocalColors.current
-    val view = LocalView.current
-    val options = listOf("سُبْحَانَ اللَّهِ", "الْحَمْدُ لِلَّهِ", "اللَّهُ أَكْبَرُ", "لَا إِلَٰهَ إِلَّا اللَّهُ", "أَسْتَغْفِرُ اللَّهَ", "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ")
-    var pick by remember { mutableIntStateOf(0) }
-    val counts = remember { mutableStateListOf(*Array(options.size) { 0 }) }
-    fun tap() { counts[pick] = counts[pick] + 1; view.haptic(if (counts[pick] % 33 == 0) Haptic.Confirm else Haptic.Tick) }
-    Column(
-        Modifier.fillMaxSize().background(c.bg)
-            .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
-            .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-            .pointerInput(Unit) { detectTapGestures { tap() } },
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
-            Column(Modifier.weight(1f)) {
-                Text("العداد", color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold)
-                Text("اضغط في أي مكان على الشاشة", color = c.muted, fontSize = 13.sp)
-            }
-            RoundIconButton(Ic.refresh, "تصفير", { counts[pick] = 0 }, haptic = Haptic.Delete)
-        }
-        androidx.compose.foundation.layout.FlowRow(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            options.forEachIndexed { k, o ->
-                val on = k == pick
-                Text(
-                    o, color = if (on) c.onPrimary else c.text, fontSize = 15.sp, fontFamily = AppFonts.naskh,
-                    modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (on) c.primary else c.card)
-                        .border(1.dp, if (on) c.primary else c.border, RoundedCornerShape(18.dp))
-                        .springClick(role = Role.Tab, haptic = Haptic.Tick, pressedScale = 0.95f) { pick = k }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                )
-            }
-        }
-        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(options[pick], color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
-                Text(num(counts[pick]), color = c.primary, fontSize = 72.sp, fontWeight = FontWeight.Bold)
-                val round = counts[pick] % 33
-                Text(
-                    if (counts[pick] >= 33) "${num(counts[pick] / 33)} × ٣٣ و${num(round)}" else "من ٣٣",
-                    color = c.muted, fontSize = 13.sp,
-                )
-            }
-        }
-        DhikrCounter(
-            count = counts[pick] % 33, target = 33, done = false, onTap = { tap() },
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 28.dp),
-        )
-    }
-}

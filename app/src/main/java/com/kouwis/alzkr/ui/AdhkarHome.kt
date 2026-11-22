@@ -104,6 +104,9 @@ private fun longDay(name: String): String = when (name) {
     else -> name
 }
 
+/** When the place was last quietly checked, for this run of the app. */
+private object LocationCheck { var last = 0L }
+
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionSwipe: (Int) -> Unit) = AdhkarTheme {
@@ -136,7 +139,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     var locating by remember { mutableStateOf(false) }
     fun toast(t: String) = android.widget.Toast.makeText(context, t, android.widget.Toast.LENGTH_LONG).show()
     fun locateNow(quiet: Boolean = false) {
-        locating = true
+        // the quiet check runs behind the scenes: the card keeps showing the place it has
+        if (!quiet) locating = true
         scope.launch {
             when (val r = Locator.locate(context)) {
                 is Locator.Result.Found -> {
@@ -151,12 +155,16 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                 Locator.Result.Off -> if (!quiet) toast("الموقع مقفول في الموبايل — افتحه وجرّب تاني")
                 Locator.Result.NotFound -> if (!quiet) toast("معرفناش نحدد مكانك دلوقتي — جرّب تاني بعد شوية")
             }
-            locating = false
+            if (!quiet) locating = false
         }
     }
     fun granted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     // each time the Adhkar home opens, quietly check we're still where the times were worked out
-    LaunchedEffect(hasPlace) { if (hasPlace && granted()) locateNow(quiet = true) }
+    // (at most every 30 minutes, not on every return to this screen)
+    LaunchedEffect(hasPlace) {
+        val t = System.currentTimeMillis()
+        if (hasPlace && granted() && t - LocationCheck.last > 30 * 60_000L) { LocationCheck.last = t; locateNow(quiet = true) }
+    }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) locateNow()
     }
@@ -253,8 +261,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             RoundIconButton(AdhkarIc.beads, "العداد", { nav.go(Screen.Tasbih) }, tint = c.primary)
-                            RoundIconButton(AdhkarIc.qibla, "القبلة", { soon("القبلة") }, tint = c.primary)
-                            RoundIconButton(Ic.search, "بحث", { soon("البحث في الأذكار") })
+                            RoundIconButton(AdhkarIc.qibla, "القبلة", { nav.go(Screen.Qibla) }, tint = c.primary)
+                            RoundIconButton(Ic.search, "بحث", { nav.go(Screen.AdhkarSearch) })
                             RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
                         }
                     }

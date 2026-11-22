@@ -119,7 +119,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                     textStyle = TextStyle(color = c.text, fontSize = 16.sp),
                     cursorBrush = SolidColor(c.primary),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { pageHit?.let { nav.go(Screen.Mushaf(it)) } }),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { pageHit?.let { nav.openFromSearch(Screen.Mushaf(it)) } }),
                     modifier = Modifier.weight(1f).focusRequester(focus),
                     decorationBox = { inner ->
                         if (query.isEmpty()) Text("سورة، كلمة، أو رقم صفحة", color = c.muted, fontSize = 16.sp)
@@ -138,7 +138,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                 item(key = "page") {
                     CardBox(Modifier.fillMaxWidth()) {
                         Row(
-                            Modifier.clickable { nav.go(Screen.Mushaf(pageHit)) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                            Modifier.clickable { nav.openFromSearch(Screen.Mushaf(pageHit)) }.padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
@@ -160,7 +160,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                 items(surahHits, key = { "s${it.n}" }) { s ->
                     CardBox(Modifier.fillMaxWidth()) {
                         Row(
-                            Modifier.clickable { nav.go(Screen.Mushaf(s.page)) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                            Modifier.clickable { nav.openFromSearch(Screen.Mushaf(s.page)) }.padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
@@ -182,7 +182,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                 items(verseHits, key = { "v${it.first}:${it.second}" }) { (s, a) ->
                     CardBox(Modifier.fillMaxWidth()) {
                         Column(
-                            Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(s, a), "$s:$a", highlight = true)) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                            Modifier.clickable { nav.openFromSearch(Screen.Mushaf(q.pageOf(s, a), "$s:$a", highlight = true)) }.padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Row {

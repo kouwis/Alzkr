@@ -35,10 +35,12 @@ sealed interface Screen {
     /** Opens the mushaf at [page]; [verse] ("s:a") is highlighted / scrolled to when given. */
     data class Mushaf(val page: Int, val verse: String? = null, val highlight: Boolean = false) : Screen
     /** The adhkar of one section (see assets/data/adhkar.json). */
-    data class Adhkar(val id: String) : Screen
+    data class Adhkar(val id: String, val start: Int = 0) : Screen
     data object Tasbih : Screen
     /** «التصحيح»: verses marked to review */
     data object Mistakes : Screen
+    data object Qibla : Screen
+    data object AdhkarSearch : Screen
 }
 
 class Nav {
@@ -46,6 +48,13 @@ class Nav {
     val current: Screen get() = stack.last()
     fun go(s: Screen) { stack.add(s) }
     fun back(): Boolean = if (stack.size > 1) { stack.removeAt(stack.lastIndex); true } else false
+    /** From the search: opened over the mushaf, the result replaces that mushaf (back goes where it went before). */
+    fun openFromSearch(m: Screen) {
+        if (stack.size >= 3 && stack.last() == Screen.Search && stack[stack.lastIndex - 1] is Screen.Mushaf) {
+            stack.removeAt(stack.lastIndex); stack.removeAt(stack.lastIndex)
+        }
+        stack.add(m)
+    }
 
 }
 
@@ -105,9 +114,11 @@ fun AlzkrApp() {
                     Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
                     Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)
                     is Screen.Mushaf -> MushafScreen(q, state, prefs, nav, screen.page, screen.verse, screen.highlight)
-                    Screen.Tasbih -> TasbihScreen(nav)
+                    Screen.Tasbih -> TasbihScreen(state, prefs, nav)
                     Screen.Mistakes -> MistakesScreen(q, state, prefs, nav)
-                    is Screen.Adhkar -> AdhkarReaderScreen(q, state, prefs, nav, screen.id)
+                    is Screen.Adhkar -> AdhkarReaderScreen(q, state, prefs, nav, screen.id, screen.start)
+                    Screen.Qibla -> QiblaScreen(state, nav)
+                    Screen.AdhkarSearch -> AdhkarSearchScreen(q, nav)
                 }
             }
         }

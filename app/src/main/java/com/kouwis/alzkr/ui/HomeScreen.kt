@@ -150,9 +150,9 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             RoundIconButton(Ic.search, "بحث", { nav.go(Screen.Search) })
                             RoundIconButton(Ic.bookmarkFilled, "العلامات", { nav.go(Screen.Bookmarks) }, tint = c.gold)
-                            RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
-                            // settings will come back here once they exist; till then the review list has the spot
-                            RoundIconButton(Ic.pen, "التصحيح", { nav.go(Screen.Mistakes) }, tint = c.heart)
+                            // favourites open from the bookmarks screen
+                            RoundIconButton(Ic.pen, "مراجعة الحفظ", { nav.go(Screen.Mistakes) }, tint = c.heart)
+                            RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
                         }
                     }
                     ContinueCard(q, prefs, nav,

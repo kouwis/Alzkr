@@ -71,6 +71,9 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                 Text("العلامات", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
                 Text(if (marks.isEmpty()) "لا توجد علامات" else "${num(marks.size)} علامة", color = c.muted, fontSize = 13.sp)
             }
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            // favourites live here now (the Quran home has no room for both)
+            RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
         }
         if (marks.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {

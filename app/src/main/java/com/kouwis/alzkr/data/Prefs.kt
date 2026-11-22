@@ -42,6 +42,8 @@ data class AppPrefs(
     val mistakes: List<Pair<String, Set<Int>>> = emptyList(),
     /** when each adhkar section was last finished (epoch millis) */
     val adhkarDone: Map<String, Long> = emptyMap(),
+    /** the tasbih counter's adhkar and how many times each round is; null = the default list */
+    val tasbih: List<Pair<String, Int>>? = null,
 )
 
 class Prefs(private val context: Context) {
@@ -64,6 +66,7 @@ class Prefs(private val context: Context) {
         val place = stringPreferencesKey("place")
         val mistakes = stringPreferencesKey("mistakes") // "s:a|0.3;s:a|"
         val adhkarDone = stringPreferencesKey("adhkar_done") // "morning=1732300000000;sleep=…"
+        val tasbih = stringPreferencesKey("tasbih") // "text\u001F33\u001Etext\u001F100"
     }
 
     private fun parseMistakes(raw: String?): List<Pair<String, Set<Int>>> = raw.orEmpty().split(';').mapNotNull { e ->
@@ -104,7 +107,16 @@ class Prefs(private val context: Context) {
                 val (k, v) = e.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
                 v.toLongOrNull()?.let { k to it }
             }.toMap(),
+            tasbih = p[K.tasbih]?.split('\u001E')?.mapNotNull { e ->
+                val f = e.split('\u001F')
+                val t = f[0].trim()
+                if (t.isEmpty()) null else t to (f.getOrNull(1)?.toIntOrNull() ?: 33)
+            },
         )
+    }
+
+    suspend fun setTasbih(list: List<Pair<String, Int>>) = context.store.edit { p ->
+        p[K.tasbih] = list.joinToString("\u001E") { (t, n) -> t.replace('\u001E', ' ').replace('\u001F', ' ') + "\u001F" + n }
     }
 
     /** Marks a verse (words = which words; empty = the whole verse) to review; empty set + [remove] takes it off. */

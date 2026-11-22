@@ -107,8 +107,8 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
         containerColor = c.card,
         title = {
             Column {
-                Text("التصحيح · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text)
-                Text("دوس على الكلمة اللي غلطت فيها، أو سيبها كلها للآية كلها", fontSize = 13.sp, color = c.muted)
+                Text("للمراجعة · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text)
+                Text("دوس على الكلمة اللي محتاج تراجعها، أو متحددش حاجة للآية كلها", fontSize = 13.sp, color = c.muted)
             }
         },
         text = {
@@ -143,14 +143,14 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
         },
         dismissButton = {
             Row {
-                if (current != null) TextButton(onClick = { onSave(null) }) { Text("شيلها من التصحيح", color = c.heart) }
+                if (current != null) TextButton(onClick = { onSave(null) }) { Text("شيلها من المراجعة", color = c.heart) }
                 TextButton(onClick = onDismiss) { Text("إلغاء", color = c.muted) }
             }
         },
     )
 }
 
-/** «التصحيح»: verses (and words) marked to review, newest first. */
+/** «مراجعة الحفظ»: verses (and words) marked to review, newest first. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MistakesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
@@ -170,14 +170,14 @@ fun MistakesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             RoundIconButton(Ic.back, "رجوع", { nav.back() })
             Column {
-                Text("التصحيح", color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text("مراجعة الحفظ", color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
                 Text(if (list.isEmpty()) "مفيش حاجة للمراجعة" else "${num(list.size)} آيات للمراجعة", color = c.muted, fontSize = 13.sp)
             }
         }
         if (list.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "اضغط ضغطة طويلة على أي آية في المصحف واختار «تصحيح»،\nوحدد الكلمة اللي غلطت فيها.",
+                    "اضغط ضغطة طويلة على أي آية في المصحف واختار «مراجعة»،\nوحدد الكلمة اللي محتاج تراجعها.",
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }

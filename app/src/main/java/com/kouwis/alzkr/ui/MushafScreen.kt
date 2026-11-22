@@ -133,7 +133,7 @@ fun MushafScreen(
 
     // opening at a verse only positions the reader there; selecting is a long-press
     var selected by remember { mutableStateOf<String?>(null) }
-    // «التصحيح»: the verse whose wrong words are being picked
+    // «المراجعة»: the verse whose words to review are being picked
     var picking by remember { mutableStateOf<String?>(null) }
     val mistakesMap = remember(prefs.mistakes) { prefs.mistakes.toMap() }
     var showLegend by remember { mutableStateOf(false) }
@@ -272,6 +272,7 @@ fun MushafScreen(
                 onToggleMode = { scope.launch { store.setVerseMode(!verseMode) }; showBars() },
                 onTajweed = { showLegend = true },
                 tajweedOn = prefs.tajweedOn && !verseMode,
+                onSearch = { nav.go(Screen.Search) },
             )
         }
 
@@ -312,7 +313,7 @@ fun MushafScreen(
         val (s, a) = parseKey(key) ?: return@let
         MistakePicker(q, s, a, mistakesMap[key], onDismiss = { picking = null }, onSave = { words ->
             scope.launch { store.setMistake(key, words) }
-            Toast.makeText(ctx, if (words == null) "اتشالت من التصحيح" else "اتضافت للتصحيح", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, if (words == null) "اتشالت من المراجعة" else "اتضافت للمراجعة", Toast.LENGTH_SHORT).show()
             picking = null
             selected = null
         })
@@ -415,6 +416,7 @@ private fun TopBar(
     onToggleMode: () -> Unit,
     onTajweed: () -> Unit,
     tajweedOn: Boolean = false,
+    onSearch: () -> Unit = {},
 ) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().shadow(6.dp).background(c.card)) {
@@ -437,6 +439,7 @@ private fun TopBar(
                     color = c.muted, fontSize = 11.sp, maxLines = 1,
                 )
             }
+            RoundIconButton(Ic.search, "بحث", onSearch, size = 40.dp)
             RoundIconButton(
                 if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
                 if (pageBookmarked) "شيل علامة الصفحة" else "علامة على الصفحة",
@@ -473,7 +476,7 @@ private fun AyahActions(
     ) {
         ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
         ActionItem(if (isFavorite) Ic.heart else Ic.heartOutline, if (isFavorite) "محفوظة" else "مفضلة", Color(0xFFF3A6AF), onFavorite, Haptic.Confirm)
-        ActionItem(Ic.pen, "تصحيح", if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
+        ActionItem(Ic.pen, "مراجعة", if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
         ActionItem(Ic.book, "تفسير", Color.White, onTafsir)
         ActionItem(Ic.translate, "ترجمة", Color.White, onTranslation)
         ActionItem(Ic.copy, "نسخ", Color.White, onCopy)
