@@ -65,7 +65,7 @@ fun TajweedLegendDialog(onDismiss: () -> Unit) {
                         }
                     }
                     Text(
-                        "الألوان من مصحف التجويد بتاع مجمع الملك فهد، وموجودة جوه خط الصفحة نفسه.",
+                        "الألوان من مصحف التجويد الصادر عن مجمع الملك فهد، وهي مضمّنة في خط الصفحة نفسه.",
                         color = c.muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp),
                     )
                 }

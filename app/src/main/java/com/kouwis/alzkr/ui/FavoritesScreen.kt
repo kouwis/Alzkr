@@ -57,7 +57,7 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         if (favs.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "اضغط على أي آية في المصحف واختر «مفضلة»\nوهتلاقيها هنا.",
+                    "لا توجد آيات في المفضلة.",
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }

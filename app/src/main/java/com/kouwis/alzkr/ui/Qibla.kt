@@ -6,30 +6,39 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.view.Surface
+import android.view.WindowManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,17 +46,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,152 +90,222 @@ fun qiblaBearing(lat: Double, lng: Double): Double {
 /** Signed smallest difference a - b in degrees, in -180..180. */
 private fun diff(a: Float, b: Float): Float = ((a - b + 540f) % 360f) - 180f
 
-/** The phone's heading from true north, smoothed, with the compass accuracy. */
+private class Compass(val heading: State<Float?>, val accuracy: State<Int>, val available: Boolean)
+
+/**
+ * The direction the top of the phone points to, from true north. Works lying flat or held upright, in any
+ * screen rotation. The value lives in a State read only while drawing, so turning the phone never recomposes.
+ */
 @Composable
-private fun rememberHeading(lat: Double, lng: Double): Pair<Float?, Int> {
+private fun rememberCompass(lat: Double, lng: Double): Compass {
     val context = LocalContext.current
-    var heading by remember { mutableStateOf<Float?>(null) }
-    var accuracy by remember { mutableIntStateOf(SensorManager.SENSOR_STATUS_ACCURACY_HIGH) }
-    DisposableEffect(lat, lng) {
-        val sm = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val sensor = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) ?: sm.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR)
-        // magnetic north -> true north
+    val heading = remember { mutableStateOf<Float?>(null) }
+    val accuracy = remember { mutableIntStateOf(SensorManager.SENSOR_STATUS_ACCURACY_HIGH) }
+    val sm = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
+    val sensor = remember { sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) ?: sm.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR) }
+    DisposableEffect(lat, lng, sensor) {
         val declination = GeomagneticField(lat.toFloat(), lng.toFloat(), 0f, System.currentTimeMillis()).declination
+        @Suppress("DEPRECATION")
+        val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
         val rot = FloatArray(9)
+        val screen = FloatArray(9)
+        val upright = FloatArray(9)
         val orient = FloatArray(3)
         val listener = object : SensorEventListener {
             override fun onSensorChanged(e: SensorEvent) {
                 SensorManager.getRotationMatrixFromVector(rot, e.values)
-                SensorManager.getOrientation(rot, orient)
-                val h = ((Math.toDegrees(orient[0].toDouble()).toFloat() + declination) + 360f) % 360f
-                val old = heading
-                // a little smoothing so the needle doesn't shiver (and turns the short way round)
-                heading = if (old == null) h else (old + diff(h, old) * 0.15f + 360f) % 360f
+                // the screen's own axes, whatever way the display is turned
+                val (ax, ay) = when (display.rotation) {
+                    Surface.ROTATION_90 -> SensorManager.AXIS_Y to SensorManager.AXIS_MINUS_X
+                    Surface.ROTATION_180 -> SensorManager.AXIS_MINUS_X to SensorManager.AXIS_MINUS_Y
+                    Surface.ROTATION_270 -> SensorManager.AXIS_MINUS_Y to SensorManager.AXIS_X
+                    else -> SensorManager.AXIS_X to SensorManager.AXIS_Y
+                }
+                SensorManager.remapCoordinateSystem(rot, ax, ay, screen)
+                // held upright (tilted more than ~60°) the heading is where the back of the phone faces
+                val m = if (abs(screen[8]) < 0.5f) {
+                    SensorManager.remapCoordinateSystem(screen, SensorManager.AXIS_X, SensorManager.AXIS_Z, upright); upright
+                } else screen
+                SensorManager.getOrientation(m, orient)
+                val h = ((Math.toDegrees(orient[0].toDouble()).toFloat() + declination) % 360f + 360f) % 360f
+                val old = heading.value
+                heading.value = if (old == null) h else ((old + diff(h, old) * 0.22f) % 360f + 360f) % 360f
             }
 
-            override fun onAccuracyChanged(s: Sensor?, a: Int) { accuracy = a }
+            override fun onAccuracyChanged(s: Sensor?, a: Int) { accuracy.intValue = a }
         }
-        if (sensor != null) sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+        if (sensor != null) sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
         onDispose { sm.unregisterListener(listener) }
     }
-    return heading to accuracy
+    return remember(sensor) { Compass(heading, accuracy, sensor != null) }
 }
+
+private val BgTop = Color(0xFF3D4858)
+private val BgBottom = Color(0xFF222C39)
+private val Rim = Color(0xFF2E3846)
+private val Face = Color(0xFF5E6874)
+private val Hub = Color(0xFFA9AFB7)
+private val Ink = Color(0xFF5A6470)
+private val Soft = Color(0xFFB8BEC6)
+private val Gold = Color(0xFFD9B45A)
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
-    val c = LocalColors.current
+fun QiblaScreen(prefs: AppPrefs, nav: Nav) {
     val view = LocalView.current
     val hasPlace = prefs.lat != null && prefs.lng != null
     val lat = prefs.lat ?: 30.0444
     val lng = prefs.lng ?: 31.2357
+    val place = if (hasPlace) prefs.place.ifBlank { "موقعك الحالي" } else "القاهرة"
     val bearing = remember(lat, lng) { qiblaBearing(lat, lng).toFloat() }
     val km = remember(lat, lng) { Locator.km(lat, lng, KAABA_LAT, KAABA_LNG).roundToInt() }
-    val (heading, accuracy) = rememberHeading(lat, lng)
-    val off = heading?.let { diff(bearing, it) } // how far to turn: + = to the right
-    val facing = off != null && abs(off) <= 3f
+    val compass = rememberCompass(lat, lng)
+    // recomposes only when you come onto (or leave) the qibla, not on every reading
+    val facing by remember(bearing) { derivedStateOf { compass.heading.value?.let { abs(diff(bearing, it)) <= 3f } == true } }
     LaunchedEffect(facing) { if (facing) view.haptic(Haptic.Confirm) }
-    val ring by animateColorAsState(if (facing) c.primary else c.border, tween(250), label = "ring")
+    val hubColor by animateColorAsState(if (facing) Gold else Hub, tween(250), label = "hub")
+    var info by remember { mutableStateOf(false) }
+    val measurer = rememberTextMeasurer()
+    val labelStyle = TextStyle(color = Color.White, fontSize = 17.sp, fontFamily = AppFonts.naskhBold)
 
     Column(
-        Modifier.fillMaxSize().background(c.bg)
+        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BgTop, BgBottom)))
             .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
-            Column(Modifier.weight(1f)) {
-                Text("القبلة", color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold)
-                Text(
-                    (if (hasPlace) prefs.place.ifBlank { "موقعك" } else "القاهرة") + " · ${num(km)} كم من مكة",
-                    color = c.muted, fontSize = 13.sp, maxLines = 1,
-                )
-            }
+        Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.align(Alignment.CenterStart).size(44.dp).clip(CircleShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
+                    .springClick(label = "رجوع") { nav.back() },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Ic.back, "رجوع", tint = Color.White, modifier = Modifier.size(20.dp)) }
+            Text("القبلة", color = Color.White, fontSize = 22.sp, fontFamily = AppFonts.naskhBold)
         }
-        Column(
-            Modifier.weight(1f).fillMaxWidth().padding(horizontal = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-        ) {
-            Text(
-                when {
-                    heading == null -> "الموبايل ده مفيهوش بوصلة"
-                    facing -> "أنت متجه للقبلة"
-                    off!! > 0 -> "لِف يمين ${num(abs(off).roundToInt())}°"
-                    else -> "لِف شمال ${num(abs(off).roundToInt())}°"
-                },
-                color = if (facing) c.primary else c.text, fontSize = 22.sp, fontWeight = FontWeight.Bold,
-            )
-            Box(Modifier.fillMaxWidth().widthIn(max = 360.dp).aspectRatio(1f), contentAlignment = Alignment.Center) {
-                val dial = c.card
-                val tick = c.muted
-                val north = c.heart
-                val gold = c.gold
-                val kaaba = Color(0xFF1B1B1B)
-                val pointer = if (facing) c.primary else c.text
-                Canvas(Modifier.fillMaxSize()) {
-                    val r = size.minDimension / 2f
-                    val center = Offset(size.width / 2f, size.height / 2f)
-                    drawCircle(dial, r * 0.96f, center)
-                    drawCircle(ring, r * 0.96f, center, style = Stroke(6.dp.toPx()))
-                    // the dial turns so its north points to the real north
-                    rotate(-(heading ?: 0f), center) {
-                        for (d in 0 until 360 step 10) {
-                            val long = d % 90 == 0
-                            val a = Math.toRadians(d.toDouble())
-                            val r1 = r * (if (long) 0.80f else 0.86f)
-                            val r2 = r * 0.92f
-                            drawLine(
-                                if (d == 0) north else tick,
-                                Offset(center.x + r1 * sin(a).toFloat(), center.y - r1 * cos(a).toFloat()),
-                                Offset(center.x + r2 * sin(a).toFloat(), center.y - r2 * cos(a).toFloat()),
-                                strokeWidth = (if (long) 3.dp else 1.5.dp).toPx(), cap = StrokeCap.Round,
-                            )
-                        }
-                        // the Kaaba on the rim, at the qibla direction
-                        val a = Math.toRadians(bearing.toDouble())
-                        val kr = r * 0.66f
-                        val kc = Offset(center.x + kr * sin(a).toFloat(), center.y - kr * cos(a).toFloat())
-                        val s = r * 0.17f
-                        rotate(bearing, kc) {
-                            drawRoundRect(kaaba, Offset(kc.x - s / 2, kc.y - s / 2), Size(s, s), CornerRadius(s * 0.08f))
-                            drawRect(gold, Offset(kc.x - s / 2, kc.y - s * 0.22f), Size(s, s * 0.12f))
-                        }
-                        // a line from the centre to the Kaaba
+        Spacer(Modifier.height(18.dp))
+        Text("اتجاه القبلة في", color = Soft, fontSize = 17.sp)
+        Text(
+            place, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+            modifier = Modifier.padding(top = 8.dp).widthIn(max = 300.dp).clip(RoundedCornerShape(24.dp))
+                .background(Color.White.copy(alpha = 0.08f)).padding(horizontal = 32.dp, vertical = 9.dp),
+        )
+
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (!compass.available) {
+                Text("هذا الهاتف لا يحتوي على بوصلة", color = Color.White, fontSize = 17.sp)
+            } else {
+                Canvas(Modifier.fillMaxWidth(0.86f).widthIn(max = 380.dp).aspectRatio(1f)) {
+                    val h = compass.heading.value ?: 0f // read here only: a reading redraws, nothing more
+                    val c = Offset(size.width / 2f, size.height / 2f)
+                    val labelRoom = 26.dp.toPx()
+                    val r = size.minDimension / 2f - labelRoom
+                    drawCircle(Rim, r, c)
+                    // ticks every 10°, the four directions longer and white; the dial turns with the phone
+                    for (d in 0 until 360 step 10) {
+                        val main = d % 90 == 0
+                        val a = Math.toRadians((d - h).toDouble())
+                        val r1 = r * (if (main) 0.86f else 0.89f)
+                        val r2 = r * 0.95f
                         drawLine(
-                            gold.copy(alpha = 0.55f), center,
-                            Offset(center.x + r * 0.52f * sin(a).toFloat(), center.y - r * 0.52f * cos(a).toFloat()),
-                            strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round,
+                            if (main) Color.White else Color.White.copy(alpha = 0.45f),
+                            Offset(c.x + r1 * sin(a).toFloat(), c.y - r1 * cos(a).toFloat()),
+                            Offset(c.x + r2 * sin(a).toFloat(), c.y - r2 * cos(a).toFloat()),
+                            strokeWidth = (if (main) 2.5.dp else 1.5.dp).toPx(), cap = StrokeCap.Round,
                         )
                     }
-                    // the phone's own direction: a fixed arrow pointing up
-                    val p = Path().apply {
-                        moveTo(center.x, center.y - r * 0.98f)
-                        lineTo(center.x - r * 0.07f, center.y - r * 0.82f)
-                        lineTo(center.x + r * 0.07f, center.y - r * 0.82f)
-                        close()
+                    // the four directions just outside the dial, always upright
+                    listOf(0 to "شمال", 90 to "شرق", 180 to "جنوب", 270 to "غرب").forEach { (d, name) ->
+                        val a = Math.toRadians((d - h).toDouble())
+                        val rr = r + labelRoom * 0.62f
+                        val layout = measurer.measure(name, labelStyle)
+                        drawText(
+                            layout,
+                            topLeft = Offset(
+                                c.x + rr * sin(a).toFloat() - layout.size.width / 2f,
+                                c.y - rr * cos(a).toFloat() - layout.size.height / 2f,
+                            ),
+                        )
                     }
-                    drawPath(p, pointer)
-                    drawCircle(pointer, r * 0.035f, center)
+                    drawCircle(Face, r * 0.84f, c)
+                    // the Kaaba on the face, toward the qibla
+                    val q = bearing - h
+                    val qa = Math.toRadians(q.toDouble())
+                    val kr = r * 0.64f
+                    kaaba(Offset(c.x + kr * sin(qa).toFloat(), c.y - kr * cos(qa).toFloat()), r * 0.11f, q, Soft)
+                    // the hub with the arrow to the qibla
+                    drawCircle(hubColor, r * 0.44f, c)
+                    rotate(q, c) { arrow(c, r * 0.30f, Ink) }
                 }
             }
-            Text(
-                "اتجاه القبلة ${num(bearing.roundToInt())}° من الشمال" + if (!hasPlace) "\nحدد مكانك من كارت اليوم في الأذكار علشان الاتجاه يبقى أدق" else "",
-                color = c.muted, fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 22.sp,
-            )
-            if (heading != null && accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
-                Text(
-                    "البوصلة محتاجة معايرة: حرّك الموبايل في الهوا على شكل رقم ٨ كذا مرة، وابعد عن الحديد والمغناطيس",
-                    color = c.goldText, fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 22.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.goldSoft).padding(horizontal = 14.dp, vertical = 10.dp),
-                )
-            } else {
-                Text("حط الموبايل مسطّح وبعيد عن أي حديد", color = c.muted, fontSize = 12.sp)
-            }
         }
+
+        Text(
+            if (facing) "أنت في اتجاه القبلة" else "السهم يشير إلى اتجاه القبلة",
+            color = if (facing) Gold else Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold,
+        )
+        Text(
+            if (compass.accuracy.value <= SensorManager.SENSOR_STATUS_ACCURACY_LOW)
+                "البوصلة تحتاج إلى معايرة: حرّك الهاتف في الهواء على شكل الرقم ٨ عدة مرات، بعيدًا عن المعادن والمغناطيس."
+            else "هذا الاتجاه تقريبي ويعتمد على بوصلة الهاتف وموقعك، وقد يتأثر بالمعادن والمغناطيس وضعف المعايرة. تأكد من الاتجاه بوسيلة أخرى قبل الاعتماد عليه.",
+            color = Soft, fontSize = 14.sp, lineHeight = 24.sp, textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 14.dp),
+        )
+        Box(
+            Modifier.padding(bottom = 18.dp).size(56.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.08f))
+                .springClick(label = "معلومات") { info = true },
+            contentAlignment = Alignment.Center,
+        ) { Icon(Ic.info, "معلومات", tint = Color.White, modifier = Modifier.size(24.dp)) }
+    }
+
+    if (info) {
+        AlertDialog(
+            onDismissRequest = { info = false },
+            confirmButton = { TextButton(onClick = { info = false }) { Text("حسنًا") } },
+            title = { Text("عن اتجاه القبلة", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "الموقع: $place\n" +
+                        "اتجاه القبلة: ${num(bearing.roundToInt())}° من الشمال الحقيقي\n" +
+                        "المسافة إلى مكة المكرمة: ${num(km)} كم\n\n" +
+                        (if (!hasPlace) "لم يُحدَّد موقعك بعد، فالاتجاه محسوب للقاهرة. حدّد موقعك من بطاقة اليوم في قسم الأذكار.\n\n" else "") +
+                        "للحصول على أدق نتيجة: ضع الهاتف مستويًا على يدك، وابتعد عن الأجهزة والمعادن. وإذا بدا الاتجاه غير مستقر، فحرّك الهاتف على شكل الرقم ٨ لمعايرة البوصلة.",
+                    lineHeight = 24.sp,
+                )
+            },
+        )
+    }
+}
+
+/** A plain arrow pointing up from the centre. */
+private fun DrawScope.arrow(c: Offset, len: Float, color: Color) {
+    val w = len * 0.30f
+    val stroke = Stroke(width = len * 0.17f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    drawLine(color, Offset(c.x, c.y + len * 0.75f), Offset(c.x, c.y - len * 0.85f), strokeWidth = stroke.width, cap = StrokeCap.Round)
+    val head = Path().apply {
+        moveTo(c.x - w * 1.6f, c.y - len * 0.85f + w * 1.6f)
+        lineTo(c.x, c.y - len * 0.85f)
+        lineTo(c.x + w * 1.6f, c.y - len * 0.85f + w * 1.6f)
+    }
+    drawPath(head, color, style = stroke)
+}
+
+/** A small Kaaba seen from a corner: two faces and the band of the kiswa. */
+private fun DrawScope.kaaba(at: Offset, s: Float, turn: Float, color: Color) {
+    rotate(turn, at) {
+        val top = Path().apply {
+            moveTo(at.x, at.y - s * 0.9f); lineTo(at.x + s, at.y - s * 0.45f); lineTo(at.x, at.y); lineTo(at.x - s, at.y - s * 0.45f); close()
+        }
+        val left = Path().apply {
+            moveTo(at.x - s, at.y - s * 0.45f); lineTo(at.x, at.y); lineTo(at.x, at.y + s); lineTo(at.x - s, at.y + s * 0.5f); close()
+        }
+        val right = Path().apply {
+            moveTo(at.x + s, at.y - s * 0.45f); lineTo(at.x, at.y); lineTo(at.x, at.y + s); lineTo(at.x + s, at.y + s * 0.5f); close()
+        }
+        drawPath(top, color.copy(alpha = 0.55f))
+        drawPath(left, color)
+        drawPath(right, color.copy(alpha = 0.8f))
+        drawLine(Face, Offset(at.x - s, at.y - s * 0.1f), Offset(at.x, at.y + s * 0.35f), strokeWidth = s * 0.16f)
+        drawLine(Face, Offset(at.x, at.y + s * 0.35f), Offset(at.x + s, at.y - s * 0.1f), strokeWidth = s * 0.16f)
     }
 }

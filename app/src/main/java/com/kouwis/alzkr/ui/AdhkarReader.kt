@@ -196,7 +196,7 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
                     )
                 }
                 if (counts.any { it > 0 }) {
-                    RoundIconButton(Ic.refresh, "كله من الأول", {
+                    RoundIconButton(Ic.refresh, "البدء من جديد", {
                         for (k in 0 until n) counts[k] = 0
                         finished = false
                         scope.launch { pager.animateScrollToPage(0) }
@@ -240,11 +240,11 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    if (counts[i] > 0) SmallAction(Ic.refresh, "صفّر") { counts[i] = 0; finished = false; view.haptic(Haptic.Delete) }
+                    if (counts[i] > 0) SmallAction(Ic.refresh, "تصفير") { counts[i] = 0; finished = false; view.haptic(Haptic.Delete) }
                 }
                 DhikrCounter(count = counts[i], target = target(i), done = complete(i), onTap = { tap(i) })
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    if (target(i) > 0 && !complete(i)) SmallAction(Ic.check, "أكملته") { completeNow(i) }
+                    if (target(i) > 0 && !complete(i)) SmallAction(Ic.check, "أتممته") { completeNow(i) }
                 }
             }
         }
@@ -493,7 +493,7 @@ private fun Finished(done: String, onBack: () -> Unit, onAgain: () -> Unit) {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("رجوع", filled = true, onClick = onBack)
-                Pill("من الأول", filled = false, onClick = onAgain)
+                Pill("من جديد", filled = false, onClick = onAgain)
             }
         }
     }

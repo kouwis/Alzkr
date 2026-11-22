@@ -108,7 +108,7 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
         title = {
             Column {
                 Text("للمراجعة · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text)
-                Text("دوس على الكلمة اللي محتاج تراجعها، أو متحددش حاجة للآية كلها", fontSize = 13.sp, color = c.muted)
+                Text("اختر الكلمات التي تحتاج إلى مراجعتها، أو لا تختر شيئًا لتحديد الآية كلها", fontSize = 13.sp, color = c.muted)
             }
         },
         text = {
@@ -143,7 +143,7 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
         },
         dismissButton = {
             Row {
-                if (current != null) TextButton(onClick = { onSave(null) }) { Text("شيلها من المراجعة", color = c.heart) }
+                if (current != null) TextButton(onClick = { onSave(null) }) { Text("إزالتها من المراجعة", color = c.heart) }
                 TextButton(onClick = onDismiss) { Text("إلغاء", color = c.muted) }
             }
         },
@@ -171,13 +171,13 @@ fun MistakesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
             RoundIconButton(Ic.back, "رجوع", { nav.back() })
             Column {
                 Text("مراجعة الحفظ", color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                Text(if (list.isEmpty()) "مفيش حاجة للمراجعة" else "${num(list.size)} آيات للمراجعة", color = c.muted, fontSize = 13.sp)
+                Text(if (list.isEmpty()) "لا توجد آيات للمراجعة" else "${num(list.size)} آيات للمراجعة", color = c.muted, fontSize = 13.sp)
             }
         }
         if (list.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "اضغط ضغطة طويلة على أي آية في المصحف واختار «مراجعة»،\nوحدد الكلمة اللي محتاج تراجعها.",
+                    "اضغط مطوّلًا على أي آية في المصحف واختر «مراجعة»،\nثم حدّد الكلمات التي تحتاج إلى مراجعتها.",
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }

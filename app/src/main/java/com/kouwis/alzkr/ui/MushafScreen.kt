@@ -265,7 +265,7 @@ fun MushafScreen(
                 onBookmarkPage = {
                     val wasOn = pageMarked
                     scope.launch { store.togglePageBookmark(currentPage, ayahsOnPage) }
-                    Toast.makeText(ctx, if (wasOn) "اتشالت علامة الصفحة" else "اتحطت علامة على صفحة ${num(currentPage)}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, if (wasOn) "أُزيلت علامة الصفحة" else "وُضعت علامة على صفحة ${num(currentPage)}", Toast.LENGTH_SHORT).show()
                     showBars()
                 },
                 onBack = { nav.back() },
@@ -286,7 +286,7 @@ fun MushafScreen(
                 onBookmark = {
                     val wasOn = "a:$sel" in prefs.bookmarks
                     scope.launch { store.toggleBookmark("a:$sel") }
-                    Toast.makeText(ctx, if (wasOn) "اتشالت علامة الآية" else "اتحطت علامة على الآية", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, if (wasOn) "أُزيلت علامة الآية" else "وُضعت علامة على الآية", Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp),
                 onFavorite = { scope.launch { store.toggleFavorite(sel) } },
@@ -313,7 +313,7 @@ fun MushafScreen(
         val (s, a) = parseKey(key) ?: return@let
         MistakePicker(q, s, a, mistakesMap[key], onDismiss = { picking = null }, onSave = { words ->
             scope.launch { store.setMistake(key, words) }
-            Toast.makeText(ctx, if (words == null) "اتشالت من المراجعة" else "اتضافت للمراجعة", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, if (words == null) "أُزيلت من المراجعة" else "أُضيفت إلى المراجعة", Toast.LENGTH_SHORT).show()
             picking = null
             selected = null
         })
@@ -442,7 +442,7 @@ private fun TopBar(
             RoundIconButton(Ic.search, "بحث", onSearch, size = 40.dp)
             RoundIconButton(
                 if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
-                if (pageBookmarked) "شيل علامة الصفحة" else "علامة على الصفحة",
+                if (pageBookmarked) "إزالة علامة الصفحة" else "علامة على الصفحة",
                 onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp, haptic = Haptic.Confirm,
             )
             if (tajweedOn) RoundIconButton(Ic.palette, "دليل ألوان التجويد", onTajweed, tint = c.primary, size = 40.dp)
@@ -475,7 +475,6 @@ private fun AyahActions(
             .padding(6.dp),
     ) {
         ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
-        ActionItem(if (isFavorite) Ic.heart else Ic.heartOutline, if (isFavorite) "محفوظة" else "مفضلة", Color(0xFFF3A6AF), onFavorite, Haptic.Confirm)
         ActionItem(Ic.pen, "مراجعة", if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
         ActionItem(Ic.book, "تفسير", Color.White, onTafsir)
         ActionItem(Ic.translate, "ترجمة", Color.White, onTranslation)

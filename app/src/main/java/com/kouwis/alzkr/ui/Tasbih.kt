@@ -204,12 +204,12 @@ private fun TasbihEditor(
                     textStyle = androidx.compose.ui.text.TextStyle(fontFamily = AppFonts.naskh, fontSize = 18.sp),
                     colors = fieldColors, modifier = Modifier.fillMaxWidth(),
                 )
-                Text("كام مرة؟", color = c.muted, fontSize = 13.sp)
+                Text("كم مرة؟", color = c.muted, fontSize = 13.sp)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     presets.forEach { n ->
                         val on = custom.isBlank() && target == n
                         Text(
-                            if (n == 0) "من غير عدد" else num(n),
+                            if (n == 0) "بلا عدد" else num(n),
                             color = if (on) c.onPrimary else c.text, fontSize = 14.sp,
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) c.primary else c.chip)
                                 .springClick(pressedScale = 0.95f, haptic = Haptic.Tick) { target = n; custom = "" }
@@ -224,7 +224,7 @@ private fun TasbihEditor(
                         custom = toArabicDigits(d)
                         d.toIntOrNull()?.let { if (it > 0) target = it }
                     },
-                    label = { Text("أو اكتب عدد") }, singleLine = true,
+                    label = { Text("أو اكتب عددًا") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = fieldColors, modifier = Modifier.fillMaxWidth(),
                 )

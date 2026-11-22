@@ -150,10 +150,10 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                     // keep a known name if the lookup failed (no network) and we haven't moved
                     val name = f.place.ifBlank { if (moved) "" else prefs.place }
                     if (moved || name != prefs.place) store.setLocation(f.lat, f.lng, name)
-                    if (!quiet) toast(if (name.isNotBlank()) "المواقيت دلوقتي لـ $name" else "اتحدد مكانك")
+                    if (!quiet) toast(if (name.isNotBlank()) "المواقيت الآن حسب $name" else "تم تحديد موقعك")
                 }
-                Locator.Result.Off -> if (!quiet) toast("الموقع مقفول في الموبايل — افتحه وجرّب تاني")
-                Locator.Result.NotFound -> if (!quiet) toast("معرفناش نحدد مكانك دلوقتي — جرّب تاني بعد شوية")
+                Locator.Result.Off -> if (!quiet) toast("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى")
+                Locator.Result.NotFound -> if (!quiet) toast("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل")
             }
             if (!quiet) locating = false
         }
@@ -208,16 +208,16 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val suggestions = buildList {
         when {
             current == Prayer.Isha || beforeFajr -> {
-                if (!sleepDone) add(Suggestion("أذكار النوم", "قبل ما تنام", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
-                if (!eveningDone) add(Suggestion("أذكار المساء", "لو لسه مقرأتهاش", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+                if (!sleepDone) add(Suggestion("أذكار النوم", "قبل النوم", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "إن لم تقرأها بعد", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
             }
             current == Prayer.Asr || current == Prayer.Maghrib ->
-                if (!eveningDone) add(Suggestion("أذكار المساء", "من العصر للمغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
-            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "وقتها لحد قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "من العصر إلى المغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "وقتها إلى ما قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
         }
         if (fridayTime) {
             add(Suggestion("الصلاة على النبي ﷺ", "يوم الجمعة · أكثِر منها", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
-            add(Suggestion("سورة الكهف", "يوم الجمعة · بتفتح في المصحف", AdhkarIc.book) {
+            add(Suggestion("سورة الكهف", "يوم الجمعة · تُفتح في المصحف", AdhkarIc.book) {
                 nav.go(Screen.Mushaf(kahfPage, "18:1"))
             })
         }
@@ -260,7 +260,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                             Text("حصن المسلم · مواقيت الصلاة", color = c.muted, fontSize = 13.sp)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            RoundIconButton(AdhkarIc.beads, "العداد", { nav.go(Screen.Tasbih) }, tint = c.primary)
+                            RoundIconButton(AdhkarIc.beads, "السبحة", { nav.go(Screen.Tasbih) }, tint = c.primary)
                             RoundIconButton(AdhkarIc.qibla, "القبلة", { nav.go(Screen.Qibla) }, tint = c.primary)
                             RoundIconButton(Ic.search, "بحث", { nav.go(Screen.AdhkarSearch) })
                             RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
@@ -284,7 +284,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                     )
                     Text("مقترح لك الآن", color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp))
                     if (suggestions.isEmpty()) {
-                        Text("خلّصت أذكار الوقت ده، الحمد لله", color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+                        Text("أتممت أذكار هذا الوقت، والحمد لله", color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
                     }
                 }
             }
@@ -450,14 +450,14 @@ private fun DayCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(AdhkarIc.pin, null, tint = soft, modifier = Modifier.size(14.dp))
                 Text(
-                    if (locating && !placeIsDefault) "بنحدّث مكانك…" else place,
+                    if (locating && !placeIsDefault) "جارٍ تحديث الموقع…" else place,
                     color = soft, fontSize = 13.sp,
                     // tap the place to locate again (after travelling, say)
-                    modifier = if (placeIsDefault) Modifier else Modifier.springClick(role = Role.Button, label = "حدّث مكانك", ripple = false) { if (!locating) onLocate() },
+                    modifier = if (placeIsDefault) Modifier else Modifier.springClick(role = Role.Button, label = "تحديث الموقع", ripple = false) { if (!locating) onLocate() },
                 )
                 if (placeIsDefault) {
                     Text(
-                        if (locating) "بنحدد مكانك…" else "استخدم موقعي",
+                        if (locating) "جارٍ تحديد الموقع…" else "استخدم موقعي",
                         color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
@@ -486,7 +486,7 @@ private fun DayCard(
         ) {
             // the prayer that has come is done with: the strip is about the next one, live
             Column(Modifier.weight(1f)) {
-                Text(if (next == Prayer.Sunrise) "الشروق" else "الصلاة الجاية", color = soft, fontSize = 12.sp)
+                Text(if (next == Prayer.Sunrise) "الشروق" else "الصلاة القادمة", color = soft, fontSize = 12.sp)
                 Text("${next.ar} · ${clock(times.getValue(next))}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {

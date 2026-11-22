@@ -121,10 +121,10 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
         }
         when {
             needle.length < 2 -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text("اكتب كلمة من الذكر، زي «الكرب» أو «أصبحنا»", color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center)
+                Text("اكتب كلمة من الذكر، مثل «الكرب» أو «أصبحنا»", color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center)
             }
             hits.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text("مفيش ذكر فيه «$query»", color = c.muted, fontSize = 15.sp)
+                Text("لا يوجد ذكر فيه «$query»", color = c.muted, fontSize = 15.sp)
             }
             else -> {
                 Text("${num(hits.size)} نتيجة", color = c.muted, fontSize = 13.sp)

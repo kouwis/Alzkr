@@ -168,7 +168,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                                     }
                                     if (have < 604) android.widget.Toast.makeText(
                                         context,
-                                        "بننزّل مصحف التجويد مرة واحدة (حوالي ٧٠ ميجا)، والصفحات بتتلوّن أول ما توصل",
+                                        "يُنزَّل مصحف التجويد مرة واحدة (نحو ٧٠ ميجابايت)، وتتلوّن الصفحات فور وصولها",
                                         android.widget.Toast.LENGTH_LONG,
                                     ).show()
                                 }
@@ -298,7 +298,7 @@ private fun ContinueCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(Ic.bookmark, null, tint = Color(0xFFCFE3DD), modifier = Modifier.size(15.dp))
-                Text("آخر ٣ أماكن قريت فيها هتظهر هنا", color = Color(0xFFCFE3DD), fontSize = 13.sp, maxLines = 1)
+                Text("ستظهر هنا آخر ثلاثة مواضع قرأت فيها", color = Color(0xFFCFE3DD), fontSize = 13.sp, maxLines = 1)
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -348,7 +348,7 @@ private fun ContinueCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("الختمة · ${num(pct)}٪", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Text(
-                    if (left <= 0) "ختمت المصحف ✓" else "بوردك هتختم بعد ${num(days)} يوم",
+                    if (left <= 0) "ختمت المصحف ✓" else "بوردك تختم بعد ${num(days)} يومًا",
                     color = Color(0xFFE3EEEA), fontSize = 12.sp,
                 )
             }

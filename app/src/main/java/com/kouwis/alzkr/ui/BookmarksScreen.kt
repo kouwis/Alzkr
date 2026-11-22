@@ -72,13 +72,13 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                 Text(if (marks.isEmpty()) "لا توجد علامات" else "${num(marks.size)} علامة", color = c.muted, fontSize = 13.sp)
             }
             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-            // favourites live here now (the Quran home has no room for both)
-            RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
+            // favourites can no longer be added; the ones saved before are still reachable from here
+            if (prefs.favorites.isNotEmpty()) RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
         }
         if (marks.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "علشان تعلّم صفحة: افتح المصحف، المس الشاشة، واضغط زرار العلامة اللي فوق.\n\nعلشان تعلّم آية: اضغط ضغطة مطوّلة على الآية واختار «علامة».",
+                    "لوضع علامة على صفحة: افتح المصحف، والمس الشاشة، ثم اضغط زر العلامة في الأعلى.\n\nلوضع علامة على آية: اضغط مطوّلًا على الآية واختر «علامة».",
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }
@@ -95,7 +95,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Icon(
-                                Ic.bookmarkFilled, "شيل العلامة", tint = c.gold,
+                                Ic.bookmarkFilled, "إزالة العلامة", tint = c.gold,
                                 modifier = Modifier.size(22.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleBookmark(m.key) } },
                             )
                             Column(Modifier.weight(1f)) {
@@ -114,7 +114,7 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(
-                                    Ic.bookmarkFilled, "شيل العلامة", tint = c.gold,
+                                    Ic.bookmarkFilled, "إزالة العلامة", tint = c.gold,
                                     modifier = Modifier.size(22.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleBookmark(m.key) } },
                                 )
                                 Column(Modifier.weight(1f)) {
