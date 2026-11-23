@@ -152,7 +152,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                             RoundIconButton(Ic.bookmarkFilled, "العلامات", { nav.go(Screen.Bookmarks) }, tint = c.gold)
                             // favourites open from the bookmarks screen
                             RoundIconButton(Ic.pen, "مراجعة الحفظ", { nav.go(Screen.Mistakes) }, tint = c.heart)
-                            RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
+                            RoundIconButton(Ic.settings, "الإعدادات", { nav.go(Screen.Settings) })
                         }
                     }
                     ContinueCard(q, prefs, nav,

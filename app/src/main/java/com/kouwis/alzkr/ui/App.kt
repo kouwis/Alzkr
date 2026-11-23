@@ -45,6 +45,7 @@ sealed interface Screen {
     data object HisnIndex : Screen
     /** «متابعتي»: the day's deeds, the week's progress, the Hijri calendar and the occasions */
     data object Tracker : Screen
+    data object Settings : Screen
 }
 
 class Nav {
@@ -136,6 +137,7 @@ fun AlzkrApp() {
                     Screen.AdhkarSearch -> AdhkarSearchScreen(q, nav)
                     Screen.HisnIndex -> HisnIndexScreen(nav)
                     Screen.Tracker -> TrackerScreen(state, prefs, nav)
+                    Screen.Settings -> SettingsScreen(state, nav)
                 } }
             }
         }

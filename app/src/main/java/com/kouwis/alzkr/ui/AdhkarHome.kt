@@ -334,7 +334,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                             RoundIconButton(AdhkarIc.beads, "السبحة", { nav.go(Screen.Tasbih) }, tint = c.primary)
                             RoundIconButton(AdhkarIc.qibla, "القبلة", { nav.go(Screen.Qibla) }, tint = c.primary)
                             RoundIconButton(Ic.search, "بحث", { nav.go(Screen.AdhkarSearch) })
-                            RoundIconButton(Ic.settings, "الإعدادات", { soon("الإعدادات") })
+                            RoundIconButton(Ic.settings, "الإعدادات", { nav.go(Screen.Settings) })
                         }
                     }
                     DayCard(
