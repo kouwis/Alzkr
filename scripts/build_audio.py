@@ -40,8 +40,11 @@ def encode(src, dst, start=0.0, end=None):
         chain += [f"atrim=start={start:.2f}:end={end:.2f}", "asetpts=PTS-STARTPTS", f"afade=t=out:st={max(0.0, end - start - 1.2):.2f}:d=1.2"]
     chain += ["silenceremove=start_periods=1:start_threshold=-45dB", "loudnorm=I=-16:TP=-1.5:LRA=11",
               "aresample=44100", "aformat=channel_layouts=mono"]
-    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-af", ",".join(chain),
-                    "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", dst], check=True)
+    # two steps (filters to WAV, then AAC): newer ffmpeg rejects loudnorm's frames straight into the AAC encoder
+    wav = dst + ".wav"
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-af", ",".join(chain), "-c:a", "pcm_s16le", wav], check=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", wav, "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", dst], check=True)
+    os.remove(wav)
 
 
 catalog = []
