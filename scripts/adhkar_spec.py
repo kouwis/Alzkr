@@ -216,6 +216,23 @@ EXTRA_SECTIONS = [
         dict(h=("bukhari", 935), frm="فيه ساعة", to="إلا أعطاه إياه", label="تحري ساعة الإجابة", icon="hands"),
         dict(h=("muslim", 881), frm="إذا صلى أحدكم الجمعة", to="أربعا", label="أربع ركعات بعد الجمعة", icon="prayer"),
     ]),
+    # the voluntary prayers suggested in their time (the ids match the tracker's deeds)
+    dict(id="duha", title="صلاة الضحى", done="تقبّل الله صلاتك", group="prayer", items=[
+        dict(h=("muslim", 720), frm="يصبح على كل سلامى من أحدكم صدقة", to="يركعهما من الضحى", label="تجزئ عن صدقة كل مفصل", icon="star"),
+        dict(h=("bukhari", 1981), frm="أوصاني خليلي", to="وأن أوتر قبل أن أنام", label="وصية النبي ﷺ", icon="hands"),
+        dict(h=("muslim", 748), frm="صلاة الأوابين", to="حين ترمض الفصال", label="أفضل وقتها: إذا اشتد الحر قبيل الظهر", icon="sun"),
+    ]),
+    dict(id="qiyam", title="قيام الليل", done="تقبّل الله قيامك", group="prayer", items=[
+        dict(h=("muslim", 1163), frm="وأفضل الصلاة بعد الفريضة", to="صلاة الليل", label="أفضل الصلاة بعد الفريضة", icon="moon"),
+        dict(h=("bukhari", 1145), frm="ينزل ربنا تبارك وتعالى كل ليلة", to="فأغفر له", label="ثلث الليل الآخر", icon="hands"),
+        dict(h=("bukhari", 990), frm="صلاة الليل مثنى مثنى", to="توتر له ما قد صلى", label="كيف يصلّى", icon="prayer"),
+    ]),
+    dict(id="witr", title="صلاة الوتر", done="تقبّل الله وترك", group="prayer", items=[
+        dict(h=("bukhari", 998), frm="اجعلوا آخر صلاتكم بالليل وترا", to="وترا", label="آخر صلاة الليل", icon="star"),
+        dict(h=("muslim", 755), frm="من خاف أن لا يقوم من آخر الليل", to="وذلك أفضل", label="أول الليل أو آخره", icon="moon"),
+        dict(a=("دعاء قنوت الوتر", 0), label="دعاء القنوت", icon="hands"),
+        dict(a=("الذكر عقب السلام من الوتر", 0), label="بعد السلام من الوتر", icon="prayer"),
+    ]),
     dict(id="ramadan", title="رمضان", done="انتهى باب رمضان", group="occasion", items=[
         dict(a=("دعاء رؤية الهلال", 0), label="عند رؤية الهلال", icon="moon"),
         dict(quran=(2, 183, 185), label="فرض الصيام", icon="book"),

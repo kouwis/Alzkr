@@ -210,18 +210,58 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         day.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() + minute * 60_000L
     val night = if (beforeFajr) today.minusDays(1) else today // the evening/night the reader is in
     fun doneSince(id: String, from: Long) = (prefs.adhkarDone[id] ?: 0L) >= from
-    val morningDone = doneSince("morning", at(today, times.getValue(Prayer.Fajr)))
-    val eveningDone = doneSince("evening", at(night, times.getValue(Prayer.Asr)))
-    val sleepDone = doneSince("sleep", at(night, times.getValue(Prayer.Isha)))
+    val fajr = times.getValue(Prayer.Fajr)
+    val sunrise = times.getValue(Prayer.Sunrise)
+    val dhuhr = times.getValue(Prayer.Dhuhr)
+    val asr = times.getValue(Prayer.Asr)
+    val maghribM = times.getValue(Prayer.Maghrib)
+    val isha = times.getValue(Prayer.Isha)
+    val afterIsha = minuteNow >= isha || beforeFajr
+    // the last third of the night, from Maghrib to Fajr (in today's minutes; before midnight it is negative)
+    val lastThird = fajr - (fajr + 1440 - maghribM) / 3
+    val inLastThird = (beforeFajr && minuteNow >= lastThird) || (!beforeFajr && minuteNow >= lastThird + 1440)
+    val tracked = prefs.track[today.toString()].orEmpty()
+    val nightStart = at(night, isha)
+    val morningDone = doneSince("morning", at(today, fajr))
+    val eveningDone = doneSince("evening", at(night, asr))
+    val sleepDone = doneSince("sleep", nightStart)
     val suggestions = buildList {
-        when {
-            current == Prayer.Isha || beforeFajr -> {
-                if (!sleepDone) add(Suggestion("أذكار النوم", "تُقال عند الاضطجاع للنوم", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
-                if (!eveningDone) add(Suggestion("أذكار المساء", "وقتها من العصر إلى المغرب، إن لم تقرأها بعد", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+        // the adhkar after a prayer, for an hour after its adhan
+        listOf(Prayer.Fajr, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha).lastOrNull { minuteNow >= times.getValue(it) }?.let { p ->
+            val t = times.getValue(p)
+            if (minuteNow < t + 60 && !doneSince("after_prayer", at(today, t))) {
+                add(Suggestion("الأذكار بعد صلاة ${p.ar}", "تُقال بعد السلام من الصلاة", AdhkarIc.afterPrayer) { nav.go(Screen.Adhkar("after_prayer")) })
             }
-            current == Prayer.Asr || current == Prayer.Maghrib ->
-                if (!eveningDone) add(Suggestion("أذكار المساء", "تُقال من العصر إلى المغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
-            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "تُقال من الفجر إلى ما قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+        }
+        // the night: waking, qiyam in its last third, witr, sleep, and the evening adhkar if still not said
+        if (beforeFajr && inLastThird && !doneSince("waking", at(today, 0))) {
+            add(Suggestion("أذكار الاستيقاظ", "عند الاستيقاظ من النوم", AdhkarIc.alarm) { nav.go(Screen.Adhkar("waking")) })
+        }
+        if (inLastThird && !doneSince("qiyam", nightStart) && "qiyam" !in tracked) {
+            add(Suggestion("قيام الليل", "ثلث الليل الآخر، حتى أذان الفجر", AdhkarIc.prayer) { nav.go(Screen.Adhkar("qiyam")) })
+        }
+        if (afterIsha && !doneSince("witr", nightStart) && "witr" !in tracked) {
+            add(Suggestion("صلاة الوتر", "من بعد العشاء إلى الفجر", AdhkarIc.star) { nav.go(Screen.Adhkar("witr")) })
+        }
+        if (afterIsha && !sleepDone) {
+            add(Suggestion("أذكار النوم", "من بعد العشاء، عند الاضطجاع للنوم", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
+        }
+        if ((minuteNow >= asr || beforeFajr) && !eveningDone) {
+            add(Suggestion("أذكار المساء", "تُقال من العصر إلى قبل الفجر", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+        }
+        // the day: morning adhkar from Fajr till Asr; waking till sunrise; duha from the sun's rising till just before Dhuhr
+        if (!beforeFajr && minuteNow < sunrise && !doneSince("waking", at(today, 0))) {
+            add(Suggestion("أذكار الاستيقاظ", "عند الاستيقاظ من النوم", AdhkarIc.alarm) { nav.go(Screen.Adhkar("waking")) })
+        }
+        if (!beforeFajr && minuteNow < asr && !morningDone) {
+            add(Suggestion("أذكار الصباح", "تُقال من الفجر إلى ما قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+        }
+        if (minuteNow >= sunrise + 15 && minuteNow < dhuhr - 10 && !doneSince("duha", at(today, fajr)) && "duha" !in tracked) {
+            add(Suggestion(
+                "صلاة الضحى",
+                if (minuteNow >= dhuhr - 40) "قارب وقتها على الانتهاء، تُصلّى قبيل الظهر" else "وقتها من ارتفاع الشمس إلى قبيل الظهر",
+                AdhkarIc.rise,
+            ) { nav.go(Screen.Adhkar("duha")) })
         }
         if (fridayTime) {
             add(Suggestion("الصلاة على النبي ﷺ", "يُكثَر منها ليلة الجمعة ويومها، من مغرب الخميس إلى مغرب الجمعة", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
