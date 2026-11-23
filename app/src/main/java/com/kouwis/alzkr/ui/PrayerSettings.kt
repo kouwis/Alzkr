@@ -291,13 +291,13 @@ private fun num1(d: Double) = arDigits(if (d % 1.0 == 0.0) d.toInt().toString() 
 private fun num6(d: Double) = arDigits("%.4f".format(java.util.Locale.US, d))
 
 @Composable
-private fun Header(t: String) {
+internal fun Header(t: String) {
     val c = LocalColors.current
     Text(t, color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp, start = 4.dp))
 }
 
 @Composable
-private fun Group(content: @Composable () -> Unit) {
+internal fun Group(content: @Composable () -> Unit) {
     val c = LocalColors.current
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(c.card)
@@ -306,13 +306,13 @@ private fun Group(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Line() {
+internal fun Line() {
     val c = LocalColors.current
     Box(Modifier.fillMaxWidth().height(1.dp).background(c.border.copy(alpha = 0.6f)))
 }
 
 @Composable
-private fun NavRow(title: String, sub: String = "", onClick: () -> Unit) {
+internal fun NavRow(title: String, sub: String = "", onClick: () -> Unit) {
     val c = LocalColors.current
     Row(
         Modifier.fillMaxWidth().springClick(role = Role.Button, label = title, pressedScale = 0.98f, onClick = onClick).padding(vertical = 16.dp),
@@ -327,7 +327,7 @@ private fun NavRow(title: String, sub: String = "", onClick: () -> Unit) {
 }
 
 @Composable
-private fun ValueRow(title: String, value: String, onClick: () -> Unit) {
+internal fun ValueRow(title: String, value: String, onClick: () -> Unit) {
     val c = LocalColors.current
     Row(
         Modifier.fillMaxWidth().springClick(role = Role.Button, label = title, pressedScale = 0.98f, onClick = onClick).padding(vertical = 14.dp),
@@ -343,10 +343,10 @@ private fun ValueRow(title: String, value: String, onClick: () -> Unit) {
     }
 }
 
-private fun Modifier.widthInMax(max: androidx.compose.ui.unit.Dp) = this.then(Modifier.widthIn(max = max))
+internal fun Modifier.widthInMax(max: androidx.compose.ui.unit.Dp) = this.then(Modifier.widthIn(max = max))
 
 @Composable
-private fun ToggleRow(title: String, sub: String, on: Boolean, onChange: (Boolean) -> Unit) {
+internal fun ToggleRow(title: String, sub: String, on: Boolean, onChange: (Boolean) -> Unit) {
     val c = LocalColors.current
     Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -362,7 +362,7 @@ private fun ToggleRow(title: String, sub: String, on: Boolean, onChange: (Boolea
 
 /** A list of choices, one picked. */
 @Composable
-private fun Choice(title: String, options: List<Pair<String, String>>, selected: Int, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
+internal fun Choice(title: String, options: List<Pair<String, String>>, selected: Int, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
     val c = LocalColors.current
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.card,
@@ -434,7 +434,7 @@ private fun MinutesDialog(
 }
 
 @Composable
-private fun Step(t: String, enabled: Boolean, onClick: () -> Unit) {
+internal fun Step(t: String, enabled: Boolean, onClick: () -> Unit) {
     val c = LocalColors.current
     Box(
         Modifier.size(34.dp).clip(CircleShape).background(if (enabled) c.primarySoft else c.chip)
@@ -444,7 +444,7 @@ private fun Step(t: String, enabled: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun fieldColors() = LocalColors.current.let { c ->
+internal fun fieldColors() = LocalColors.current.let { c ->
     OutlinedTextFieldDefaults.colors(
         focusedBorderColor = c.primary, unfocusedBorderColor = c.border, cursorColor = c.primary,
         focusedTextColor = c.text, unfocusedTextColor = c.text, focusedLabelColor = c.primary, unfocusedLabelColor = c.muted,

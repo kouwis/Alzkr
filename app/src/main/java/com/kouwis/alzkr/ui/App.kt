@@ -48,6 +48,8 @@ sealed interface Screen {
     data object Tracker : Screen
     data object Settings : Screen
     data object PrayerSettings : Screen
+    data object Alerts : Screen
+    data class PrayerAlert(val prayer: String) : Screen
 }
 
 class Nav {
@@ -66,10 +68,15 @@ class Nav {
 }
 
 @Composable
-fun AlzkrApp() {
+fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context.applicationContext) }
     val state by prefs.flow.collectAsState(initial = AppPrefs())
+    // the adhan and alerts follow every change of their settings, the prayer times and the place
+    LaunchedEffect(state.alerts, state.prayer, state.lat, state.lng, state.lang) {
+        kotlinx.coroutines.delay(600)
+        com.kouwis.alzkr.alerts.AlertScheduler.reschedule(context)
+    }
     // the interface language: everything below is rebuilt when it changes (text, and right-to-left or left-to-right)
     val lang = com.kouwis.alzkr.data.Lang.of(state.lang)
     com.kouwis.alzkr.data.I18n.set(context, lang)
@@ -97,6 +104,8 @@ fun AlzkrApp() {
                 return@Box
             }
             BackHandler(enabled = nav.stack.size > 1) { nav.back() }
+            // opened from a reminder: straight to its adhkar
+            LaunchedEffect(open) { if (open != null) { nav.go(Screen.Adhkar(open)); onOpened() } }
             // each screen keeps its scroll position (and other saved state) while it is in the stack,
             // so going back lands where you were; a screen taken off the stack forgets it
             val holder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
@@ -144,6 +153,8 @@ fun AlzkrApp() {
                     Screen.Tracker -> TrackerScreen(state, prefs, nav)
                     Screen.Settings -> SettingsScreen(state, prefs, nav)
                     Screen.PrayerSettings -> PrayerSettingsScreen(state, prefs, nav)
+                    Screen.Alerts -> AlertsScreen(state, prefs, nav)
+                    is Screen.PrayerAlert -> PrayerAlertScreen(state, prefs, nav, screen.prayer)
                 } }
             }
         }

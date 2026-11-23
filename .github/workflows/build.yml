@@ -3,7 +3,11 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths-ignore: ["scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Adhan audio"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -29,6 +33,14 @@ jobs:
           pip install fonttools
           python3 scripts/build_data.py
           python3 scripts/build_adhkar.py
+
+      - name: Bundled adhan sounds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p app/src/main/assets/audio
+          gh release download audio-v1 -R ${{ github.repository }} -D app/src/main/assets/audio -p catalog.json -p "b-*" --clobber || echo "no adhan sounds release yet"
+          ls -la app/src/main/assets/audio
 
       - uses: actions/setup-java@v4
         with:

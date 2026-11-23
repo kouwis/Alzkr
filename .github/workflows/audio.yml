@@ -17,11 +17,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
+      - uses: FedericoCarboni/setup-ffmpeg@v3
       - name: Tools
+        timeout-minutes: 15
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-          pip install -q faster-whisper
+          ffmpeg -version | head -1
+          if [ ! -f scripts/audio_spec.json ]; then pip install --only-binary=:all: --progress-bar off faster-whisper; fi
       - name: Probe recordings
         if: hashFiles('scripts/audio_spec.json') == ''
         run: python3 scripts/probe_adhan.py
@@ -30,3 +32,11 @@ jobs:
         with:
           name: probe
           path: probe/report.json
+      - name: Build and publish the sounds
+        if: hashFiles('scripts/audio_spec.json') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/build_audio.py
+          gh release view audio-v1 >/dev/null 2>&1 || gh release create audio-v1 --title "Adhan sounds" --notes "أصوات الأذان التي يحمّلها التطبيق عند اختيارها" --latest=false
+          gh release upload audio-v1 out/audio/* --clobber

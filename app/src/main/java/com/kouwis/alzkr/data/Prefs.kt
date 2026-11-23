@@ -52,6 +52,8 @@ data class AppPrefs(
     val track: Map<String, Set<String>> = emptyMap(),
     /** the tasbih counter's adhkar and how many times each round is; null = the default list */
     val tasbih: List<Pair<String, Int>>? = null,
+    /** «الأذان والتنبيهات» */
+    val alerts: AlertsConfig = AlertsConfig(),
 )
 
 class Prefs(private val context: Context) {
@@ -78,6 +80,7 @@ class Prefs(private val context: Context) {
         val lang = stringPreferencesKey("lang")
         val autoLocate = booleanPreferencesKey("auto_locate")
         val track = stringPreferencesKey("track") // "2026-11-23=morning,qiyam;2026-11-22=…"
+        val alerts = stringPreferencesKey("alerts") // JSON
         val tasbih = stringPreferencesKey("tasbih") // "text\u001F33\u001Etext\u001F100"
     }
 
@@ -123,6 +126,7 @@ class Prefs(private val context: Context) {
             prayer = PrayerConfig.decode(p[K.prayer]),
             lang = p[K.lang] ?: "ar",
             autoLocate = p[K.autoLocate] ?: true,
+            alerts = AlertsConfig.decode(p[K.alerts]),
             tasbih = p[K.tasbih]?.split('\u001E')?.mapNotNull { e ->
                 val f = e.split('\u001F')
                 val t = f[0].trim()
@@ -131,6 +135,7 @@ class Prefs(private val context: Context) {
         )
     }
 
+    suspend fun setAlerts(a: AlertsConfig) = context.store.edit { it[K.alerts] = a.encode() }
     suspend fun setLang(code: String) = context.store.edit { it[K.lang] = code }
     suspend fun setPrayer(c: PrayerConfig) = context.store.edit { it[K.prayer] = c.encode() }
     suspend fun setAutoLocate(on: Boolean) = context.store.edit { it[K.autoLocate] = on }
