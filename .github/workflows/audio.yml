@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
+    paths: ["scripts/probe_list.json", "scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
 
 permissions:
   contents: write
@@ -23,17 +23,17 @@ jobs:
         run: |
           sudo apt-get install -y -qq --no-install-recommends ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
           ffmpeg -version | head -1
-          if [ ! -f scripts/audio_spec.json ]; then pip install --only-binary=:all: --progress-bar off faster-whisper; fi
+          if [ ! -f scripts/audio_spec.json ] || [ -f scripts/probe_list.json ]; then pip install --only-binary=:all: --progress-bar off faster-whisper; fi
       - name: Probe recordings
-        if: hashFiles('scripts/audio_spec.json') == ''
+        if: hashFiles('scripts/audio_spec.json') == '' || hashFiles('scripts/probe_list.json') != ''
         run: python3 scripts/probe_adhan.py
       - uses: actions/upload-artifact@v4
-        if: hashFiles('scripts/audio_spec.json') == ''
+        if: hashFiles('scripts/audio_spec.json') == '' || hashFiles('scripts/probe_list.json') != ''
         with:
           name: probe
           path: probe/report.json
       - name: Build and publish the sounds
-        if: hashFiles('scripts/audio_spec.json') != ''
+        if: hashFiles('scripts/audio_spec.json') != '' && hashFiles('scripts/probe_list.json') == ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

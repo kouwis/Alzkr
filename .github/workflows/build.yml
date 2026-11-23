@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [main]
-    paths-ignore: ["scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
+    paths-ignore: ["scripts/probe_list.json", "scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
   workflow_dispatch:
   workflow_run:
     workflows: ["Adhan audio"]

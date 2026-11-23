@@ -17,11 +17,11 @@ def fetch(url):
         return r.headers.get("Content-Type", ""), r.read()
 
 
-def download(n):
+def download(n, url=None):
     path = f"{SRC}/{n}.mp3"
     if os.path.exists(path) and os.path.getsize(path) > 50_000:
         return path
-    ctype, body = fetch(f"https://www.assabile.com/download/adhan/{n}")
+    ctype, body = fetch(url or f"https://www.assabile.com/download/adhan/{n}")
     if "html" in ctype:
         m = re.search(rb'(https?://[^"\'\s]+\.mp3)', body)
         ctype, body = fetch(m.group(1).decode())
@@ -49,7 +49,7 @@ def encode(src, dst, start=0.0, end=None):
 
 catalog = []
 for e in SPEC:
-    src = download(e["assabile"])
+    src = download(e.get("assabile") or e["id"], e.get("url"))
     prefix = "b-" if e.get("bundled") else ""
     full = f"{prefix}{e['id']}.m4a"
     encode(src, f"{OUT}/{full}")

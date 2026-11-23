@@ -16,11 +16,17 @@ def fetch(url):
         return r.headers.get("Content-Type", ""), r.geturl(), r.read()
 
 
+LIST = "scripts/probe_list.json"  # optional: [{"key": …, "url": …}] — probe these instead of assabile ids
+URLS = {e["key"]: e["url"] for e in json.load(open(LIST, encoding="utf-8"))} if os.path.exists(LIST) else {}
+if URLS:
+    IDS = list(URLS)
+
+
 def download(i):
     path = f"probe/{i}.mp3"
     if os.path.exists(path) and os.path.getsize(path) > 50_000:
         return path
-    ctype, final, body = fetch(BASE.format(i))
+    ctype, final, body = fetch(URLS.get(i) or BASE.format(i))
     if "html" in ctype:
         m = re.search(rb'(https?://[^"\'\s]+\.mp3)', body)
         if not m:
@@ -54,6 +60,8 @@ for i in IDS:
     fajr = ("خير من النوم" in n) or ("خيرمن النوم" in n) or ("النوم" in n and "خير" in n)
     # where «أشهد» first starts: the opening takbirs end before it
     shahada = next((w[0] for w in words if "اشهد" in norm(w[2]) or "شهد" in norm(w[2])), None)
+    if len(words) > 0:
+        print("   words:", " ".join(f"{w[2].strip()}@{w[0]:.1f}" for w in words[:40]))
     report[i] = {"duration": round(dur, 1), "fajr": fajr, "first_shahada": shahada, "size": os.path.getsize(p),
                  "segments": [(round(s.start, 1), round(s.end, 1), s.text.strip()) for s in segs]}
     print(f"== {i}: {dur:.0f}s fajr={fajr} shahada@{shahada}\n   {text[:400]}", flush=True)
