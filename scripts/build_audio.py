@@ -35,15 +35,13 @@ def duration(p):
 
 
 def encode(src, dst, start=0.0, end=None):
-    af = "loudnorm=I=-16:TP=-1.5:LRA=11"
-    args = ["ffmpeg", "-y", "-v", "error", "-i", src, "-ss", f"{start:.2f}"]
-    if end is not None:
-        args += ["-t", f"{end - start:.2f}"]
-        af = f"afade=t=out:st={max(0.0, end - start - 1.5):.2f}:d=1.5," + af
-    # trim the silence at the start of the recording
-    af = "silenceremove=start_periods=1:start_threshold=-45dB," + af
-    args += ["-af", af, "-ac", "1", "-ar", "44100", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", dst]
-    subprocess.run(args, check=True)
+    chain = []
+    if end is not None:  # cut first (on the source's own clock), then fade the cut's last moment
+        chain += [f"atrim=start={start:.2f}:end={end:.2f}", "asetpts=PTS-STARTPTS", f"afade=t=out:st={max(0.0, end - start - 1.2):.2f}:d=1.2"]
+    chain += ["silenceremove=start_periods=1:start_threshold=-45dB", "loudnorm=I=-16:TP=-1.5:LRA=11",
+              "aresample=44100", "aformat=channel_layouts=mono"]
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-af", ",".join(chain),
+                    "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", dst], check=True)
 
 
 catalog = []
