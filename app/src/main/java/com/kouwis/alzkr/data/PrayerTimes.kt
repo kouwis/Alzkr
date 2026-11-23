@@ -119,8 +119,9 @@ object Hijri {
 
     data class Day(val weekday: String, val day: Int, val month: String, val year: Int, val gregorian: String, val friday: Boolean)
 
-    fun of(date: LocalDate): Day {
-        val h = HijrahDate.from(date)
+    /** [afterMaghrib]: the Islamic day starts at Maghrib, so from then on the Hijri date is tomorrow's (the weekday stays). */
+    fun of(date: LocalDate, afterMaghrib: Boolean = false): Day {
+        val h = HijrahDate.from(if (afterMaghrib) date.plusDays(1) else date)
         return Day(
             weekday = weekdays[date.dayOfWeek.value - 1],
             day = h.get(ChronoField.DAY_OF_MONTH),

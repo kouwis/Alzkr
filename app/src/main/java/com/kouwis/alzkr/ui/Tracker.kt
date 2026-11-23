@@ -204,13 +204,15 @@ private fun DeedsCard(prefs: AppPrefs, today: LocalDate, onToggle: (String, Bool
 @Composable
 private fun ProgressCard(prefs: AppPrefs, today: LocalDate) {
     val c = LocalColors.current
-    val week = (6 downTo 0).map { dayScore(prefs, today.minusDays(it.toLong())) } // oldest first
-    val before = (13 downTo 7).map { dayScore(prefs, today.minusDays(it.toLong())) }
-    val avg = week.average().toFloat()
-    val up = avg >= before.average().toFloat()
-    val todayPct = (week.last() * 100).roundToInt()
-    val shown by animateFloatAsState(week.last(), tween(500), label = "today")
-    Panel("التقدم") {
+    // the week runs Saturday to Friday
+    val sat = today.minusDays(((today.dayOfWeek.value + 1) % 7).toLong())
+    val upto = ChronoUnit.DAYS.between(sat, today).toInt() // today's place in the week, 0..6
+    val week = (0..6).map { dayScore(prefs, sat.plusDays(it.toLong())) }
+    val lastWeek = (0..6).map { dayScore(prefs, sat.minusDays(7L - it)) }
+    val avg = week.take(upto + 1).average().toFloat()
+    val up = avg >= lastWeek.average().toFloat()
+    val todayPct = (week[upto] * 100).roundToInt()
+    Panel("تقدم هذا الأسبوع") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("إنجاز اليوم", color = c.muted, fontSize = 13.sp)
@@ -218,50 +220,54 @@ private fun ProgressCard(prefs: AppPrefs, today: LocalDate) {
             }
             Box(Modifier.width(1.dp).height(44.dp).background(c.border))
             Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                Text("معدل آخر سبعة أيام", color = c.muted, fontSize = 13.sp)
+                Text("معدل الأسبوع", color = c.muted, fontSize = 13.sp)
                 Text("${num((avg * 100).roundToInt())}٪", color = c.text, fontSize = 34.sp, fontWeight = FontWeight.Bold)
             }
             Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(if (up) c.primarySoft else c.goldSoft), contentAlignment = Alignment.Center) {
                 Text(if (up) "↑" else "↓", color = if (up) c.primary else c.goldText, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             }
         }
-        // the last seven days, today on the left (Arabic reads from the right)
+        // Saturday on the right, Friday on the left (Arabic reads from the right); the line stops at today
         val line = c.gold
         val grid = c.border
         Canvas(Modifier.fillMaxWidth().height(110.dp)) {
-            val n = week.size
             val pad = 8.dp.toPx()
             val w = size.width - pad * 2
             val h = size.height - pad * 2
-            fun pt(i: Int) = Offset(pad + w - w * i / (n - 1), pad + h - h * week[i])
+            val col = w / 7
+            fun pt(i: Int) = Offset(pad + w - col * (i + 0.5f), pad + h - h * week[i])
             for (k in 0..2) drawLine(grid, Offset(pad, pad + h * k / 2), Offset(pad + w, pad + h * k / 2), strokeWidth = 1f)
             val path = Path().apply {
                 moveTo(pt(0).x, pt(0).y)
-                for (i in 1 until n) {
+                for (i in 1..upto) {
                     val a = pt(i - 1); val b = pt(i)
                     val mx = (a.x + b.x) / 2
                     cubicTo(mx, a.y, mx, b.y, b.x, b.y)
                 }
             }
-            val fill = Path().apply {
-                addPath(path)
-                lineTo(pt(n - 1).x, pad + h); lineTo(pt(0).x, pad + h); close()
+            if (upto > 0) {
+                val fill = Path().apply {
+                    addPath(path)
+                    lineTo(pt(upto).x, pad + h); lineTo(pt(0).x, pad + h); close()
+                }
+                drawPath(fill, Brush.verticalGradient(listOf(line.copy(alpha = 0.28f), Color.Transparent)))
+                drawPath(path, line, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
             }
-            drawPath(fill, Brush.verticalGradient(listOf(line.copy(alpha = 0.28f), Color.Transparent)))
-            drawPath(path, line, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
-            drawCircle(line, 5.dp.toPx(), pt(n - 1))
-            drawCircle(Color.White, 2.dp.toPx(), pt(n - 1))
+            // the days still to come: faint dots
+            for (i in upto + 1..6) drawCircle(grid, 3.dp.toPx(), Offset(pt(i).x, pad + h))
+            drawCircle(line, 5.dp.toPx(), pt(upto))
+            drawCircle(Color.White, 2.dp.toPx(), pt(upto))
         }
         Row(Modifier.fillMaxWidth()) {
-            (0..6).forEach { i ->
-                val d = today.minusDays(i.toLong())
+            listOf("سبت", "أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة").forEachIndexed { i, name ->
                 Text(
-                    if (i == 0) "اليوم" else listOf("اثن", "ثلا", "أرب", "خمي", "جمع", "سبت", "أحد")[d.dayOfWeek.value - 1],
-                    color = if (i == 0) c.text else c.muted, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f),
+                    if (i == upto) "اليوم" else name,
+                    color = if (i == upto) c.text else if (i > upto) c.muted.copy(alpha = 0.5f) else c.muted,
+                    fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f),
                 )
             }
         }
-        Text(if (shown >= 1f) "أتممت عبادات اليوم، تقبّل الله منك" else "", color = c.primary, fontSize = 13.sp)
+        if (week[upto] >= 1f) Text("أتممت عبادات اليوم، تقبّل الله منك", color = c.primary, fontSize = 13.sp)
     }
 }
 

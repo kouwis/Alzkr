@@ -90,6 +90,9 @@ private fun clock(min: Int): String {
 }
 
 /** "١:٥١:٠٧" — hours, minutes and seconds to go, ticking. */
+/** Minutes from the adhan to the iqama (the usual times in Egypt's mosques; to be set in the settings later). */
+val IqamaDelay = mapOf(Prayer.Fajr to 25, Prayer.Dhuhr to 20, Prayer.Asr to 20, Prayer.Maghrib to 10, Prayer.Isha to 20)
+
 private fun countdown(secs: Int): String = ar("%d:%02d:%02d".format(secs / 3600, secs / 60 % 60, secs % 60))
 
 /** The day's name written out in full, with its vowels and stretched (kashida) like a heading. */
@@ -134,7 +137,12 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val minuteNow = now.hour * 60 + now.minute
     val secondNow = minuteNow * 60 + now.second
     val untilNext = (times.getValue(next) * 60 - secondNow).let { if (it < 0) it + 86_400 else it }
-    val hijri = remember(today) { Hijri.of(today) }
+    // the Islamic day begins at Maghrib: from then on the Hijri date is the next day's
+    val afterMaghrib = minuteNow >= times.getValue(Prayer.Maghrib)
+    val hijri = remember(today, afterMaghrib) { Hijri.of(today, afterMaghrib) }
+    // after the adhan, the time left to the iqama (then the strip moves on to the next prayer)
+    val iqamaAt = IqamaDelay[current]?.let { times.getValue(current) + it }
+    val untilIqama = iqamaAt?.let { at -> (at * 60 - secondNow).takeIf { it > 0 && secondNow >= times.getValue(current) * 60 } }
 
     var locating by remember { mutableStateOf(false) }
     fun toast(t: String) = android.widget.Toast.makeText(context, t, android.widget.Toast.LENGTH_LONG).show()
@@ -212,8 +220,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                 if (!eveningDone) add(Suggestion("أذكار المساء", "وقتها من العصر إلى المغرب، إن لم تقرأها بعد", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
             }
             current == Prayer.Asr || current == Prayer.Maghrib ->
-                if (!eveningDone) add(Suggestion("أذكار المساء", "تُقال من العصر (${clock(times.getValue(Prayer.Asr))}) إلى المغرب (${clock(times.getValue(Prayer.Maghrib))})", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
-            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "تُقال من الفجر (${clock(times.getValue(Prayer.Fajr))}) إلى ما قبل العصر (${clock(times.getValue(Prayer.Asr))})", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+                if (!eveningDone) add(Suggestion("أذكار المساء", "تُقال من العصر إلى المغرب", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+            else -> if (!morningDone) add(Suggestion("أذكار الصباح", "تُقال من الفجر إلى ما قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
         }
         if (fridayTime) {
             add(Suggestion("الصلاة على النبي ﷺ", "يُكثَر منها ليلة الجمعة ويومها، من مغرب الخميس إلى مغرب الجمعة", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
@@ -224,12 +232,12 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         // the hour of answer: the last hour of Friday before Maghrib
         val maghrib = times.getValue(Prayer.Maghrib)
         if (dow == DayOfWeek.FRIDAY && minuteNow in (maghrib - 60) until maghrib) {
-            add(0, Suggestion("ساعة الإجابة", "آخر ساعة من يوم الجمعة، حتى أذان المغرب (${clock(maghrib)})", AdhkarIc.clock) {
+            add(0, Suggestion("ساعة الإجابة", "آخر ساعة من يوم الجمعة، حتى أذان المغرب", AdhkarIc.clock) {
                 nav.go(Screen.Adhkar("friday_hour"))
             })
         }
         // the occasions of the Hijri year, while they are on
-        val hd = java.time.chrono.HijrahDate.from(today)
+        val hd = java.time.chrono.HijrahDate.from(if (afterMaghrib) today.plusDays(1) else today)
         val hMonth = hd.get(java.time.temporal.ChronoField.MONTH_OF_YEAR)
         val hDay = hd.get(java.time.temporal.ChronoField.DAY_OF_MONTH)
         when {
@@ -301,6 +309,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         next = next,
                         times = times,
                         untilNext = untilNext,
+                        iqama = if (untilIqama != null && iqamaAt != null) Triple(current, iqamaAt, untilIqama) else null,
                         scene = scene,
                         hijriDay = hijri.day,
                         onPick = { p -> view.haptic(Haptic.Tick); preview = if (p == current) null else p },
@@ -453,6 +462,7 @@ private fun DayCard(
     weekday: String, hijriLine: String, gregorian: String,
     place: String, placeIsDefault: Boolean, locating: Boolean, onLocate: () -> Unit,
     current: Prayer, next: Prayer, times: Map<Prayer, Int>, untilNext: Int,
+    iqama: Triple<Prayer, Int, Int>? = null, // (prayer, iqama minute, seconds left)
     scene: Prayer, hijriDay: Int, onPick: (Prayer) -> Unit,
 ) {
     val target = skyOf(scene)
@@ -530,12 +540,15 @@ private fun DayCard(
         ) {
             // the prayer that has come is done with: the strip is about the next one, live
             Column(Modifier.weight(1f)) {
-                Text(if (next == Prayer.Sunrise) "الشروق" else "الصلاة القادمة", color = soft, fontSize = 12.sp)
-                Text("${next.ar} · ${clock(times.getValue(next))}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(if (iqama != null) "الإقامة" else if (next == Prayer.Sunrise) "الشروق" else "الصلاة القادمة", color = soft, fontSize = 12.sp)
+                Text(
+                    if (iqama != null) "إقامة ${iqama.first.ar} · ${clock(iqama.second)}" else "${next.ar} · ${clock(times.getValue(next))}",
+                    color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                )
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text("باقي", color = soft, fontSize = 12.sp)
-                Text(countdown(untilNext), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                Text(countdown(iqama?.third ?: untilNext), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                     style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
             }
         }
