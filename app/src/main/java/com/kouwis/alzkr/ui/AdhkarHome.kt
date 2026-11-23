@@ -83,7 +83,7 @@ private const val CAIRO_LNG = 31.2357
 private fun ar(s: String) = s.map { if (it in '0'..'9') '٠' + (it - '0') else it }.joinToString("")
 
 /** "٤:٥٥" — 12-hour clock with Arabic digits. */
-private fun clock(min: Int): String {
+fun clock(min: Int): String {
     val h = (min / 60) % 24
     val h12 = if (h % 12 == 0) 12 else h % 12
     return ar("%d:%02d".format(h12, min % 60))
@@ -132,7 +132,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         else -> "موقعك"
     }
     val today = now.toLocalDate()
-    val times = remember(today, lat, lng) { PrayerTimes.forDay(today, lat, lng) }
+    val times = remember(today, lat, lng, prefs.prayer) { PrayerTimes.forDay(today, lat, lng, prefs.prayer) }
     val (current, next) = PrayerTimes.current(times, now)
     val minuteNow = now.hour * 60 + now.minute
     val secondNow = minuteNow * 60 + now.second
@@ -141,7 +141,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val afterMaghrib = minuteNow >= times.getValue(Prayer.Maghrib)
     val hijri = remember(today, afterMaghrib) { Hijri.of(today, afterMaghrib) }
     // after the adhan, the time left to the iqama (then the strip moves on to the next prayer)
-    val iqamaAt = IqamaDelay[current]?.let { times.getValue(current) + it }
+    val iqamaAt = prefs.prayer.iqama[current]?.takeIf { it > 0 }?.let { times.getValue(current) + it }
     val untilIqama = iqamaAt?.let { at -> (at * 60 - secondNow).takeIf { it > 0 && secondNow >= times.getValue(current) * 60 } }
 
     var locating by remember { mutableStateOf(false) }
@@ -158,6 +158,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                     // keep a known name if the lookup failed (no network) and we haven't moved
                     val name = f.place.ifBlank { if (moved) "" else prefs.place }
                     if (moved || name != prefs.place) store.setLocation(f.lat, f.lng, name)
+                    if (!quiet && !prefs.autoLocate) store.setAutoLocate(true)
                     if (!quiet) toast(if (name.isNotBlank()) "المواقيت الآن حسب $name" else "تم تحديد موقعك")
                 }
                 Locator.Result.Off -> if (!quiet) toast("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى")
@@ -171,7 +172,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     // (at most every 30 minutes, not on every return to this screen)
     LaunchedEffect(hasPlace) {
         val t = System.currentTimeMillis()
-        if (hasPlace && granted() && t - LocationCheck.last > 30 * 60_000L) { LocationCheck.last = t; locateNow(quiet = true) }
+        if (hasPlace && prefs.autoLocate && granted() && t - LocationCheck.last > 30 * 60_000L) { LocationCheck.last = t; locateNow(quiet = true) }
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) locateNow()

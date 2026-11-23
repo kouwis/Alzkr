@@ -61,7 +61,8 @@ fun SettingsScreen(prefs: AppPrefs, nav: Nav) {
 
     val groups = listOf(
         "الإعدادات" to listOf(
-            Setting("مواقيت الصلاة", AdhkarIc.clock, Color(0xFF2D8CFF), "الهيئة المصرية العامة للمساحة · " + prefs.place.ifBlank { "القاهرة" }) { soon("مواقيت الصلاة") },
+            Setting("مواقيت الصلاة", AdhkarIc.clock, Color(0xFF2D8CFF),
+                (if (prefs.autoLocate) "تلقائي" else "يدوي") + " · " + prefs.place.ifBlank { "القاهرة" }) { nav.go(Screen.PrayerSettings) },
             Setting("اللغة", Ic.globe, Color(0xFF1A9BD7), "العربية") { soon("اللغة") },
             Setting("الأذان", Ic.speaker, Color(0xFF1FA67A)) { soon("الأذان") },
             Setting("المنبهات", Ic.bell, Color(0xFFFF9F0A)) { soon("المنبهات") },
