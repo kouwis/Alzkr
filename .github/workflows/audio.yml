@@ -1,0 +1,32 @@
+name: Adhan audio
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q faster-whisper
+      - name: Probe recordings
+        if: hashFiles('scripts/audio_spec.json') == ''
+        run: python3 scripts/probe_adhan.py
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('scripts/audio_spec.json') == ''
+        with:
+          name: probe
+          path: probe/report.json
