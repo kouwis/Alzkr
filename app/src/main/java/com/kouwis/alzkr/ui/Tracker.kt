@@ -236,7 +236,8 @@ private fun ProgressCard(prefs: AppPrefs, today: LocalDate) {
             val w = size.width - pad * 2
             val h = size.height - pad * 2
             val col = w / 7
-            fun pt(i: Int) = Offset(pad + w - col * (i + 0.5f), pad + h - h * week[i])
+            val rtl = com.kouwis.alzkr.data.I18n.lang.rtl // the week runs the way the text reads
+            fun pt(i: Int) = Offset(if (rtl) pad + w - col * (i + 0.5f) else pad + col * (i + 0.5f), pad + h - h * week[i])
             for (k in 0..2) drawLine(grid, Offset(pad, pad + h * k / 2), Offset(pad + w, pad + h * k / 2), strokeWidth = 1f)
             val path = Path().apply {
                 moveTo(pt(0).x, pt(0).y)
@@ -391,7 +392,7 @@ private fun OccasionsCard(today: LocalDate, onOpen: (String) -> Unit) {
                     val step = size.width / n
                     for (i in 0 until n) {
                         // ticks fill from the right, like the text
-                        val on = (n - 1 - i) < (frac * n).roundToInt()
+                        val on = (if (com.kouwis.alzkr.data.I18n.lang.rtl) n - 1 - i else i) < (frac * n).roundToInt()
                         val x = step * i + step / 2
                         drawLine(if (on) lit else dim, Offset(x, 2f), Offset(x, size.height - 2f), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
                     }

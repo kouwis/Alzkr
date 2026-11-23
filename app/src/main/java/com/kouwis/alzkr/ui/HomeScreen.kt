@@ -130,7 +130,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                 sectionDrag = 0f
             },
             onDragCancel = { sectionDrag = 0f },
-        ) { change, dx -> change.consume(); sectionDrag += dx }
+        ) { change, dx -> change.consume(); sectionDrag += if (com.kouwis.alzkr.data.I18n.lang.rtl) dx else -dx }
     }
     // movement only — no fading, so the list never blinks
     val slidePx = with(density) { 56.dp.toPx() }

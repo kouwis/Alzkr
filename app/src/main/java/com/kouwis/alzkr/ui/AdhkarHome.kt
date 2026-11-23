@@ -196,7 +196,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                 sectionDrag = 0f
             },
             onDragCancel = { sectionDrag = 0f },
-        ) { change, dx -> change.consume(); sectionDrag += dx }
+        ) { change, dx -> change.consume(); sectionDrag += if (com.kouwis.alzkr.data.I18n.lang.rtl) dx else -dx }
     }
 
     // Friday's sunnah runs from Thursday's Maghrib to Friday's Maghrib
@@ -536,7 +536,8 @@ private fun DayCard(
                 starSpots.forEachIndexed { i, (sx, sy) ->
                     if (stars > 0f) drawCircle(Color.White.copy(alpha = stars * (0.55f + 0.45f * ((i * 37) % 10) / 10f)), radius = (0.7f + (i % 3) * 0.35f) * density, center = Offset(sx * size.width, sy * size.height))
                 }
-                val center = Offset(bx * size.width, bodyY * size.height)
+                // the sky follows the reading direction: the body starts on the side the text starts
+                val center = Offset((if (com.kouwis.alzkr.data.I18n.lang.rtl) bx else 1f - bx) * size.width, bodyY * size.height)
                 if (sunA > 0.01f) drawSun(center, glowR.dp.toPx(), glow, sunMid, sunEdge, sunA)
                 if (moonA > 0.01f) drawMoon(center, 23.dp.toPx(), hijriDay, moonA, top)
                 drawLand(land, land2)
