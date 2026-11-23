@@ -1,0 +1,96 @@
+غفوة {0} دقائق	Snooze {0} min	Répéter dans {0} min	{0} dk ertele	{0} Min. schlummern	Posponer {0} min	Tunda {0} menit	Tunda {0} minit
+إيقاف	Stop	Arrêter	Durdur	Stopp	Detener	Hentikan	Henti
+تنبيهات الصلاة	Prayer alerts	Alertes de prière	Namaz uyarıları	Gebetshinweise	Avisos de oración	Pengingat salat	Peringatan solat
+تنبيهات بالاهتزاز	Vibration alerts	Alertes par vibration	Titreşimli uyarılar	Hinweise mit Vibration	Avisos con vibración	Pengingat getar	Peringatan getaran
+المنبّهات	Alarms	Alarmes	Alarmlar	Wecker	Alarmas	Alarm	Penggera
+التذكيرات	Reminders	Rappels	Hatırlatmalar	Erinnerungen	Recordatorios	Pengingat	Peringatan
+إيقاف الأذان	Stop the adhan	Arrêter l'adhan	Ezanı durdur	Adhan stoppen	Detener el adhan	Hentikan azan	Hentikan azan
+حان الآن موعد أذان {0}	It is now time for the {0} adhan	C'est l'heure de l'adhan du {0}	{0} ezanı vakti geldi	Es ist Zeit für den {0}-Adhan	Es la hora del adhan del {0}	Telah masuk waktu azan {0}	Telah masuk waktu azan {0}
+انتهى وقت صلاة الفجر	The time for Fajr prayer has ended	Le temps de la prière du Fajr est terminé	Sabah namazının vakti çıktı	Die Zeit des Fadschr-Gebets ist vorbei	Ha terminado el tiempo de la oración del Fajr	Waktu salat Subuh telah habis	Waktu solat Subuh telah tamat
+الصلاة خير من الدنيا وما فيها	Prayer is better than this world and all it holds	La prière vaut mieux que ce monde et ce qu'il contient	Namaz dünyadan ve içindekilerden hayırlıdır	Das Gebet ist besser als die Welt und was in ihr ist	La oración es mejor que este mundo y lo que contiene	Salat lebih baik daripada dunia dan seisinya	Solat lebih baik daripada dunia dan isinya
+بقي {0} دقيقة على الشروق	{0} minutes until sunrise	Lever du soleil dans {0} min	Güneşin doğmasına {0} dakika kaldı	Noch {0} Minuten bis Sonnenaufgang	Faltan {0} minutos para el amanecer	{0} menit lagi menuju terbit	{0} minit lagi ke syuruk
+بقي {0} دقيقة على أذان {1}	{0} minutes until the {1} adhan	Adhan du {1} dans {0} min	{1} ezanına {0} dakika kaldı	Noch {0} Minuten bis zum {1}-Adhan	Faltan {0} minutos para el adhan del {1}	{0} menit lagi menuju azan {1}	{0} minit lagi ke azan {1}
+استعد للصلاة	Get ready for prayer	Préparez-vous à la prière	Namaza hazırlanın	Bereiten Sie sich auf das Gebet vor	Prepárate para la oración	Bersiaplah untuk salat	Bersedialah untuk solat
+حان وقت إقامة صلاة {0}	It is time for the {0} iqama	C'est l'heure de l'iqama du {0}	{0} namazının kamet vakti geldi	Zeit für die Iqama des {0}-Gebets	Es la hora de la iqama del {0}	Telah masuk waktu ikamah {0}	Telah masuk waktu iqamah {0}
+بقي {0} دقيقة على إقامة صلاة {1}	{0} minutes until the {1} iqama	Iqama du {1} dans {0} min	{1} namazının kametine {0} dakika kaldı	Noch {0} Minuten bis zur Iqama des {1}-Gebets	Faltan {0} minutos para la iqama del {1}	{0} menit lagi menuju ikamah {1}	{0} minit lagi ke iqamah {1}
+قوموا إلى صلاتكم	Rise for your prayer	Levez-vous pour votre prière	Namazınıza kalkın	Erhebt euch zu eurem Gebet	Levantaos para vuestra oración	Bangkitlah untuk salat kalian	Bangunlah untuk solat kalian
+عند أذان {0}	At the {0} adhan	À l'adhan du {0}	{0} ezanında	Beim {0}-Adhan	En el adhan del {0}	Saat azan {0}	Ketika azan {0}
+عند إقامة {0}	At the {0} iqama	À l'iqama du {0}	{0} kametinde	Bei der {0}-Iqama	En la iqama del {0}	Saat ikamah {0}	Ketika iqamah {0}
+قبل أذان {0} بـ {1} دقيقة	{1} min before the {0} adhan	{1} min avant l'adhan du {0}	{0} ezanından {1} dk önce	{1} Min. vor dem {0}-Adhan	{1} min antes del adhan del {0}	{1} menit sebelum azan {0}	{1} minit sebelum azan {0}
+قبل إقامة {0} بـ {1} دقيقة	{1} min before the {0} iqama	{1} min avant l'iqama du {0}	{0} kametinden {1} dk önce	{1} Min. vor der {0}-Iqama	{1} min antes de la iqama del {0}	{1} menit sebelum ikamah {0}	{1} minit sebelum iqamah {0}
+بعد أذان {0} بـ {1} دقيقة	{1} min after the {0} adhan	{1} min après l'adhan du {0}	{0} ezanından {1} dk sonra	{1} Min. nach dem {0}-Adhan	{1} min después del adhan del {0}	{1} menit setelah azan {0}	{1} minit selepas azan {0}
+بعد إقامة {0} بـ {1} دقيقة	{1} min after the {0} iqama	{1} min après l'iqama du {0}	{0} kametinden {1} dk sonra	{1} Min. nach der {0}-Iqama	{1} min después de la iqama del {0}	{1} menit setelah ikamah {0}	{1} minit selepas iqamah {0}
+كل يوم	Every day	Tous les jours	Her gün	Jeden Tag	Todos los días	Setiap hari	Setiap hari
+صوت الإشعار	Notification sound	Son de notification	Bildirim sesi	Benachrichtigungston	Sonido de notificación	Suara notifikasi	Bunyi pemberitahuan
+صوت المنبّه	Alarm sound	Son d'alarme	Alarm sesi	Weckton	Sonido de alarma	Suara alarm	Bunyi penggera
+اهتزاز فقط	Vibration only	Vibration seulement	Yalnızca titreşim	Nur Vibration	Solo vibración	Getar saja	Getaran sahaja
+{0} · تكبيرات	{0} · takbirs	{0} · takbirs	{0} · tekbirler	{0} · Takbire	{0} · takbires	{0} · takbir	{0} · takbir
+{0} · أذان الفجر	{0} · Fajr adhan	{0} · adhan du Fajr	{0} · sabah ezanı	{0} · Fadschr-Adhan	{0} · adhan del Fajr	{0} · azan Subuh	{0} · azan Subuh
+حان وقت أذكار الصباح	It's time for the morning adhkar	C'est l'heure des adhkar du matin	Sabah zikirlerinin vakti	Zeit für die Morgen-Adhkar	Es la hora de los adhkar de la mañana	Waktunya zikir pagi	Masa untuk zikir pagi
+حان وقت أذكار المساء	It's time for the evening adhkar	C'est l'heure des adhkar du soir	Akşam zikirlerinin vakti	Zeit für die Abend-Adhkar	Es la hora de los adhkar de la tarde	Waktunya zikir petang	Masa untuk zikir petang
+دخل وقت صلاة الضحى	The time for Duha prayer has begun	Le temps de la prière du Duha a commencé	Kuşluk namazının vakti girdi	Die Zeit des Duha-Gebets hat begonnen	Ha comenzado el tiempo de la oración del Duha	Telah masuk waktu salat Duha	Telah masuk waktu solat Dhuha
+لا تنسَ أذكار النوم	Don't forget the sleep adhkar	N'oubliez pas les adhkar du coucher	Uyku zikirlerini unutmayın	Vergessen Sie die Adhkar vor dem Schlafen nicht	No olvides los adhkar antes de dormir	Jangan lupa zikir sebelum tidur	Jangan lupa zikir sebelum tidur
+دخل ثلث الليل الآخر، وقت النزول الإلهي	The last third of the night has begun, the time of divine descent	Le dernier tiers de la nuit a commencé, moment de la descente divine	Gecenin son üçte biri girdi, ilahi nüzul vakti	Das letzte Drittel der Nacht hat begonnen, die Zeit des göttlichen Herabsteigens	Ha comenzado el último tercio de la noche, el momento del descenso divino	Sepertiga malam terakhir telah tiba, waktu turunnya Allah ke langit dunia	Satu pertiga malam terakhir telah tiba, waktu nuzul Ilahi
+اليوم الجمعة: سورة الكهف والصلاة على النبي ﷺ	It's Friday: Surah al-Kahf and salawat upon the Prophet ﷺ	C'est vendredi : sourate al-Kahf et prière sur le Prophète ﷺ	Bugün Cuma: Kehf Suresi ve Peygamber'e ﷺ salavat	Heute ist Freitag: Sure al-Kahf und Segensgebet für den Propheten ﷺ	Hoy es viernes: sura al-Kahf y bendiciones sobre el Profeta ﷺ	Hari ini Jumat: Surah Al-Kahfi dan selawat kepada Nabi ﷺ	Hari ini Jumaat: Surah al-Kahfi dan selawat ke atas Nabi ﷺ
+آخر ساعة من يوم الجمعة، فأكثِر من الدعاء	The last hour of Friday — make plenty of supplication	La dernière heure du vendredi — multipliez les invocations	Cuma gününün son saati, çokça dua edin	Die letzte Stunde des Freitags — bitten Sie viel	La última hora del viernes — multiplica las súplicas	Saat terakhir hari Jumat, perbanyaklah doa	Saat terakhir hari Jumaat, perbanyakkan doa
+صيام الاثنين والخميس	Monday and Thursday fasting	Jeûne du lundi et du jeudi	Pazartesi ve perşembe orucu	Fasten am Montag und Donnerstag	Ayuno del lunes y el jueves	Puasa Senin dan Kamis	Puasa Isnin dan Khamis
+غدًا يُستحب الصيام، فلا تنسَ نية الصيام والسحور	Fasting tomorrow is recommended — don't forget the intention and suhur	Il est recommandé de jeûner demain — n'oubliez pas l'intention et le suhur	Yarın oruç tutmak müstehaptır, niyeti ve sahuru unutmayın	Morgen ist Fasten empfohlen — Absicht und Suhur nicht vergessen	Mañana se recomienda ayunar — no olvides la intención y el suhur	Besok disunahkan puasa, jangan lupa niat dan sahur	Esok disunatkan berpuasa, jangan lupa niat dan sahur
+صيام الأيام البيض	Fasting the white days	Jeûne des jours blancs	Eyyam-ı biyz orucu	Fasten der weißen Tage	Ayuno de los días blancos	Puasa Ayyamul Bidh	Puasa hari putih
+غدًا من الأيام البيض (١٣ و١٤ و١٥ من الشهر الهجري)	Tomorrow is one of the white days (13th, 14th and 15th of the Hijri month)	Demain est l'un des jours blancs (13, 14 et 15 du mois hégirien)	Yarın eyyam-ı biyzdandır (hicri ayın 13, 14 ve 15'i)	Morgen ist einer der weißen Tage (13., 14. und 15. des Hidschri-Monats)	Mañana es uno de los días blancos (13, 14 y 15 del mes hégira)	Besok termasuk Ayyamul Bidh (13, 14, dan 15 bulan Hijriah)	Esok termasuk hari putih (13, 14 dan 15 bulan Hijrah)
+الأذان والتنبيهات	Adhan and alerts	Adhan et alertes	Ezan ve uyarılar	Adhan und Hinweise	Adhan y avisos	Azan dan pengingat	Azan dan peringatan
+الإشعارات متوقفة	Notifications are off	Notifications désactivées	Bildirimler kapalı	Benachrichtigungen sind aus	Las notificaciones están desactivadas	Notifikasi nonaktif	Pemberitahuan dimatikan
+اسمح للتطبيق بالإشعارات ليصلك الأذان والتنبيهات	Allow notifications so the adhan and alerts reach you	Autorisez les notifications pour recevoir l'adhan et les alertes	Ezan ve uyarıların gelmesi için bildirimlere izin verin	Benachrichtigungen erlauben, damit Adhan und Hinweise ankommen	Permite las notificaciones para recibir el adhan y los avisos	Izinkan notifikasi agar azan dan pengingat sampai kepada Anda	Benarkan pemberitahuan supaya azan dan peringatan sampai kepada anda
+التنبيه في وقته بالضبط	Alerts right on time	Alertes à l'heure exacte	Tam vaktinde uyarı	Hinweise pünktlich	Avisos a su hora exacta	Pengingat tepat waktu	Peringatan tepat pada masanya
+اسمح بالمنبّهات والتذكيرات حتى لا يتأخر الأذان عن وقته	Allow alarms and reminders so the adhan is never late	Autorisez alarmes et rappels pour que l'adhan ne soit jamais en retard	Ezanın gecikmemesi için alarm ve hatırlatmalara izin verin	Wecker und Erinnerungen erlauben, damit der Adhan nie zu spät kommt	Permite alarmas y recordatorios para que el adhan no se retrase	Izinkan alarm dan pengingat agar azan tidak terlambat	Benarkan penggera dan peringatan supaya azan tidak lewat
+المنبّه على الشاشة	Alarm on screen	Alarme à l'écran	Ekranda alarm	Wecker auf dem Bildschirm	Alarma en pantalla	Alarm di layar	Penggera pada skrin
+اسمح بعرض المنبّه بملء الشاشة ليظهر فوق شاشة القفل	Allow full-screen alarms so they show over the lock screen	Autorisez l'alarme en plein écran pour qu'elle s'affiche sur l'écran de verrouillage	Alarmın kilit ekranında görünmesi için tam ekrana izin verin	Vollbild-Wecker erlauben, damit er über dem Sperrbildschirm erscheint	Permite la alarma a pantalla completa para que aparezca sobre la pantalla de bloqueo	Izinkan alarm layar penuh agar tampil di atas layar kunci	Benarkan penggera skrin penuh supaya dipaparkan di atas skrin kunci
+تنبيه الأذان	Adhan alert	Alerte de l'adhan	Ezan uyarısı	Adhan-Hinweis	Aviso del adhan	Pengingat azan	Peringatan azan
+مغلق	Off	Désactivé	Kapalı	Aus	Desactivado	Mati	Mati
+منبّه جديد	New alarm	Nouvelle alarme	Yeni alarm	Neuer Wecker	Nueva alarma	Alarm baru	Penggera baharu
+يرنّ المنبّه مثل منبّه الهاتف، ويتحرّك وقته وحده كل يوم مع مواقيت الصلاة.	The alarm rings like the phone's alarm clock, and its time moves by itself each day with the prayer times.	L'alarme sonne comme celle du téléphone, et son heure suit chaque jour les horaires de prière.	Alarm telefonun alarmı gibi çalar ve saati her gün namaz vakitleriyle kendiliğinden değişir.	Der Wecker klingelt wie der des Telefons und seine Zeit folgt jeden Tag von selbst den Gebetszeiten.	La alarma suena como la del teléfono y su hora se ajusta sola cada día a los horarios de oración.	Alarm berbunyi seperti alarm ponsel, dan waktunya bergeser sendiri setiap hari mengikuti jadwal salat.	Penggera berbunyi seperti penggera telefon, dan masanya berubah sendiri setiap hari mengikut waktu solat.
+تذكيرات يومية	Daily reminders	Rappels quotidiens	Günlük hatırlatmalar	Tägliche Erinnerungen	Recordatorios diarios	Pengingat harian	Peringatan harian
+عام	General	Général	Genel	Allgemein	General	Umum	Umum
+الأذان في الوضع الصامت	Adhan in silent mode	Adhan en mode silencieux	Sessiz modda ezan	Adhan im Lautlos-Modus	Adhan en modo silencio	Azan saat mode senyap	Azan dalam mod senyap
+يعمل الأذان ولو كان الهاتف صامتًا أو على الاهتزاز	The adhan plays even when the phone is silent or on vibrate	L'adhan retentit même si le téléphone est en silencieux ou en vibreur	Telefon sessiz ya da titreşimde olsa da ezan okunur	Der Adhan erklingt auch, wenn das Telefon lautlos oder auf Vibration ist	El adhan suena aunque el teléfono esté en silencio o vibración	Azan tetap berbunyi meski ponsel dalam mode senyap atau getar	Azan tetap berbunyi walaupun telefon senyap atau bergetar
+يعلو الأذان والمنبّه بمستوى صوت المنبّه في الهاتف.	The adhan and alarms play at the phone's alarm volume.	L'adhan et les alarmes utilisent le volume d'alarme du téléphone.	Ezan ve alarmlar telefonun alarm ses düzeyinde çalar.	Adhan und Wecker nutzen die Weckerlautstärke des Telefons.	El adhan y las alarmas suenan al volumen de alarma del teléfono.	Azan dan alarm berbunyi dengan volume alarm ponsel.	Azan dan penggera berbunyi pada kelantangan penggera telefon.
+الثلث الأخير من الليل	the last third of the night	le dernier tiers de la nuit	gecenin son üçte biri	das letzte Drittel der Nacht	el último tercio de la noche	sepertiga malam terakhir	satu pertiga malam terakhir
+عند {0}	At {0}	À {0}	{0} vaktinde	Bei {0}	En {0}	Saat {0}	Ketika {0}
+بعد {0} بـ {1} دقيقة	{1} min after {0}	{1} min après {0}	{0} vaktinden {1} dk sonra	{1} Min. nach {0}	{1} min después de {0}	{1} menit setelah {0}	{1} minit selepas {0}
+قبل {0} بـ {1} دقيقة	{1} min before {0}	{1} min avant {0}	{0} vaktinden {1} dk önce	{1} Min. vor {0}	{1} min antes de {0}	{1} menit sebelum {0}	{1} minit sebelum {0}
+الجمعة · {0}	Friday · {0}	Vendredi · {0}	Cuma · {0}	Freitag · {0}	Viernes · {0}	Jumat · {0}	Jumaat · {0}
+ليلة الاثنين والخميس · {0}	Eve of Monday and Thursday · {0}	Veille du lundi et du jeudi · {0}	Pazartesi ve perşembe geceleri · {0}	Vorabend von Montag und Donnerstag · {0}	Víspera del lunes y el jueves · {0}	Malam Senin dan Kamis · {0}	Malam Isnin dan Khamis · {0}
+ليالي ١٣ و١٤ و١٥ · {0}	Eves of the 13th, 14th and 15th · {0}	Veilles des 13, 14 et 15 · {0}	13, 14 ve 15. geceler · {0}	Vorabende des 13., 14. und 15. · {0}	Vísperas del 13, 14 y 15 · {0}	Malam 13, 14, dan 15 · {0}	Malam 13, 14 dan 15 · {0}
+السماح	Allow	Autoriser	İzin ver	Erlauben	Permitir	Izinkan	Benarkan
+تنبيه الشروق	Sunrise alert	Alerte du lever du soleil	Güneş doğuşu uyarısı	Hinweis zum Sonnenaufgang	Aviso del amanecer	Pengingat terbit	Peringatan syuruk
+اليوم {0}	Today {0}	Aujourd'hui {0}	Bugün {0}	Heute {0}	Hoy {0}	Hari ini {0}	Hari ini {0}
+الصوت	Sound	Son	Ses	Ton	Sonido	Suara	Bunyi
+صوت الأذان	Adhan sound	Son de l'adhan	Ezan sesi	Adhan-Ton	Sonido del adhan	Suara azan	Bunyi azan
+التنبيه قبل الشروق	Alert before sunrise	Alerte avant le lever du soleil	Güneş doğmadan önce uyarı	Hinweis vor Sonnenaufgang	Aviso antes del amanecer	Pengingat sebelum terbit	Peringatan sebelum syuruk
+التنبيه قبل الأذان	Alert before the adhan	Alerte avant l'adhan	Ezandan önce uyarı	Hinweis vor dem Adhan	Aviso antes del adhan	Pengingat sebelum azan	Peringatan sebelum azan
+قبل الوقت بـ	Before the time by	Avant l'heure de	Vakitten önce	Vor der Zeit um	Antes de la hora	Sebelum waktunya	Sebelum waktunya
+{0} دقيقة	{0} min	{0} min	{0} dk	{0} Min.	{0} min	{0} menit	{0} minit
+صوت التنبيه	Alert sound	Son de l'alerte	Uyarı sesi	Hinweiston	Sonido del aviso	Suara pengingat	Bunyi peringatan
+تنبيه الإقامة	Iqama alert	Alerte de l'iqama	Kamet uyarısı	Iqama-Hinweis	Aviso de la iqama	Pengingat ikamah	Peringatan iqamah
+الإقامة بعد الأذان بـ {0} دقيقة	The iqama is {0} min after the adhan	L'iqama est {0} min après l'adhan	Kamet ezandan {0} dk sonra	Die Iqama ist {0} Min. nach dem Adhan	La iqama es {0} min después del adhan	Ikamah {0} menit setelah azan	Iqamah {0} minit selepas azan
+لم يُضبط وقت للإقامة	No iqama time set	Aucune heure d'iqama définie	Kamet vakti ayarlanmadı	Keine Iqama-Zeit eingestellt	No hay hora de iqama	Waktu ikamah belum diatur	Waktu iqamah belum ditetapkan
+قبل الإقامة	Before the iqama	Avant l'iqama	Kametten önce	Vor der Iqama	Antes de la iqama	Sebelum ikamah	Sebelum iqamah
+عند الإقامة	At the iqama	À l'iqama	Kamette	Bei der Iqama	En la iqama	Saat ikamah	Ketika iqamah
+{0} دقائق	{0} min	{0} min	{0} dk	{0} Min.	{0} min	{0} menit	{0} minit
+صوت تنبيه الإقامة	Iqama alert sound	Son de l'alerte d'iqama	Kamet uyarı sesi	Iqama-Hinweiston	Sonido del aviso de iqama	Suara pengingat ikamah	Bunyi peringatan iqamah
+تعذّر تنزيل الصوت — تأكد من الاتصال بالإنترنت	Couldn't download the sound — check your internet connection	Impossible de télécharger le son — vérifiez votre connexion	Ses indirilemedi — internet bağlantınızı kontrol edin	Ton konnte nicht geladen werden — Internetverbindung prüfen	No se pudo descargar el sonido — revisa tu conexión	Gagal mengunduh suara — periksa koneksi internet	Gagal memuat turun bunyi — semak sambungan internet
+اختر صوت الأذان	Choose the adhan sound	Choisir le son de l'adhan	Ezan sesini seçin	Adhan-Ton wählen	Elige el sonido del adhan	Pilih suara azan	Pilih bunyi azan
+اختر الصوت	Choose the sound	Choisir le son	Sesi seçin	Ton wählen	Elige el sonido	Pilih suara	Pilih bunyi
+استماع	Listen	Écouter	Dinle	Anhören	Escuchar	Dengarkan	Dengar
+التكبيرات الأولى فقط	Opening takbirs only	Premiers takbirs seulement	Yalnızca ilk tekbirler	Nur die ersten Takbire	Solo los primeros takbires	Takbir pembuka saja	Takbir pembuka sahaja
+يُنزَّل مرة واحدة · {0} ميجابايت	Downloaded once · {0} MB	Téléchargé une fois · {0} Mo	Bir kez indirilir · {0} MB	Wird einmal geladen · {0} MB	Se descarga una vez · {0} MB	Diunduh sekali · {0} MB	Dimuat turun sekali · {0} MB
+تعديل المنبّه	Edit alarm	Modifier l'alarme	Alarmı düzenle	Wecker bearbeiten	Editar alarma	Ubah alarm	Ubah penggera
+الصلاة	Prayer	Prière	Namaz	Gebet	Oración	Salat	Solat
+قبل	Before	Avant	Önce	Vor	Antes	Sebelum	Sebelum
+عند	At	À	Tam	Bei	En	Saat	Ketika
+بعد	After	Après	Sonra	Nach	Después	Setelah	Selepas
+بالدقائق	Minutes	Minutes	Dakika	Minuten	Minutos	Menit	Minit
+الأيام	Days	Jours	Günler	Tage	Días	Hari	Hari
+اسم المنبّه (اختياري)	Alarm name (optional)	Nom de l'alarme (facultatif)	Alarm adı (isteğe bağlı)	Name des Weckers (optional)	Nombre de la alarma (opcional)	Nama alarm (opsional)	Nama penggera (pilihan)
+حذف المنبّه	Delete alarm	Supprimer l'alarme	Alarmı sil	Wecker löschen	Eliminar alarma	Hapus alarm	Padam penggera
+بالدقائق: السالب قبل الوقت، والموجب بعده	In minutes: negative is before the time, positive after	En minutes : négatif avant l'heure, positif après	Dakika: eksi vakitten önce, artı sonra	In Minuten: negativ vor der Zeit, positiv danach	En minutos: negativo antes de la hora, positivo después	Dalam menit: negatif sebelum waktu, positif sesudahnya	Dalam minit: negatif sebelum waktu, positif selepasnya
+صوت الأذان، المنبّهات، التذكيرات	Adhan sound, alarms, reminders	Son de l'adhan, alarmes, rappels	Ezan sesi, alarmlar, hatırlatmalar	Adhan-Ton, Wecker, Erinnerungen	Sonido del adhan, alarmas, recordatorios	Suara azan, alarm, pengingat	Bunyi azan, penggera, peringatan

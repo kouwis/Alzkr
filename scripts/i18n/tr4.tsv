@@ -1,0 +1,120 @@
+جاكرتا	Jakarta	Jakarta	Cakarta	Jakarta	Yakarta	Jakarta	Jakarta
+موقعك الحالي	Your current location	Votre position actuelle	Şu anki konumunuz	Ihr aktueller Standort	Tu ubicación actual	Lokasi Anda saat ini	Lokasi semasa anda
+معلومات	Information	Informations	Bilgi	Informationen	Información	Informasi	Maklumat
+اتجاه القبلة في	Qibla direction in	Direction de la qibla à	Kıble yönü:	Qibla-Richtung in	Dirección de la qibla en	Arah kiblat di	Arah kiblat di
+هذا الهاتف لا يحتوي على بوصلة	This phone has no compass	Ce téléphone n'a pas de boussole	Bu telefonda pusula yok	Dieses Telefon hat keinen Kompass	Este teléfono no tiene brújula	Ponsel ini tidak memiliki kompas	Telefon ini tiada kompas
+شمال	N	N	K	N	N	U	U
+شرق	E	E	D	O	E	T	T
+جنوب	S	S	G	S	S	S	S
+غرب	W	O	B	W	O	B	B
+أنت في اتجاه القبلة	You are facing the Qibla	Vous êtes face à la qibla	Kıbleye dönüksünüz	Sie sind in Qibla-Richtung	Estás orientado a la qibla	Anda menghadap kiblat	Anda menghadap kiblat
+السهم يشير إلى اتجاه القبلة	The arrow points to the Qibla	La flèche indique la qibla	Ok kıble yönünü gösterir	Der Pfeil zeigt zur Qibla	La flecha señala la qibla	Panah menunjuk arah kiblat	Anak panah menunjuk arah kiblat
+البوصلة تحتاج إلى معايرة: حرّك الهاتف في الهواء على شكل الرقم ٨ عدة مرات، بعيدًا عن المعادن والمغناطيس.	The compass needs calibrating: move the phone in a figure 8 several times, away from metal and magnets.	La boussole doit être calibrée : décrivez un 8 avec le téléphone plusieurs fois, loin des métaux et aimants.	Pusulanın kalibre edilmesi gerekiyor: telefonu metal ve mıknatıslardan uzakta birkaç kez 8 şeklinde hareket ettirin.	Der Kompass muss kalibriert werden: das Telefon mehrmals in Form einer 8 bewegen, fern von Metall und Magneten.	La brújula necesita calibrarse: mueve el teléfono en forma de 8 varias veces, lejos de metales e imanes.	Kompas perlu dikalibrasi: gerakkan ponsel membentuk angka 8 beberapa kali, jauh dari logam dan magnet.	Kompas perlu ditentukur: gerakkan telefon membentuk angka 8 beberapa kali, jauh daripada logam dan magnet.
+الاتجاه تقريبي ويعتمد على بوصلة الهاتف وموقعك، وقد يتأثر بالمعادن والمغناطيس. ضع الهاتف مستويًا للحصول على أدق نتيجة.	The direction is approximate and depends on the phone's compass and your location, and may be affected by metal and magnets. Hold the phone flat for the most accurate result.	La direction est approximative ; elle dépend de la boussole et de votre position et peut être perturbée par les métaux et aimants. Tenez le téléphone à plat pour plus de précision.	Yön yaklaşıktır; telefon pusulasına ve konumunuza bağlıdır, metal ve mıknatıslardan etkilenebilir. En doğru sonuç için telefonu düz tutun.	Die Richtung ist ungefähr, hängt vom Kompass und Ihrem Standort ab und kann durch Metall und Magnete gestört werden. Halten Sie das Telefon flach für das genaueste Ergebnis.	La dirección es aproximada, depende de la brújula y de tu ubicación y puede verse afectada por metales e imanes. Coloca el teléfono plano para mayor precisión.	Arah ini perkiraan dan bergantung pada kompas ponsel serta lokasi Anda, dan bisa terpengaruh logam dan magnet. Letakkan ponsel mendatar untuk hasil paling akurat.	Arah ini anggaran dan bergantung pada kompas telefon serta lokasi anda, dan boleh terjejas oleh logam dan magnet. Letakkan telefon mendatar untuk hasil paling tepat.
+حسنًا	OK	D'accord	Tamam	OK	De acuerdo	Oke	Baik
+عن اتجاه القبلة	About the Qibla direction	À propos de la direction de la qibla	Kıble yönü hakkında	Über die Qibla-Richtung	Sobre la dirección de la qibla	Tentang arah kiblat	Tentang arah kiblat
+الموقع: {0}⏎	Location: {0}⏎	Position : {0}⏎	Konum: {0}⏎	Standort: {0}⏎	Ubicación: {0}⏎	Lokasi: {0}⏎	Lokasi: {0}⏎
+اتجاه القبلة: {0}° من الشمال الحقيقي⏎	Qibla direction: {0}° from true north⏎	Direction de la qibla : {0}° du nord géographique⏎	Kıble yönü: gerçek kuzeyden {0}°⏎	Qibla-Richtung: {0}° von geografisch Nord⏎	Dirección de la qibla: {0}° desde el norte verdadero⏎	Arah kiblat: {0}° dari utara sejati⏎	Arah kiblat: {0}° dari utara benar⏎
+المسافة إلى مكة المكرمة: {0} كم⏎⏎	Distance to Makkah: {0} km⏎⏎	Distance jusqu'à La Mecque : {0} km⏎⏎	Mekke'ye uzaklık: {0} km⏎⏎	Entfernung nach Mekka: {0} km⏎⏎	Distancia a La Meca: {0} km⏎⏎	Jarak ke Makkah: {0} km⏎⏎	Jarak ke Makkah: {0} km⏎⏎
+لم يُحدَّد موقعك بعد، فالاتجاه محسوب للقاهرة. حدّد موقعك من بطاقة اليوم في قسم الأذكار.⏎⏎	Your location hasn't been set yet, so the direction is calculated for Cairo. Set your location from the day card in the Adhkar section.⏎⏎	Votre position n'est pas encore définie : la direction est calculée pour Le Caire. Définissez-la depuis la carte du jour dans la section Adhkar.⏎⏎	Konumunuz henüz belirlenmedi, yön Kahire'ye göre hesaplandı. Konumunuzu Zikirler bölümündeki gün kartından belirleyin.⏎⏎	Ihr Standort ist noch nicht festgelegt, daher gilt die Richtung für Kairo. Legen Sie ihn über die Tageskarte im Adhkar-Bereich fest.⏎⏎	Tu ubicación aún no está definida, así que la dirección se calcula para El Cairo. Fíjala desde la tarjeta del día en la sección Adhkar.⏎⏎	Lokasi Anda belum ditentukan, jadi arah dihitung untuk Kairo. Tentukan lokasi dari kartu hari di bagian Zikir.⏎⏎	Lokasi anda belum ditetapkan, jadi arah dikira untuk Kaherah. Tetapkan lokasi daripada kad hari di bahagian Zikir.⏎⏎
+للحصول على أدق نتيجة: ضع الهاتف مستويًا على يدك، وابتعد عن الأجهزة والمعادن. وإذا بدا الاتجاه غير مستقر، فحرّك الهاتف على شكل الرقم ٨ لمعايرة البوصلة.	For the most accurate result: hold the phone flat in your hand, away from devices and metal. If the direction seems unstable, move the phone in a figure 8 to calibrate the compass.	Pour plus de précision : tenez le téléphone à plat dans la main, loin des appareils et métaux. Si la direction semble instable, décrivez un 8 pour calibrer la boussole.	En doğru sonuç için: telefonu elinizde düz tutun, cihazlardan ve metallerden uzak durun. Yön kararsız görünürse pusulayı kalibre etmek için telefonu 8 şeklinde hareket ettirin.	Für das genaueste Ergebnis: das Telefon flach in der Hand halten, fern von Geräten und Metall. Wirkt die Richtung unruhig, das Telefon in Form einer 8 bewegen, um den Kompass zu kalibrieren.	Para mayor precisión: sostén el teléfono plano en la mano, lejos de aparatos y metales. Si la dirección parece inestable, muévelo en forma de 8 para calibrar la brújula.	Untuk hasil paling akurat: pegang ponsel mendatar di tangan, jauh dari perangkat dan logam. Jika arah tampak tidak stabil, gerakkan ponsel membentuk angka 8 untuk mengalibrasi kompas.	Untuk hasil paling tepat: pegang telefon mendatar di tangan, jauh daripada peranti dan logam. Jika arah kelihatan tidak stabil, gerakkan telefon membentuk angka 8 untuk menentukur kompas.
+سورة، كلمة، أو رقم صفحة	Surah, word, or page number	Sourate, mot ou numéro de page	Sure, kelime veya sayfa numarası	Sure, Wort oder Seitenzahl	Sura, palabra o número de página	Surah, kata, atau nomor halaman	Surah, perkataan atau nombor halaman
+الصفحة	Page	Page	Sayfa	Seite	Página	Halaman	Halaman
+سورة {0} · الجزء {1}	Surah {0} · Juz {1}	Sourate {0} · Juz {1}	{0} Suresi · {1}. cüz	Sure {0} · Dschuz {1}	Sura {0} · Yuz {1}	Surah {0} · Juz {1}	Surah {0} · Juzuk {1}
+لا توجد نتائج	No results	Aucun résultat	Sonuç yok	Keine Ergebnisse	Sin resultados	Tidak ada hasil	Tiada hasil
+أول {0} نتيجة	First {0} results	{0} premiers résultats	İlk {0} sonuç	Erste {0} Ergebnisse	Primeros {0} resultados	{0} hasil pertama	{0} hasil pertama
+{0} آية	{0} verses	{0} versets	{0} ayet	{0} Verse	{0} aleyas	{0} ayat	{0} ayat
+الآيات · {0}	Verses · {0}	Versets · {0}	Ayetler · {0}	Verse · {0}	Aleyas · {0}	Ayat · {0}	Ayat · {0}
+الفقه	Fiqh	Fiqh	Fıkıh	Fiqh	Fiqh	Fikih	Fiqah
+القرآن	Quran	Coran	Kur'an	Koran	Corán	Al-Qur'an	Al-Quran
+{0} · قريبًا	{0} · coming soon	{0} · bientôt	{0} · yakında	{0} · bald	{0} · próximamente	{0} · segera hadir	{0} · akan datang
+تلقائي	Automatic	Automatique	Otomatik	Automatisch	Automático	Otomatis	Automatik
+يدوي	Manual	Manuel	Elle	Manuell	Manual	Manual	Manual
+اللغة	Language	Langue	Dil	Sprache	Idioma	Bahasa	Bahasa
+الأذان	Adhan	Adhan	Ezan	Adhan	Adhan	Azan	Azan
+المنبهات	Reminders	Rappels	Hatırlatıcılar	Erinnerungen	Recordatorios	Pengingat	Peringatan
+الصمت أثناء الصلاة	Silent during prayer	Silencieux pendant la prière	Namazda sessiz	Stumm beim Gebet	Silencio durante la oración	Senyap saat salat	Senyap semasa solat
+التاريخ	Date	Date	Tarih	Datum	Fecha	Tanggal	Tarikh
+أم القرى · يبدأ اليوم الهجري من المغرب	Umm al-Qura · the Hijri day begins at Maghrib	Umm al-Qura · le jour hégirien commence au Maghrib	Ümmü'l-Kura · hicri gün akşamla başlar	Umm al-Qura · der Hidschri-Tag beginnt mit Maghrib	Umm al-Qura · el día hégira empieza en el Maghrib	Umm al-Qura · hari Hijriah dimulai saat Magrib	Umm al-Qura · hari Hijrah bermula pada Maghrib
+المصحف	Mushaf	Mushaf	Mushaf	Mushaf	Mushaf	Mushaf	Mushaf
+الملفات الصوتية	Audio files	Fichiers audio	Ses dosyaları	Audiodateien	Archivos de audio	Berkas audio	Fail audio
+الودجت	Widget	Widget	Widget	Widget	Widget	Widget	Widget
+شاشة القفل	Lock screen	Écran de verrouillage	Kilit ekranı	Sperrbildschirm	Pantalla de bloqueo	Layar kunci	Skrin kunci
+الودجت الخاص	Custom widget	Widget personnalisé	Özel widget	Eigenes Widget	Widget personalizado	Widget kustom	Widget tersuai
+صمّم ودجت لشاشتك الرئيسية	Design a widget for your home screen	Créez un widget pour votre écran d'accueil	Ana ekranınız için widget tasarlayın	Gestalten Sie ein Widget für Ihren Startbildschirm	Diseña un widget para tu pantalla de inicio	Rancang widget untuk layar utama Anda	Reka widget untuk skrin utama anda
+التطبيق	App	Application	Uygulama	App	Aplicación	Aplikasi	Aplikasi
+انشر التطبيق	Share the app	Partager l'application	Uygulamayı paylaş	App teilen	Compartir la aplicación	Bagikan aplikasi	Kongsi aplikasi
+تطبيق «الذِّكر»: القرآن الكريم والأذكار ومواقيت الصلاة، مجاني وبلا إعلانات⏎{0}	Alzkr app: the Holy Quran, adhkar and prayer times — free and ad-free⏎{0}	Application Alzkr : le Saint Coran, les adhkar et les horaires de prière — gratuite et sans publicité⏎{0}	Alzkr uygulaması: Kur'an-ı Kerim, zikirler ve namaz vakitleri — ücretsiz ve reklamsız⏎{0}	Alzkr-App: der edle Koran, Adhkar und Gebetszeiten — kostenlos und werbefrei⏎{0}	Aplicación Alzkr: el Sagrado Corán, los adhkar y los horarios de oración — gratis y sin anuncios⏎{0}	Aplikasi Alzkr: Al-Qur'an, zikir, dan jadwal salat — gratis dan tanpa iklan⏎{0}	Aplikasi Alzkr: al-Quran, zikir dan waktu solat — percuma dan tanpa iklan⏎{0}
+الاقتراحات والشكاوى	Suggestions and complaints	Suggestions et réclamations	Öneri ve şikâyetler	Vorschläge und Beschwerden	Sugerencias y quejas	Saran dan keluhan	Cadangan dan aduan
+ادعم التطبيق	Support the app	Soutenir l'application	Uygulamayı destekle	App unterstützen	Apoyar la aplicación	Dukung aplikasi	Sokong aplikasi
+دعم اختياري لصاحب التطبيق	Optional support for the app's maker	Soutien facultatif à l'auteur de l'application	Uygulama sahibine isteğe bağlı destek	Freiwillige Unterstützung für den Entwickler	Apoyo opcional al autor de la aplicación	Dukungan sukarela untuk pembuat aplikasi	Sokongan sukarela kepada pembuat aplikasi
+الذِّكر	Alzkr	Alzkr	Alzkr	Alzkr	Alzkr	Alzkr	Alzkr
+مجاني بالكامل، بلا إعلانات ولا اشتراكات	Completely free, with no ads and no subscriptions	Entièrement gratuite, sans publicité ni abonnement	Tamamen ücretsiz, reklam ve abonelik yok	Völlig kostenlos, ohne Werbung und ohne Abos	Totalmente gratis, sin anuncios ni suscripciones	Sepenuhnya gratis, tanpa iklan dan langganan	Percuma sepenuhnya, tanpa iklan dan langganan
+النسخة {0}	Version {0}	Version {0}	Sürüm {0}	Version {0}	Versión {0}	Versi {0}	Versi {0}
+الألوان من مصحف التجويد الصادر عن مجمع الملك فهد، وهي مضمّنة في خط الصفحة نفسه.	The colors come from the tajweed mushaf published by the King Fahd Complex and are built into the page font itself.	Les couleurs proviennent du mushaf tajwid publié par le Complexe du Roi Fahd et sont intégrées à la police de la page.	Renkler Kral Fahd Kompleksi'nin yayımladığı tecvitli mushaftan alınmıştır ve sayfa yazı tipine gömülüdür.	Die Farben stammen aus dem Tadschwid-Mushaf des König-Fahd-Komplexes und sind in die Seitenschrift eingebettet.	Los colores proceden del mushaf de tajwid publicado por el Complejo Rey Fahd y están integrados en la fuente de la página.	Warna berasal dari mushaf tajwid terbitan Kompleks Raja Fahd dan tertanam dalam fon halaman itu sendiri.	Warna diambil daripada mushaf tajwid terbitan Kompleks Raja Fahd dan terbina dalam fon halaman itu sendiri.
+مدّ لازم	Madd lazim (necessary)	Madd lazim (obligatoire)	Medd-i lazım	Madd lazim (notwendig)	Madd lazim (necesario)	Mad lazim	Mad lazim
+يُمدّ ٦ حركات	Lengthened 6 counts	Allongé de 6 temps	6 hareke uzatılır	6 Zählzeiten gedehnt	Se alarga 6 tiempos	Dibaca panjang 6 harakat	Dipanjangkan 6 harakat
+مدّ واجب متصل	Madd wajib muttasil	Madd wajib muttasil	Medd-i muttasıl	Madd wadschib muttasil	Madd wayib muttasil	Mad wajib muttasil	Mad wajib muttasil
+يُمدّ ٤ أو ٥ حركات	Lengthened 4 or 5 counts	Allongé de 4 ou 5 temps	4 veya 5 hareke uzatılır	4 oder 5 Zählzeiten gedehnt	Se alarga 4 o 5 tiempos	Dibaca panjang 4 atau 5 harakat	Dipanjangkan 4 atau 5 harakat
+مدّ جائز	Madd ja'iz (permissible)	Madd ja'iz (permis)	Medd-i caiz	Madd dscha'iz (zulässig)	Madd ya'iz (permitido)	Mad jaiz	Mad jaiz
+يُمدّ ٢ أو ٤ أو ٦ حركات	Lengthened 2, 4 or 6 counts	Allongé de 2, 4 ou 6 temps	2, 4 veya 6 hareke uzatılır	2, 4 oder 6 Zählzeiten gedehnt	Se alarga 2, 4 o 6 tiempos	Dibaca panjang 2, 4, atau 6 harakat	Dipanjangkan 2, 4 atau 6 harakat
+مدّ طبيعي	Madd tabi'i (natural)	Madd tabi'i (naturel)	Medd-i tabii	Madd tabi'i (natürlich)	Madd tabi'i (natural)	Mad thabi'i	Mad asli
+يُمدّ حركتين	Lengthened 2 counts	Allongé de 2 temps	2 hareke uzatılır	2 Zählzeiten gedehnt	Se alarga 2 tiempos	Dibaca panjang 2 harakat	Dipanjangkan 2 harakat
+غُنّة وإخفاء	Ghunnah and ikhfa'	Ghunna et ikhfa'	Gunne ve ihfa	Ghunna und Ichfa'	Ghunna e ijfa'	Gunah dan ikhfa	Dengung dan ikhfa'
+غنّة بمقدار حركتين	Nasalization for 2 counts	Nasalisation de 2 temps	2 hareke gunne	Nasalierung über 2 Zählzeiten	Nasalización de 2 tiempos	Dengung selama 2 harakat	Dengung selama 2 harakat
+تفخيم	Tafkhim (heavy letters)	Tafkhim (lettres emphatiques)	Tefhim	Tafchim (schwere Buchstaben)	Tafjim (letras enfáticas)	Tafkhim	Tafkhim
+الحروف المفخّمة، وأشهرها الراء	The heavy letters, most notably Ra'	Les lettres emphatiques, surtout le Ra'	Kalın okunan harfler, en bilineni Ra	Die schweren Buchstaben, vor allem Ra'	Las letras enfáticas, sobre todo la Ra'	Huruf-huruf tebal, terutama Ra	Huruf-huruf tebal, terutamanya Ra
+قلقلة	Qalqalah	Qalqala	Kalkale	Qalqala	Qalqala	Qalqalah	Qalqalah
+حروف «قطب جد» الساكنة	The letters of "qutb jad" with sukun	Les lettres de « qutb jad » avec soukoun	Sakin "kutb cedd" harfleri	Die Buchstaben von „qutb dschad" mit Sukun	Las letras de «qutb yad» con sukun	Huruf "qutbu jad" yang sukun	Huruf "qutbu jad" yang bersukun
+لا يُنطق	Not pronounced	Non prononcé	Okunmaz	Nicht ausgesprochen	No se pronuncia	Tidak dibaca	Tidak dibaca
+همزة الوصل واللام الشمسية والحروف الساكتة	Hamzat al-wasl, the sun Lam and silent letters	Hamzat al-wasl, le lam solaire et les lettres muettes	Vasl hemzesi, şemsi lam ve okunmayan harfler	Hamzat al-wasl, das Sonnen-Lam und stumme Buchstaben	Hamzat al-wasl, la lam solar y las letras mudas	Hamzah wasal, lam syamsiah, dan huruf yang tidak dibaca	Hamzah wasal, lam syamsiah dan huruf yang tidak dibaca
+اضغط في أي مكان · ضغطة طويلة على الذكر لتعديله	Tap anywhere · long-press a dhikr to edit it	Touchez n'importe où · appui long sur un dhikr pour le modifier	Herhangi bir yere dokunun · düzenlemek için zikre uzun basın	Überall tippen · lange auf ein Dhikr drücken, um es zu bearbeiten	Toca en cualquier lugar · mantén pulsado un dhikr para editarlo	Sentuh di mana saja · tekan lama zikir untuk mengubahnya	Sentuh di mana-mana · tekan lama zikir untuk mengubahnya
++ ذكر جديد	+ New dhikr	+ Nouveau dhikr	+ Yeni zikir	+ Neues Dhikr	+ Nuevo dhikr	+ Zikir baru	+ Zikir baharu
+ذكر جديد	New dhikr	Nouveau dhikr	Yeni zikir	Neues Dhikr	Nuevo dhikr	Zikir baru	Zikir baharu
+ و{0}	 and {0}	 et {0}	 ve {0}	 und {0}	 y {0}	 dan {0}	 dan {0}
+تعديل الذكر	Edit dhikr	Modifier le dhikr	Zikri düzenle	Dhikr bearbeiten	Editar dhikr	Ubah zikir	Ubah zikir
+الذكر	Dhikr	Dhikr	Zikir	Dhikr	Dhikr	Zikir	Zikir
+كم مرة؟	How many times?	Combien de fois ?	Kaç kez?	Wie oft?	¿Cuántas veces?	Berapa kali?	Berapa kali?
+بلا عدد	No count	Sans nombre	Sayısız	Ohne Zahl	Sin número	Tanpa hitungan	Tanpa kiraan
+أو اكتب عددًا	Or type a number	Ou tapez un nombre	Ya da bir sayı yazın	Oder eine Zahl eingeben	O escribe un número	Atau ketik angka	Atau taip nombor
+متابعتي	My progress	Mon suivi	Takibim	Mein Fortschritt	Mi seguimiento	Pantauanku	Pemantauan saya
+العبادات والتقويم الهجري والمناسبات	Worship, the Hijri calendar and occasions	Adorations, calendrier hégirien et occasions	İbadetler, hicri takvim ve özel günler	Gottesdienste, Hidschri-Kalender und Anlässe	Adoración, calendario hégira y ocasiones	Ibadah, kalender Hijriah, dan hari besar	Ibadah, kalendar Hijrah dan hari kebesaran
+متابعة العبادات	Worship tracker	Suivi des adorations	İbadet takibi	Gottesdienst-Tracker	Seguimiento de adoración	Pantauan ibadah	Pemantauan ibadah
+تقدم هذا الأسبوع	This week's progress	Progrès de la semaine	Bu haftanın ilerlemesi	Fortschritt dieser Woche	Progreso de esta semana	Kemajuan pekan ini	Kemajuan minggu ini
+إنجاز اليوم	Today's achievement	Accompli aujourd'hui	Bugünün başarısı	Heute erreicht	Logro de hoy	Capaian hari ini	Pencapaian hari ini
+{0}٪	{0}%	{0} %	%{0}	{0} %	{0} %	{0}%	{0}%
+معدل الأسبوع	Weekly average	Moyenne de la semaine	Haftalık ortalama	Wochendurchschnitt	Media semanal	Rata-rata pekan	Purata mingguan
+سبت	Sat	Sam	Cmt	Sa	Sáb	Sab	Sab
+أحد	Sun	Dim	Paz	So	Dom	Min	Ahd
+اثنين	Mon	Lun	Pzt	Mo	Lun	Sen	Isn
+ثلاثاء	Tue	Mar	Sal	Di	Mar	Sel	Sel
+أربعاء	Wed	Mer	Çar	Mi	Mié	Rab	Rab
+خميس	Thu	Jeu	Per	Do	Jue	Kam	Kha
+جمعة	Fri	Ven	Cum	Fr	Vie	Jum	Jum
+اليوم	Today	Aujourd'hui	Bugün	Heute	Hoy	Hari ini	Hari ini
+أتممت عبادات اليوم، تقبّل الله منك	You have completed today's worship — may Allah accept it from you	Vous avez accompli les adorations du jour — qu'Allah les accepte	Bugünün ibadetlerini tamamladınız, Allah kabul etsin	Sie haben die heutigen Gottesdienste vollendet — möge Allah sie annehmen	Has completado la adoración de hoy — que Allah te la acepte	Anda telah menyelesaikan ibadah hari ini, semoga Allah menerimanya	Anda telah melengkapkan ibadah hari ini, semoga Allah menerimanya
+التقويم	Calendar	Calendrier	Takvim	Kalender	Calendario	Kalender	Kalendar
+هجري	Hijri	Hégirien	Hicri	Hidschri	Hégira	Hijriah	Hijrah
+ميلادي	Gregorian	Grégorien	Miladi	Gregorianisch	Gregoriano	Masehi	Masihi
+الشهر السابق	Previous month	Mois précédent	Önceki ay	Vorheriger Monat	Mes anterior	Bulan sebelumnya	Bulan sebelumnya
+الشهر التالي	Next month	Mois suivant	Sonraki ay	Nächster Monat	Mes siguiente	Bulan berikutnya	Bulan berikutnya
+{0} {1} هـ · {2} {3} م	{0} {1} AH · {2} {3}	{0} {1} H · {2} {3}	{0} {1} H · {2} {3}	{0} {1} n. H. · {2} {3}	{0} {1} H · {2} {3}	{0} {1} H · {2} {3} M	{0} {1} H · {2} {3} M
+جارٍ الآن	Happening now	En cours	Şu an	Jetzt	Ahora	Sedang berlangsung	Sedang berlangsung
+شهران	months	mois	ay	Monate	meses	bulan	bulan
+أشهر	months	mois	ay	Monate	meses	bulan	bulan
+شهر	month	mois	ay	Monat	mes	bulan	bulan
+شهرًا	months	mois	ay	Monate	meses	bulan	bulan
+يومان	days	jours	gün	Tage	días	hari	hari
+أيام	days	jours	gün	Tage	días	hari	hari
+يوم	day	jour	gün	Tag	día	hari	hari
+يومًا	days	jours	gün	Tage	días	hari	hari
+متابعتي والتقويم	My progress and calendar	Mon suivi et calendrier	Takibim ve takvim	Mein Fortschritt und Kalender	Mi seguimiento y calendario	Pantauanku dan kalender	Pemantauan dan kalendar
+{0} الآن	{0} now	{0} en cours	{0} şu an	{0} jetzt	{0} ahora	{0} sekarang	{0} sekarang
+{0} بعد {1} أيام	{0} in {1} days	{0} dans {1} jours	{0} {1} gün sonra	{0} in {1} Tagen	{0} en {1} días	{0} dalam {1} hari	{0} dalam {1} hari
+{0} بعد {1} يومًا	{0} in {1} days	{0} dans {1} jours	{0} {1} gün sonra	{0} in {1} Tagen	{0} en {1} días	{0} dalam {1} hari	{0} dalam {1} hari
+{0} من {1} عبادات اليوم · {2}	{0} of {1} acts of worship today · {2}	{0} sur {1} adorations aujourd'hui · {2}	Bugün {1} ibadetten {0} · {2}	{0} von {1} Gottesdiensten heute · {2}	{0} de {1} actos de adoración hoy · {2}	{0} dari {1} ibadah hari ini · {2}	{0} daripada {1} ibadah hari ini · {2}
+أذكار الصلاة	Prayer adhkar	Adhkar de la prière	Namaz zikirleri	Gebets-Adhkar	Adhkar de la oración	Zikir salat	Zikir solat
+ورد القرآن	Quran portion	Portion de Coran	Kur'an virdi	Koran-Anteil	Porción de Corán	Wirid Al-Qur'an	Wirid al-Quran
+العشر من ذي الحجة	The ten days of Dhu al-Hijjah	Les dix jours de Dhou al-Hijja	Zilhicce'nin ilk on günü	Die zehn Tage von Dhu l-Hiddscha	Los diez días de Dhu al-Hiyya	Sepuluh hari Zulhijah	Sepuluh hari Zulhijah
+عيد الأضحى	Eid al-Adha	Aïd al-Adha	Kurban Bayramı	Eid al-Adha	Eid al-Adha	Iduladha	Aidiladha
+رأس السنة الهجرية	Islamic New Year	Nouvel an hégirien	Hicri Yılbaşı	Islamisches Neujahr	Año Nuevo islámico	Tahun Baru Islam	Maal Hijrah
