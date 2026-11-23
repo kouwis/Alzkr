@@ -154,16 +154,12 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
             when (val r = Locator.locate(context)) {
                 is Locator.Result.Found -> {
                     val f = r.fix
-                    val moved = prefs.lat == null || prefs.lng == null ||
-                        Locator.km(prefs.lat, prefs.lng, f.lat, f.lng) > 2.0
-                    // keep a known name if the lookup failed (no network) and we haven't moved
-                    val name = f.place.ifBlank { if (moved) "" else prefs.place }
-                    if (moved || name != prefs.place) store.setLocation(f.lat, f.lng, name)
+                    val name = store.setFoundLocation(prefs, f.lat, f.lng, f.place)
                     if (!quiet && !prefs.autoLocate) store.setAutoLocate(true)
                     if (!quiet) toast(if (name.isNotBlank()) t("المواقيت الآن حسب {0}", name) else t("تم تحديد موقعك"))
                 }
-                Locator.Result.Off -> if (!quiet) toast("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى")
-                Locator.Result.NotFound -> if (!quiet) toast("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل")
+                Locator.Result.Off -> if (!quiet) toast(t("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى"))
+                Locator.Result.NotFound -> if (!quiet) toast(t("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل"))
             }
             if (!quiet) locating = false
         }

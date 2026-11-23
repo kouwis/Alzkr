@@ -68,6 +68,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
     val scope = rememberCoroutineScope()
     var pickLang by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var crash by remember { mutableStateOf(com.kouwis.alzkr.data.CrashLog.read(context)) }
     val soon = soon()
     val version = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
@@ -98,7 +99,13 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
             },
             Setting(t("الاقتراحات والشكاوى"), Ic.mail, Color(0xFF1A9BD7)) { open("https://github.com/kouwis/Alzkr/issues") },
             Setting(t("ادعم التطبيق"), Ic.gift, Color(0xFFD9A62E), t("دعم اختياري لصاحب التطبيق")) { soon(t("ادعم التطبيق")) },
-        ),
+        ) + listOfNotNull(crash?.let { report ->
+            Setting(t("إرسال تقرير العطل"), Ic.info, Color(0xFFE5484D), t("توقّف التطبيق مرة، فأرسل التقرير لنصلحه")) {
+                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, report) }, t("إرسال تقرير العطل")))
+                com.kouwis.alzkr.data.CrashLog.clear(context)
+                crash = null
+            }
+        }),
     )
 
     Column(

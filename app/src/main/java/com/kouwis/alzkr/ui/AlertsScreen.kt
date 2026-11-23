@@ -471,104 +471,153 @@ private fun StepperRow(title: String, value: Int, range: IntRange, label: (Int) 
 
 enum class SoundKind { Adhan, Alert, Alarm }
 
-/** Choose a sound: each with a ▶ to hear it first; recordings not on the phone yet are downloaded when chosen. */
+/**
+ * Plays one sound at a time to try it. Every call is guarded: a sound still loading when another
+ * is tapped is reset and released (stop() would throw while it prepares), and a late callback from
+ * a released player does nothing.
+ */
+private class Previewer(private val onState: (playing: String?, loading: String?) -> Unit) {
+    private var mp: MediaPlayer? = null
+    private var id: String? = null
+
+    fun stop() {
+        val p = mp ?: return
+        mp = null; id = null
+        runCatching { p.setOnPreparedListener(null); p.setOnCompletionListener(null); p.setOnErrorListener(null) }
+        runCatching { p.reset() }
+        runCatching { p.release() }
+        onState(null, null)
+    }
+
+    fun toggle(context: android.content.Context, catalog: List<SoundEntry>, s: String) {
+        val same = id == s
+        stop()
+        if (same) return
+        val p = MediaPlayer()
+        mp = p; id = s
+        try {
+            p.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+            when {
+                s == "sys" || s == "vib" -> p.setDataSource(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                s == "alarm" -> p.setDataSource(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+                Sounds.isBundled(catalog, s) -> context.assets.openFd("audio/" + Sounds.fileName(catalog, s)).use { p.setDataSource(it.fileDescriptor, it.startOffset, it.length) }
+                Sounds.ready(context, catalog, s) -> p.setDataSource(Sounds.localFile(context, Sounds.fileName(catalog, s) ?: "").path)
+                else -> p.setDataSource(Sounds.remoteUrl(catalog, s)) // heard over the network before it is downloaded
+            }
+            p.setOnPreparedListener { if (mp === p) { runCatching { p.start() }; onState(s, null) } }
+            p.setOnCompletionListener { if (mp === p) stop() }
+            p.setOnErrorListener { _, _, _ -> if (mp === p) stop(); true }
+            onState(s, s)
+            p.prepareAsync()
+        } catch (e: Exception) {
+            stop()
+        }
+    }
+}
+
+/** Choose a sound, in groups (Fajr adhan, full adhan, takbirs only, the phone's sounds); ▶ to hear it first. Recordings not on the phone yet are downloaded when chosen. */
 @Composable
 fun SoundPicker(kind: SoundKind, fajr: Boolean, catalog: List<SoundEntry>, selected: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     val c = LocalColors.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val options = remember(kind, fajr, catalog) {
-        val full = catalog.filter { if (kind == SoundKind.Adhan) it.fajr == fajr else !it.fajr }.map { "full:${it.id}" }
-        val fajrOthers = if (kind == SoundKind.Adhan && fajr) catalog.filter { !it.fajr }.map { "full:${it.id}" } else emptyList()
-        val shorts = catalog.filter { it.short != null && (!it.fajr || catalog.none { o -> !o.fajr && o.name == it.name }) }.map { "short:${it.id}" }
+    val groups: List<Pair<String, List<String>>> = remember(kind, fajr, catalog) {
+        val fajrFull = catalog.filter { it.fajr }.map { "full:${it.id}" }
+        val full = catalog.filter { !it.fajr }.map { "full:${it.id}" }
+        val shorts = catalog.filter { it.short != null && !it.fajr }.map { "short:${it.id}" } +
+            catalog.filter { it.short != null && it.fajr && catalog.none { o -> !o.fajr && o.name == it.name } }.map { "short:${it.id}" }
+        val phone = when (kind) { SoundKind.Alarm -> listOf("alarm", "sys"); else -> listOf("sys", "vib") }
         when (kind) {
-            SoundKind.Adhan -> full + shorts + fajrOthers + listOf("sys", "vib")
-            SoundKind.Alert -> listOf("sys", "vib") + shorts
-            SoundKind.Alarm -> listOf("alarm") + shorts + full
-        }.distinct()
+            SoundKind.Adhan -> if (fajr) listOf(t("أذان الفجر") to fajrFull, t("التكبيرات فقط") to shorts, t("أذان كامل") to full, t("أصوات الهاتف") to phone)
+            else listOf(t("أذان كامل") to full, t("التكبيرات فقط") to shorts, t("أصوات الهاتف") to phone)
+            SoundKind.Alert -> listOf(t("أصوات الهاتف") to phone, t("التكبيرات فقط") to shorts)
+            SoundKind.Alarm -> listOf(t("أصوات الهاتف") to phone, t("التكبيرات فقط") to shorts, t("أذان كامل") to full + fajrFull)
+        }.filter { it.second.isNotEmpty() }
     }
     var playing by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf<String?>(null) }
     var downloading by remember { mutableStateOf<Pair<String, Float>?>(null) }
-    val player = remember { arrayOfNulls<MediaPlayer>(1) }
-    fun stop() { player[0]?.runCatching { stop(); release() }; player[0] = null; playing = null; loading = null }
-    DisposableEffect(Unit) { onDispose { stop() } }
-    fun preview(s: String) {
-        if (playing == s) { stop(); return }
-        stop()
-        val mp = MediaPlayer()
-        mp.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-        runCatching {
-            when {
-                s == "sys" || s == "vib" -> mp.setDataSource(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                s == "alarm" -> mp.setDataSource(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-                Sounds.isBundled(catalog, s) -> context.assets.openFd("audio/" + Sounds.fileName(catalog, s)).use { mp.setDataSource(it.fileDescriptor, it.startOffset, it.length) }
-                Sounds.ready(context, catalog, s) -> mp.setDataSource(Sounds.localFile(context, Sounds.fileName(catalog, s)!!).path)
-                else -> mp.setDataSource(Sounds.remoteUrl(catalog, s)) // heard over the network before it is downloaded
-            }
-            mp.setOnPreparedListener { it.start(); loading = null }
-            mp.setOnCompletionListener { stop() }
-            mp.setOnErrorListener { _, _, _ -> stop(); true }
-            player[0] = mp; playing = s; loading = s
-            mp.prepareAsync()
-        }.onFailure { mp.release(); playing = null; loading = null }
-    }
+    val previewer = remember { Previewer { p, l -> playing = p; loading = l } }
+    DisposableEffect(Unit) { onDispose { previewer.stop() } }
     fun choose(s: String) {
-        if (Sounds.ready(context, catalog, s)) { onPick(s); onDismiss(); return }
+        if (Sounds.ready(context, catalog, s)) { previewer.stop(); onPick(s); onDismiss(); return }
         if (downloading != null) return
         downloading = s to 0f
         scope.launch {
-            val ok = withContext(Dispatchers.IO) { Sounds.download(context, catalog, s) { f -> downloading = s to f } }
+            val ok = withContext(Dispatchers.IO) {
+                Sounds.download(context, catalog, s) { f -> scope.launch { if (downloading?.first == s) downloading = s to f } }
+            }
             downloading = null
-            if (ok) { onPick(s); onDismiss() }
+            if (ok) { previewer.stop(); onPick(s); onDismiss() }
             else android.widget.Toast.makeText(context, t("تعذّر تنزيل الصوت — تأكد من الاتصال بالإنترنت"), android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss, containerColor = c.card,
-        title = { Text(if (kind == SoundKind.Adhan) t("اختر صوت الأذان") else t("اختر الصوت"), color = c.text, fontWeight = FontWeight.Bold) },
-        text = {
-            LazyColumn(Modifier.heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(options, key = { it }) { s ->
-                    val on = s == selected
-                    val e = Sounds.entry(catalog, s)
-                    val ready = Sounds.ready(context, catalog, s)
-                    val size = e?.let { if (s.startsWith("short:")) it.shortSize else it.fullSize } ?: 0L
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(if (on) c.primarySoft else c.chip.copy(alpha = 0.5f))
-                            .border(1.dp, if (on) c.primary.copy(alpha = 0.5f) else c.border, RoundedCornerShape(18.dp))
-                            .clickable { choose(s) }.padding(horizontal = 10.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        if (s != "vib") Box(
-                            Modifier.size(44.dp).clip(CircleShape).background(c.bg).clickable { preview(s) },
-                            contentAlignment = Alignment.Center,
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier.fillMaxWidth(0.94f).heightIn(max = 640.dp).clip(RoundedCornerShape(28.dp)).background(c.card)
+                .border(1.dp, c.border, RoundedCornerShape(28.dp)).padding(top = 20.dp, bottom = 12.dp),
+        ) {
+            Text(
+                if (kind == SoundKind.Adhan) t("اختر صوت الأذان") else t("اختر الصوت"), color = c.text, fontSize = 20.sp,
+                fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            )
+            LazyColumn(Modifier.weight(1f, fill = false), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                groups.forEach { (title, list) ->
+                    item(key = "h:$title") {
+                        Text(title, color = c.goldText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp, start = 6.dp))
+                    }
+                    items(list, key = { it }) { s ->
+                        val on = s == selected
+                        val e = Sounds.entry(catalog, s)
+                        val ready = Sounds.ready(context, catalog, s)
+                        val size = e?.let { if (s.startsWith("short:")) it.shortSize else it.fullSize } ?: 0L
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 68.dp).clip(RoundedCornerShape(20.dp))
+                                .background(if (on) c.primarySoft else c.bg.copy(alpha = 0.6f))
+                                .border(1.dp, if (on) c.primary.copy(alpha = 0.6f) else c.border, RoundedCornerShape(20.dp))
+                                .clickable { choose(s) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
-                            if (loading == s) CircularProgressIndicator(color = c.goldText, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                            else Icon(if (playing == s) Ic.stop else Ic.play, t("استماع"), tint = c.goldText, modifier = Modifier.size(18.dp))
-                        } else Box(Modifier.size(44.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(Sounds.label(catalog, s), color = c.text, fontSize = 15.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal)
-                            val sub = buildList {
-                                if (e != null && e.place.isNotBlank()) add(t(e.place))
-                                if (s.startsWith("short:")) add(t("التكبيرات الأولى فقط"))
-                                if (e != null && !ready) add(t("يُنزَّل مرة واحدة · {0} ميجابايت", com.kouwis.alzkr.data.ArabicText.digitsOf("%.1f".format(java.util.Locale.US, size / 1_048_576.0))))
-                            }.joinToString(" · ")
-                            if (sub.isNotBlank()) Text(sub, color = c.muted, fontSize = 12.sp)
-                        }
-                        val d = downloading
-                        when {
-                            d != null && d.first == s -> CircularProgressIndicator(progress = { d.second }, color = c.primary, strokeWidth = 3.dp, modifier = Modifier.size(24.dp))
-                            on -> Icon(Ic.check, null, tint = c.primary, modifier = Modifier.size(22.dp))
-                            e != null && !ready -> Icon(Ic.download, null, tint = c.muted, modifier = Modifier.size(20.dp))
+                            if (s != "vib") Box(
+                                Modifier.size(46.dp).clip(CircleShape).background(c.chip).clickable { previewer.toggle(context, catalog, s) },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (loading == s) CircularProgressIndicator(color = c.goldText, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                                else Icon(if (playing == s) Ic.stop else Ic.play, t("استماع"), tint = c.goldText, modifier = Modifier.size(18.dp))
+                            } else Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) { Icon(Ic.bell, null, tint = c.muted, modifier = Modifier.size(20.dp)) }
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    e?.let { t(it.name) } ?: Sounds.label(catalog, s), color = c.text, fontSize = 16.sp, lineHeight = 22.sp,
+                                    fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                                )
+                                val sub = buildList {
+                                    if (e != null && e.place.isNotBlank()) add(t(e.place))
+                                    if (e != null && !ready) add(t("{0} ميجابايت", com.kouwis.alzkr.data.ArabicText.digitsOf("%.1f".format(java.util.Locale.US, size / 1_048_576.0))))
+                                }.joinToString(" · ")
+                                if (sub.isNotBlank()) Text(sub, color = c.muted, fontSize = 12.sp, lineHeight = 16.sp)
+                            }
+                            val d = downloading
+                            Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+                                when {
+                                    d != null && d.first == s -> CircularProgressIndicator(progress = { d.second }, color = c.primary, strokeWidth = 3.dp, modifier = Modifier.size(24.dp))
+                                    on -> Icon(Ic.check, null, tint = c.primary, modifier = Modifier.size(22.dp))
+                                    e != null && !ready -> Icon(Ic.download, t("تنزيل"), tint = c.muted, modifier = Modifier.size(20.dp))
+                                }
+                            }
                         }
                     }
                 }
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(t("إغلاق"), color = c.primary) } },
-    )
+            if (catalog.any { !it.bundled }) Text(
+                t("الأصوات التي عليها سهم التنزيل تُنزَّل مرة واحدة عند اختيارها، ثم تعمل دون إنترنت."),
+                color = c.muted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text(t("إغلاق"), color = c.primary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
 }
 
 /** Add or change an alarm: which prayer, adhan or iqama, before or after and by how much, which days, the sound. */

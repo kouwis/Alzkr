@@ -37,6 +37,8 @@ data class AppPrefs(
     val lat: Double? = null,
     val lng: Double? = null,
     val place: String = "",
+    /** the place's name was written by the user: kept while the phone stays in the same area */
+    val placeCustom: Boolean = false,
     /** verses (and words in them) marked to review — «التصحيح»: newest first, ("s:a", word indexes;
      *  empty = the whole verse). Word indexes count the verse's words in the mushaf from 0. */
     val mistakes: List<Pair<String, Set<Int>>> = emptyList(),
@@ -74,6 +76,7 @@ class Prefs(private val context: Context) {
         val lat = androidx.datastore.preferences.core.doublePreferencesKey("lat")
         val lng = androidx.datastore.preferences.core.doublePreferencesKey("lng")
         val place = stringPreferencesKey("place")
+        val placeCustom = booleanPreferencesKey("place_custom")
         val mistakes = stringPreferencesKey("mistakes") // "s:a|0.3;s:a|"
         val adhkarDone = stringPreferencesKey("adhkar_done") // "morning=1732300000000;sleep=…"
         val prayer = stringPreferencesKey("prayer_config")
@@ -117,6 +120,7 @@ class Prefs(private val context: Context) {
             lat = p[K.lat],
             lng = p[K.lng],
             place = p[K.place] ?: "",
+            placeCustom = p[K.placeCustom] ?: false,
             mistakes = parseMistakes(p[K.mistakes]),
             adhkarDone = p[K.adhkarDone].orEmpty().split(';').mapNotNull { e ->
                 val (k, v) = e.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
@@ -177,8 +181,21 @@ class Prefs(private val context: Context) {
     suspend fun setVerseMode(on: Boolean) = context.store.edit { it[K.verseMode] = on }
     suspend fun setTajweed(on: Boolean) = context.store.edit { it[K.tajweed] = on }
     suspend fun setSection(s: String) = context.store.edit { it[K.section] = s }
-    suspend fun setLocation(lat: Double, lng: Double, place: String) = context.store.edit {
-        it[K.lat] = lat; it[K.lng] = lng; it[K.place] = place
+    suspend fun setLocation(lat: Double, lng: Double, place: String, custom: Boolean = false) = context.store.edit {
+        it[K.lat] = lat; it[K.lng] = lng; it[K.place] = place; it[K.placeCustom] = custom
+    }
+
+    /**
+     * A location found by the phone: within 2 km of the place already set, a name the user wrote
+     * stays (the phone's lookup may call the same place «قسم أول أكتوبر»); further away it is a new place.
+     * Returns the name now used.
+     */
+    suspend fun setFoundLocation(cur: AppPrefs, lat: Double, lng: Double, found: String): String {
+        val moved = cur.lat == null || cur.lng == null || Locator.km(cur.lat, cur.lng, lat, lng) > 2.0
+        val keep = !moved && (cur.placeCustom || found.isBlank())
+        val name = if (keep) cur.place else found
+        if (moved || name != cur.place) setLocation(lat, lng, name, custom = keep && cur.placeCustom)
+        return name
     }
 
     /**

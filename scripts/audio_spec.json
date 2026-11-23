@@ -86,19 +86,5 @@
   "place": "مصر",
   "assabile": 142,
   "short_end": 13.98
- },
- {
-  "id": "minshawi",
-  "name": "محمد صديق المنشاوي",
-  "place": "مصر",
-  "assabile": 95,
-  "short_end": 18.8
- },
- {
-  "id": "banna",
-  "name": "محمود علي البنا",
-  "place": "مصر",
-  "assabile": 148,
-  "short_end": 26.06
  }
 ]

@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        com.kouwis.alzkr.data.CrashLog.install(this)
         AppFonts.init(this)
         if (savedInstanceState == null) open.value = intent?.getStringExtra(EXTRA_OPEN)
         setContent { AlzkrApp(open.value) { open.value = null } }

@@ -122,9 +122,9 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
         scope.launch {
             when (val r = Locator.locate(context)) {
                 is Locator.Result.Found -> {
-                    store.setLocation(r.fix.lat, r.fix.lng, r.fix.place)
+                    val name = store.setFoundLocation(prefs, r.fix.lat, r.fix.lng, r.fix.place)
                     store.setAutoLocate(true)
-                    toast(if (r.fix.place.isNotBlank()) t("المواقيت الآن حسب {0}", r.fix.place) else t("تم تحديد موقعك"))
+                    toast(if (name.isNotBlank()) t("المواقيت الآن حسب {0}", name) else t("تم تحديد موقعك"))
                 }
                 Locator.Result.Off -> toast(t("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى"))
                 Locator.Result.NotFound -> toast(t("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل"))
@@ -135,7 +135,7 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
     fun granted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) locateNow() }
     fun setPlace(la: Double, lo: Double, name: String) = scope.launch {
-        store.setLocation(la, lo, name)
+        store.setLocation(la, lo, name, custom = true)
         store.setAutoLocate(false) // picked by hand: the phone's location no longer moves it
     }
 
@@ -279,7 +279,7 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
         Dialog.Coords -> CoordsDialog(prefs.lat, prefs.lng, prefs.place, { la, lo, n -> setPlace(la, lo, n) }) { dialog = null }
         Dialog.Cities -> CitiesDialog({ n, la, lo -> setPlace(la, lo, n) }) { dialog = null }
         Dialog.Rename -> TextDialog(t("تعديل اسم المدينة"), prefs.place, t("اسم المدينة")) { name ->
-            if (name != null && prefs.lat != null && prefs.lng != null) scope.launch { store.setLocation(prefs.lat, prefs.lng, name) }
+            if (name != null && prefs.lat != null && prefs.lng != null) scope.launch { store.setLocation(prefs.lat, prefs.lng, name, custom = true) }
             dialog = null
         }
         null -> {}

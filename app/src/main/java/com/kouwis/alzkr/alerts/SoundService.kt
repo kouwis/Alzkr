@@ -58,6 +58,11 @@ class SoundService : Service() {
     private var mode: String? = null
     private val handler = Handler(Looper.getMainLooper())
 
+    override fun onCreate() {
+        super.onCreate()
+        com.kouwis.alzkr.data.CrashLog.install(this)
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
