@@ -18,10 +18,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - uses: FedericoCarboni/setup-ffmpeg@v3
       - name: Tools
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
+          sudo apt-get install -y -qq --no-install-recommends ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
           ffmpeg -version | head -1
           if [ ! -f scripts/audio_spec.json ]; then pip install --only-binary=:all: --progress-bar off faster-whisper; fi
       - name: Probe recordings
