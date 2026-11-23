@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -146,7 +147,7 @@ fun NumberBadge(n: String) {
 @Composable
 fun soon(): (String) -> Unit {
     val ctx = LocalContext.current
-    return { what -> Toast.makeText(ctx, "$what — قريبًا إن شاء الله", Toast.LENGTH_SHORT).show() }
+    return { what -> Toast.makeText(ctx, t("{0} — قريبًا إن شاء الله", what), Toast.LENGTH_SHORT).show() }
 }
 
 @Composable
@@ -182,8 +183,8 @@ fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = if (toStart) androidx.compose.foundation.layout.Arrangement.Start else androidx.compose.foundation.layout.Arrangement.End,
             ) {
-                Icon(Ic.trash, "حذف", tint = c.heart, modifier = Modifier.size(22.dp))
-                Text("  حذف", color = c.heart, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Icon(Ic.trash, t("حذف"), tint = c.heart, modifier = Modifier.size(22.dp))
+                Text(t("  حذف"), color = c.heart, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         },
     ) { content() }

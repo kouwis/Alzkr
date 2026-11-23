@@ -70,7 +70,7 @@ object Locator {
     @Suppress("DEPRECATION")
     suspend fun placeName(context: Context, lat: Double, lng: Double): String = withContext(Dispatchers.IO) {
         runCatching {
-            val a = Geocoder(context, Locale("ar")).getFromLocation(lat, lng, 1)?.firstOrNull() ?: return@runCatching ""
+            val a = Geocoder(context, Locale(I18n.lang.code)).getFromLocation(lat, lng, 1)?.firstOrNull() ?: return@runCatching ""
             val parts = listOfNotNull(a.subLocality, a.locality ?: a.subAdminArea ?: a.adminArea)
                 .map { it.trim() }.filter { it.isNotEmpty() }.distinct()
             when {

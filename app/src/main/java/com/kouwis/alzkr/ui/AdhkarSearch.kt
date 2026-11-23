@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -78,7 +79,7 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
                 }
                 val title = d.label.ifBlank {
                     d.parts.firstNotNullOfOrNull { it.q }?.takeIf { d.parts.none { p -> p.t != null && !p.t.startsWith("بِسْمِ") } }
-                        ?.let { (s, a1, a2) -> "سورة ${q.surahName(s)} " + if (a1 == a2) num(a1) else "${num(a1)}–${num(a2)}" } ?: ""
+                        ?.let { (s, a1, a2) -> t("سورة {0} ", q.surahName(s)) + if (a1 == a2) num(a1) else "${num(a1)}–${num(a2)}" } ?: ""
                 }
                 AdhkarHit(sec.id, sec.title, i, title, body, d.count) to ArabicText.normalize("${sec.title} $title $body ${d.fadl}")
             }
@@ -103,7 +104,7 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Row(
                 Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(24.dp)).background(c.card)
                     .border(1.5.dp, c.primary, RoundedCornerShape(24.dp)).padding(horizontal = 14.dp),
@@ -118,27 +119,27 @@ fun AdhkarSearchScreen(q: QuranData, nav: Nav) = AdhkarTheme {
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     modifier = Modifier.weight(1f).focusRequester(focus),
                     decorationBox = { inner ->
-                        if (query.isEmpty()) Text("ابحث في الأذكار والأدعية", color = c.muted, fontSize = 16.sp)
+                        if (query.isEmpty()) Text(t("ابحث في الأذكار والأدعية"), color = c.muted, fontSize = 16.sp)
                         inner()
                     },
                 )
-                if (query.isNotEmpty()) Icon(Ic.close, "مسح", tint = c.muted, modifier = Modifier.size(18.dp).clickable { query = "" })
+                if (query.isNotEmpty()) Icon(Ic.close, t("مسح"), tint = c.muted, modifier = Modifier.size(18.dp).clickable { query = "" })
             }
         }
         when {
             tokens.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text("اكتب ما تبحث عنه، مثل «المطر» أو «السفر» أو «السوق» أو «الكرب»", color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp)
+                Text(t("اكتب ما تبحث عنه، مثل «المطر» أو «السفر» أو «السوق» أو «الكرب»"), color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp)
             }
             hits.isEmpty() && chapterHits.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text("لا يوجد ذكر فيه «$query»", color = c.muted, fontSize = 15.sp)
+                Text(t("لا يوجد ذكر فيه «{0}»", query), color = c.muted, fontSize = 15.sp)
             }
             else -> {
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (chapterHits.isNotEmpty()) {
-                        item { Text("الأبواب", color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                        item { Text(t("الأبواب"), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
                         items(chapterHits, key = { "sec:" + it.id }) { sec -> ChapterRow(sec.title, sec.items.size) { nav.go(Screen.Adhkar(sec.id)) } }
                     }
-                    if (hits.isNotEmpty()) item { Text("الأذكار · ${num(hits.size)}", color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp)) }
+                    if (hits.isNotEmpty()) item { Text(t("الأذكار · {0}", num(hits.size)), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp)) }
                     items(hits, key = { "${it.sectionId}:${it.index}" }) { h ->
                         CardBox(Modifier.fillMaxWidth()) {
                             Column(
@@ -214,7 +215,7 @@ private fun ChapterRow(title: String, count: Int, onClick: () -> Unit) {
             Icon(AdhkarIc.books, null, tint = c.primary, modifier = Modifier.size(17.dp))
         }
         Text(title, color = c.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-        Text(if (count == 1) "ذكر واحد" else "${num(count)} أذكار", color = c.muted, fontSize = 12.sp)
+        Text(if (count == 1) t("ذكر واحد") else t("{0} أذكار", num(count)), color = c.muted, fontSize = 12.sp)
         Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(16.dp))
     }
 }
@@ -241,10 +242,10 @@ fun HisnIndexScreen(nav: Nav) = AdhkarTheme {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Column {
-                Text("حصن المسلم", color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold)
-                Text("${num(list.size)} بابًا", color = c.muted, fontSize = 13.sp)
+                Text(t("حصن المسلم"), color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold)
+                Text(t("{0} بابًا", num(list.size)), color = c.muted, fontSize = 13.sp)
             }
         }
         Row(
@@ -259,7 +260,7 @@ fun HisnIndexScreen(nav: Nav) = AdhkarTheme {
                 textStyle = TextStyle(color = c.text, fontSize = 15.sp), cursorBrush = SolidColor(c.primary),
                 modifier = Modifier.weight(1f),
                 decorationBox = { inner ->
-                    if (query.isEmpty()) Text("ابحث في الأبواب: السفر، المطر، الطعام…", color = c.muted, fontSize = 15.sp)
+                    if (query.isEmpty()) Text(t("ابحث في الأبواب: السفر، المطر، الطعام…"), color = c.muted, fontSize = 15.sp)
                     inner()
                 },
             )

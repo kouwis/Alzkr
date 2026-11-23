@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -123,10 +124,10 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
                 is Locator.Result.Found -> {
                     store.setLocation(r.fix.lat, r.fix.lng, r.fix.place)
                     store.setAutoLocate(true)
-                    toast(if (r.fix.place.isNotBlank()) "المواقيت الآن حسب ${r.fix.place}" else "تم تحديد موقعك")
+                    toast(if (r.fix.place.isNotBlank()) t("المواقيت الآن حسب {0}", r.fix.place) else t("تم تحديد موقعك"))
                 }
-                Locator.Result.Off -> toast("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى")
-                Locator.Result.NotFound -> toast("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل")
+                Locator.Result.Off -> toast(t("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى"))
+                Locator.Result.NotFound -> toast(t("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل"))
             }
             locating = false
         }
@@ -144,8 +145,8 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility),
     ) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.align(Alignment.CenterStart)) { RoundIconButton(Ic.back, "رجوع", { nav.back() }) }
-            Text("مواقيت الصلاة", color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold)
+            Box(Modifier.align(Alignment.CenterStart)) { RoundIconButton(Ic.back, t("رجوع"), { nav.back() }) }
+            Text(t("مواقيت الصلاة"), color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold)
         }
         LazyColumn(
             Modifier.weight(1f),
@@ -166,17 +167,17 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
                 }
             }
 
-            item { Header("المدينة") }
+            item { Header(t("المدينة")) }
             item {
                 Group {
                     Column(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("المدينة", color = c.text, fontSize = 17.sp, modifier = Modifier.weight(1f))
-                            Text(prefs.place.ifBlank { if (prefs.lat == null) "القاهرة" else "موقعك" }, color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(t("المدينة"), color = c.text, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                            Text(prefs.place.ifBlank { if (prefs.lat == null) t("القاهرة") else t("موقعك") }, color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            if (prefs.lat == null) "لم يُحدَّد موقعك بعد"
-                            else if (prefs.autoLocate) "تلقائي · من موقعك الجغرافي" else "يدوي · ${num6(lat)}، ${num6(lng)}",
+                            if (prefs.lat == null) t("لم يُحدَّد موقعك بعد")
+                            else if (prefs.autoLocate) t("تلقائي · من موقعك الجغرافي") else t("يدوي · {0}، {1}", num6(lat), num6(lng)),
                             color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp),
                         )
                     }
@@ -187,47 +188,47 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
                         }.padding(vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("تحديد المدينة تلقائيًا من موقعي", color = c.goldText, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text(t("تحديد المدينة تلقائيًا من موقعي"), color = c.goldText, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         if (locating) CircularProgressIndicator(color = c.goldText, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                     }
                     Line()
-                    ToggleRow("تحديث الموقع تلقائيًا", "يتحدّث إذا انتقلت أكثر من ٢ كم", prefs.autoLocate) { on ->
+                    ToggleRow(t("تحديث الموقع تلقائيًا"), t("يتحدّث إذا انتقلت أكثر من ٢ كم"), prefs.autoLocate) { on ->
                         scope.launch { store.setAutoLocate(on) }
                         if (on) { if (granted()) locateNow() else permission.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }
                     }
                     Line()
-                    NavRow("تحديد يدوي بالإحداثيات") { dialog = Dialog.Coords }
+                    NavRow(t("تحديد يدوي بالإحداثيات")) { dialog = Dialog.Coords }
                     Line()
-                    NavRow("اختر من قائمة المدن") { dialog = Dialog.Cities }
+                    NavRow(t("اختر من قائمة المدن")) { dialog = Dialog.Cities }
                     Line()
-                    NavRow("تعديل اسم المدينة") { dialog = Dialog.Rename }
+                    NavRow(t("تعديل اسم المدينة")) { dialog = Dialog.Rename }
                 }
             }
 
-            item { Header("طريقة الحساب") }
+            item { Header(t("طريقة الحساب")) }
             item {
                 Group {
-                    ValueRow("طريقة الحساب", if (cfg.method == null) "تلقائي (${method.ar})" else method.ar) { dialog = Dialog.Method }
+                    ValueRow(t("طريقة الحساب"), if (cfg.method == null) t("تلقائي ({0})", method.ar) else method.ar) { dialog = Dialog.Method }
                     Line()
-                    ValueRow("صلاة العصر", if (cfg.asrHanafi) "الحنفي" else "الجمهور") { dialog = Dialog.Asr }
+                    ValueRow(t("صلاة العصر"), if (cfg.asrHanafi) t("الحنفي") else t("الجمهور")) { dialog = Dialog.Asr }
                     Line()
-                    ValueRow("خطوط العرض المرتفعة", cfg.highLat.ar) { dialog = Dialog.HighLat }
+                    ValueRow(t("خطوط العرض المرتفعة"), cfg.highLat.ar) { dialog = Dialog.HighLat }
                     Line()
-                    ValueRow("التوقيت الصيفي", when { cfg.shift > 0 -> "+ ساعة"; cfg.shift < 0 -> "− ساعة"; else -> "حسب الهاتف" }) { dialog = Dialog.Shift }
+                    ValueRow(t("التوقيت الصيفي"), when { cfg.shift > 0 -> t("+ ساعة"); cfg.shift < 0 -> t("− ساعة"); else -> t("حسب الهاتف") }) { dialog = Dialog.Shift }
                 }
             }
 
-            item { Header("تعديل المواقيت (بالدقائق)") }
+            item { Header(t("تعديل المواقيت (بالدقائق)")) }
             item {
                 Group {
-                    NavRow("ضبط مواقيت الصلاة", if (cfg.adjust.isEmpty()) "بدون تعديل" else "معدّلة") { dialog = Dialog.Adjust }
+                    NavRow(t("ضبط مواقيت الصلاة"), if (cfg.adjust.isEmpty()) t("بدون تعديل") else t("معدّلة")) { dialog = Dialog.Adjust }
                     Line()
-                    NavRow("ضبط مواقيت الإقامة", Prayer.entries.filter { it != Prayer.Sunrise }.joinToString(" · ") { "${it.ar} ${num(cfg.iqama[it] ?: 0)}" }) { dialog = Dialog.Iqama }
+                    NavRow(t("ضبط مواقيت الإقامة"), Prayer.entries.filter { it != Prayer.Sunrise }.joinToString(" · ") { "${it.ar} ${num(cfg.iqama[it] ?: 0)}" }) { dialog = Dialog.Iqama }
                 }
             }
             item {
                 Text(
-                    "تُحسب المواقيت على الهاتف دون إنترنت، وتظهر بتوقيت الهاتف.",
+                    t("تُحسب المواقيت على الهاتف دون إنترنت، وتظهر بتوقيت الهاتف."),
                     color = c.muted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             }
@@ -236,48 +237,48 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
 
     when (dialog) {
         Dialog.Method -> Choice(
-            "طريقة الحساب",
-            listOf<Pair<String, String>>("تلقائي حسب الدولة" to "الآن: ${CalcMethod.forPlace(lat, lng).ar}") +
-                CalcMethod.entries.map { m -> m.ar to ("الفجر ${num1(m.fajr)}° · " + if (m.ishaMinutes > 0) "العشاء بعد المغرب بـ ${num(m.ishaMinutes)} دقيقة" else "العشاء ${num1(m.isha)}°") },
+            t("طريقة الحساب"),
+            listOf<Pair<String, String>>(t("تلقائي حسب الدولة") to t("الآن: {0}", CalcMethod.forPlace(lat, lng).ar)) +
+                CalcMethod.entries.map { m -> m.ar to (t("الفجر {0}° · ", num1(m.fajr)) + if (m.ishaMinutes > 0) t("العشاء بعد المغرب بـ {0} دقيقة", num(m.ishaMinutes)) else t("العشاء {0}°", num1(m.isha))) },
             if (cfg.method == null) 0 else cfg.method.ordinal + 1,
             { i -> save(cfg.copy(method = if (i == 0) null else CalcMethod.entries[i - 1])) },
         ) { dialog = null }
         Dialog.Asr -> Choice(
-            "صلاة العصر",
-            listOf("الجمهور" to "الشافعي والمالكي والحنبلي: إذا صار ظل الشيء مثله", "الحنفي" to "إذا صار ظل الشيء مثليه"),
+            t("صلاة العصر"),
+            listOf(t("الجمهور") to t("الشافعي والمالكي والحنبلي: إذا صار ظل الشيء مثله"), t("الحنفي") to t("إذا صار ظل الشيء مثليه")),
             if (cfg.asrHanafi) 1 else 0, { i -> save(cfg.copy(asrHanafi = i == 1)) },
         ) { dialog = null }
         Dialog.HighLat -> Choice(
-            "خطوط العرض المرتفعة",
+            t("خطوط العرض المرتفعة"),
             listOf(
-                HighLat.Middle.ar to "لا يبعد الفجر والعشاء عن الشروق والمغرب أكثر من نصف الليل",
-                HighLat.Seventh.ar to "لا يبعدان أكثر من سُبع الليل",
-                HighLat.Angle.ar to "جزء من الليل بنسبة زاوية الفجر والعشاء",
-                HighLat.None.ar to "الحساب كما هو",
+                HighLat.Middle.ar to t("لا يبعد الفجر والعشاء عن الشروق والمغرب أكثر من نصف الليل"),
+                HighLat.Seventh.ar to t("لا يبعدان أكثر من سُبع الليل"),
+                HighLat.Angle.ar to t("جزء من الليل بنسبة زاوية الفجر والعشاء"),
+                HighLat.None.ar to t("الحساب كما هو"),
             ),
             cfg.highLat.ordinal, { i -> save(cfg.copy(highLat = HighLat.entries[i])) },
         ) { dialog = null }
         Dialog.Shift -> Choice(
-            "التوقيت الصيفي",
-            listOf("حسب الهاتف" to "يتبع ساعة الهاتف (الأفضل)", "+ ساعة" to "تأخير كل المواقيت ساعة", "− ساعة" to "تقديم كل المواقيت ساعة"),
+            t("التوقيت الصيفي"),
+            listOf(t("حسب الهاتف") to t("يتبع ساعة الهاتف (الأفضل)"), t("+ ساعة") to t("تأخير كل المواقيت ساعة"), t("− ساعة") to t("تقديم كل المواقيت ساعة")),
             when { cfg.shift > 0 -> 1; cfg.shift < 0 -> 2; else -> 0 },
             { i -> save(cfg.copy(shift = when (i) { 1 -> 60; 2 -> -60; else -> 0 })) },
         ) { dialog = null }
         Dialog.Adjust -> MinutesDialog(
-            "ضبط مواقيت الصلاة", "دقائق تُضاف إلى كل وقت أو تُطرح منه",
+            t("ضبط مواقيت الصلاة"), t("دقائق تُضاف إلى كل وقت أو تُطرح منه"),
             Prayer.entries, cfg.adjust, -30..30,
             label = { p, m -> clock(times.getValue(p)) + if (m != 0) "" else "" },
             onSave = { save(cfg.copy(adjust = it.filterValues { v -> v != 0 })) },
         ) { dialog = null }
         Dialog.Iqama -> MinutesDialog(
-            "ضبط مواقيت الإقامة", "الدقائق بين الأذان والإقامة (٠: بدون عدّاد إقامة)",
+            t("ضبط مواقيت الإقامة"), t("الدقائق بين الأذان والإقامة (٠: بدون عدّاد إقامة)"),
             Prayer.entries.filter { it != Prayer.Sunrise }, cfg.iqama, 0..60,
-            label = { p, m -> "الإقامة " + clock(times.getValue(p) + m) },
+            label = { p, m -> t("الإقامة ") + clock(times.getValue(p) + m) },
             onSave = { save(cfg.copy(iqama = it)) },
         ) { dialog = null }
         Dialog.Coords -> CoordsDialog(prefs.lat, prefs.lng, prefs.place, { la, lo, n -> setPlace(la, lo, n) }) { dialog = null }
         Dialog.Cities -> CitiesDialog({ n, la, lo -> setPlace(la, lo, n) }) { dialog = null }
-        Dialog.Rename -> TextDialog("تعديل اسم المدينة", prefs.place, "اسم المدينة") { name ->
+        Dialog.Rename -> TextDialog(t("تعديل اسم المدينة"), prefs.place, t("اسم المدينة")) { name ->
             if (name != null && prefs.lat != null && prefs.lng != null) scope.launch { store.setLocation(prefs.lat, prefs.lng, name) }
             dialog = null
         }
@@ -388,7 +389,7 @@ private fun Choice(title: String, options: List<Pair<String, String>>, selected:
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("إغلاق", color = c.primary) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(t("إغلاق"), color = c.primary) } },
     )
 }
 
@@ -427,8 +428,8 @@ private fun MinutesDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(values); onDismiss() }) { Text("حفظ", color = c.primary, fontWeight = FontWeight.Bold) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء", color = c.muted) } },
+        confirmButton = { TextButton(onClick = { onSave(values); onDismiss() }) { Text(t("حفظ"), color = c.primary, fontWeight = FontWeight.Bold) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(t("إلغاء"), color = c.muted) } },
     )
 }
 
@@ -462,22 +463,22 @@ private fun CoordsDialog(lat: Double?, lng: Double?, place: String, onSave: (Dou
     val vlo = latin(lo).toDoubleOrNull()?.takeIf { it in -180.0..180.0 }
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.card,
-        title = { Text("تحديد يدوي بالإحداثيات", color = c.text, fontWeight = FontWeight.Bold) },
+        title = { Text(t("تحديد يدوي بالإحداثيات"), color = c.text, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(la, { la = it }, label = { Text("خط العرض (مثل ٣٠٫٠٤)") }, singleLine = true, isError = la.isNotBlank() && vla == null,
+                OutlinedTextField(la, { la = it }, label = { Text(t("خط العرض (مثل ٣٠٫٠٤)")) }, singleLine = true, isError = la.isNotBlank() && vla == null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), colors = fieldColors(), modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(lo, { lo = it }, label = { Text("خط الطول (مثل ٣١٫٢٣)") }, singleLine = true, isError = lo.isNotBlank() && vlo == null,
+                OutlinedTextField(lo, { lo = it }, label = { Text(t("خط الطول (مثل ٣١٫٢٣)")) }, singleLine = true, isError = lo.isNotBlank() && vlo == null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), colors = fieldColors(), modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(name, { name = it.take(40) }, label = { Text("اسم المكان") }, singleLine = true, colors = fieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(name, { name = it.take(40) }, label = { Text(t("اسم المكان")) }, singleLine = true, colors = fieldColors(), modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
             TextButton(onClick = { if (vla != null && vlo != null) { onSave(vla, vlo, name.trim()); onDismiss() } }, enabled = vla != null && vlo != null) {
-                Text("حفظ", color = if (vla != null && vlo != null) c.primary else c.muted, fontWeight = FontWeight.Bold)
+                Text(t("حفظ"), color = if (vla != null && vlo != null) c.primary else c.muted, fontWeight = FontWeight.Bold)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء", color = c.muted) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(t("إلغاء"), color = c.muted) } },
     )
 }
 
@@ -485,13 +486,13 @@ private fun CoordsDialog(lat: Double?, lng: Double?, place: String, onSave: (Dou
 private fun CitiesDialog(onPick: (String, Double, Double) -> Unit, onDismiss: () -> Unit) {
     val c = LocalColors.current
     var q by remember { mutableStateOf("") }
-    val list = remember(q) { val n = ArabicText.normalize(q); Cities.filter { n.isBlank() || ArabicText.normalize(it.first).contains(n) } }
+    val list = remember(q) { val n = ArabicText.normalize(q); Cities.map { t(it.first) to it.second }.filter { n.isBlank() || ArabicText.normalize(it.first).lowercase().contains(n.lowercase()) || it.first.lowercase().contains(q.trim().lowercase()) } }
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.card,
-        title = { Text("اختر المدينة", color = c.text, fontWeight = FontWeight.Bold) },
+        title = { Text(t("اختر المدينة"), color = c.text, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(q, { q = it }, label = { Text("بحث") }, singleLine = true, colors = fieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(q, { q = it }, label = { Text(t("بحث")) }, singleLine = true, colors = fieldColors(), modifier = Modifier.fillMaxWidth())
                 LazyColumn(Modifier.heightIn(max = 380.dp)) {
                     items(list, key = { it.first }) { (name, ll) ->
                         Text(
@@ -503,19 +504,19 @@ private fun CitiesDialog(onPick: (String, Double, Double) -> Unit, onDismiss: ()
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("إغلاق", color = c.primary) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(t("إغلاق"), color = c.primary) } },
     )
 }
 
 @Composable
 private fun TextDialog(title: String, initial: String, label: String, onDone: (String?) -> Unit) {
     val c = LocalColors.current
-    var t by remember { mutableStateOf(initial) }
+    var value by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = { onDone(null) }, containerColor = c.card,
         title = { Text(title, color = c.text, fontWeight = FontWeight.Bold) },
-        text = { OutlinedTextField(t, { t = it.take(40) }, label = { Text(label) }, singleLine = true, colors = fieldColors(), modifier = Modifier.fillMaxWidth()) },
-        confirmButton = { TextButton(onClick = { onDone(t.trim().ifBlank { null }) }) { Text("حفظ", color = c.primary, fontWeight = FontWeight.Bold) } },
-        dismissButton = { TextButton(onClick = { onDone(null) }) { Text("إلغاء", color = c.muted) } },
+        text = { OutlinedTextField(value, { value = it.take(40) }, label = { Text(label) }, singleLine = true, colors = fieldColors(), modifier = Modifier.fillMaxWidth()) },
+        confirmButton = { TextButton(onClick = { onDone(value.trim().ifBlank { null }) }) { Text(t("حفظ"), color = c.primary, fontWeight = FontWeight.Bold) } },
+        dismissButton = { TextButton(onClick = { onDone(null) }) { Text(t("إلغاء"), color = c.muted) } },
     )
 }

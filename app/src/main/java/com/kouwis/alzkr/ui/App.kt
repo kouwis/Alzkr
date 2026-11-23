@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -66,11 +67,14 @@ class Nav {
 
 @Composable
 fun AlzkrApp() {
-    AlzkrTheme {
+    val context = LocalContext.current
+    val prefs = remember { Prefs(context.applicationContext) }
+    val state by prefs.flow.collectAsState(initial = AppPrefs())
+    // the interface language: everything below is rebuilt when it changes (text, and right-to-left or left-to-right)
+    val lang = com.kouwis.alzkr.data.Lang.of(state.lang)
+    com.kouwis.alzkr.data.I18n.set(context, lang)
+    androidx.compose.runtime.key(lang) { AlzkrTheme {
         val c = LocalColors.current
-        val context = LocalContext.current
-        val prefs = remember { Prefs(context.applicationContext) }
-        val state by prefs.flow.collectAsState(initial = AppPrefs())
         val data by produceState<QuranData?>(Quran.peek()) { value = Quran.load(context) }
         val nav = remember { Nav() }
         // open on the section the user was last in
@@ -88,7 +92,7 @@ fun AlzkrApp() {
             if (q == null || !opened) {
                 Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = c.primary)
-                    Text("جارٍ التحميل…", color = c.muted, modifier = Modifier.padding(top = 12.dp))
+                    Text(com.kouwis.alzkr.data.t("جارٍ التحميل…"), color = c.muted, modifier = Modifier.padding(top = 12.dp))
                 }
                 return@Box
             }
@@ -138,10 +142,10 @@ fun AlzkrApp() {
                     Screen.AdhkarSearch -> AdhkarSearchScreen(q, nav)
                     Screen.HisnIndex -> HisnIndexScreen(nav)
                     Screen.Tracker -> TrackerScreen(state, prefs, nav)
-                    Screen.Settings -> SettingsScreen(state, nav)
+                    Screen.Settings -> SettingsScreen(state, prefs, nav)
                     Screen.PrayerSettings -> PrayerSettingsScreen(state, prefs, nav)
                 } }
             }
         }
     }
-}
+} }

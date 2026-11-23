@@ -2,6 +2,7 @@
 
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,19 +67,19 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Column {
-                Text("العلامات", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
-                Text(if (marks.isEmpty()) "لا توجد علامات" else "${num(marks.size)} علامة", color = c.muted, fontSize = 13.sp)
+                Text(t("العلامات"), color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
+                Text(if (marks.isEmpty()) t("لا توجد علامات") else t("{0} علامة", num(marks.size)), color = c.muted, fontSize = 13.sp)
             }
             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             // favourites can no longer be added; the ones saved before are still reachable from here
-            if (prefs.favorites.isNotEmpty()) RoundIconButton(Ic.heart, "المفضلة", { nav.go(Screen.Favorites) }, tint = c.heart)
+            if (prefs.favorites.isNotEmpty()) RoundIconButton(Ic.heart, t("المفضلة"), { nav.go(Screen.Favorites) }, tint = c.heart)
         }
         if (marks.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "لوضع علامة على صفحة: افتح المصحف، والمس الشاشة، ثم اضغط زر العلامة في الأعلى.\n\nلوضع علامة على آية: اضغط مطوّلًا على الآية واختر «علامة».",
+                    t("لوضع علامة على صفحة: افتح المصحف، والمس الشاشة، ثم اضغط زر العلامة في الأعلى.\n\nلوضع علامة على آية: اضغط مطوّلًا على الآية واختر «علامة»."),
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }
@@ -95,17 +96,17 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Icon(
-                                Ic.bookmarkFilled, "إزالة العلامة", tint = c.gold,
+                                Ic.bookmarkFilled, t("إزالة العلامة"), tint = c.gold,
                                 modifier = Modifier.size(22.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleBookmark(m.key) } },
                             )
                             Column(Modifier.weight(1f)) {
-                                Text("صفحة ${num(m.page)}", color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold)
+                                Text(t("صفحة {0}", num(m.page)), color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold)
                                 Text(
-                                    "${q.surahName(q.surahOfPage(m.page))} · الجزء ${num(q.juzOfPage(m.page))} · الحزب ${num(q.hizbOfPage(m.page))}",
+                                    t("{0} · الجزء {1} · الحزب {2}", q.surahName(q.surahOfPage(m.page)), num(q.juzOfPage(m.page)), num(q.hizbOfPage(m.page))),
                                     color = c.muted, fontSize = 12.sp,
                                 )
                             }
-                            Text("صفحة", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(t("صفحة"), color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                         is Mark.Ayah -> Column(
                             Modifier.clickable { nav.go(Screen.Mushaf(q.pageOf(m.s, m.a), "${m.s}:${m.a}", highlight = true)) }
@@ -114,17 +115,17 @@ fun BookmarksScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(
-                                    Ic.bookmarkFilled, "إزالة العلامة", tint = c.gold,
+                                    Ic.bookmarkFilled, t("إزالة العلامة"), tint = c.gold,
                                     modifier = Modifier.size(22.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleBookmark(m.key) } },
                                 )
                                 Column(Modifier.weight(1f)) {
-                                    Text("${q.surahName(m.s)} · آية ${num(m.a)}", color = c.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                                    Text(t("{0} · آية {1}", q.surahName(m.s), num(m.a)), color = c.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                                     Text(
-                                        "صفحة ${num(q.pageOf(m.s, m.a))} · الجزء ${num(q.juzOfPage(q.pageOf(m.s, m.a)))}",
+                                        t("صفحة {0} · الجزء {1}", num(q.pageOf(m.s, m.a)), num(q.juzOfPage(q.pageOf(m.s, m.a)))),
                                         color = c.muted, fontSize = 12.sp,
                                     )
                                 }
-                                Text("آية", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                Text(t("آية"), color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                             }
                             QuranVerse(q, m.s, m.a, fontSize = 24.sp)
                         }

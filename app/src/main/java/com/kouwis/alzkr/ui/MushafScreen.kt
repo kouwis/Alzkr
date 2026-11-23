@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import android.widget.Toast
@@ -186,8 +187,8 @@ fun MushafScreen(
             val juz = q.meta.juz.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
             val hizb = q.meta.hizb.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
             val note = when {
-                juz != null -> "بداية الجزء ${num(juz.n)}"
-                hizb != null -> "بداية الحزب ${num(hizb.n)}"
+                juz != null -> t("بداية الجزء {0}", num(juz.n))
+                hizb != null -> t("بداية الحزب {0}", num(hizb.n))
                 else -> null
             }
             if (note != null) { markNote = note; noteTick++ }
@@ -208,7 +209,7 @@ fun MushafScreen(
 
     val pageVerses = { pg: Int -> q.versesOnPage(pg, q.tajweedReady(prefs.tajweedOn)).map { "${it.first}:${it.second}" } }
     Box(Modifier.fillMaxSize().background(c.paper)) {
-        if (verseMode) {
+        if (verseMode) CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             VerseList(
                 q, prefs, selected ?: focus,
                 // currentPage is a page of the print the pages view shows (normal or tajweed)
@@ -265,7 +266,7 @@ fun MushafScreen(
                 onBookmarkPage = {
                     val wasOn = pageMarked
                     scope.launch { store.togglePageBookmark(currentPage, ayahsOnPage) }
-                    Toast.makeText(ctx, if (wasOn) "أُزيلت علامة الصفحة" else "وُضعت علامة على صفحة ${num(currentPage)}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, if (wasOn) t("أُزيلت علامة الصفحة") else t("وُضعت علامة على صفحة {0}", num(currentPage)), Toast.LENGTH_SHORT).show()
                     showBars()
                 },
                 onBack = { nav.back() },
@@ -286,22 +287,22 @@ fun MushafScreen(
                 onBookmark = {
                     val wasOn = "a:$sel" in prefs.bookmarks
                     scope.launch { store.toggleBookmark("a:$sel") }
-                    Toast.makeText(ctx, if (wasOn) "أُزيلت علامة الآية" else "وُضعت علامة على الآية", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, if (wasOn) t("أُزيلت علامة الآية") else t("وُضعت علامة على الآية"), Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp),
                 onFavorite = { scope.launch { store.toggleFavorite(sel) } },
-                onTafsir = { dialog = "التفسير الميسر" to sel },
-                onTranslation = { dialog = "الترجمة (English)" to sel },
+                onTafsir = { dialog = t("التفسير الميسر") to sel },
+                onTranslation = { dialog = t("الترجمة (English)") to sel },
                 onCopy = {
                     verseText(q, sel)?.let {
                         clipboard.setText(AnnotatedString(it))
-                        Toast.makeText(ctx, "تم النسخ", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, t("تم النسخ"), Toast.LENGTH_SHORT).show()
                     }
                 },
                 onShare = {
                     val text = verseText(q, sel) ?: return@AyahActions
                     val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
-                    ctx.startActivity(Intent.createChooser(send, "مشاركة الآية"))
+                    ctx.startActivity(Intent.createChooser(send, t("مشاركة الآية")))
                 },
             )
         }
@@ -313,7 +314,7 @@ fun MushafScreen(
         val (s, a) = parseKey(key) ?: return@let
         MistakePicker(q, s, a, mistakesMap[key], onDismiss = { picking = null }, onSave = { words ->
             scope.launch { store.setMistake(key, words) }
-            Toast.makeText(ctx, if (words == null) "أُزيلت من المراجعة" else "أُضيفت إلى المراجعة", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, if (words == null) t("أُزيلت من المراجعة") else t("أُضيفت إلى المراجعة"), Toast.LENGTH_SHORT).show()
             picking = null
             selected = null
         })
@@ -321,19 +322,19 @@ fun MushafScreen(
 
     dialog?.let { (title, key) ->
         val (s, a) = parseKey(key) ?: return@let
-        val body = if (title.startsWith("التفسير")) q.tafsirOf(s, a) else q.translationOf(s, a)
+        val body = if (title == t("التفسير الميسر")) q.tafsirOf(s, a) else q.translationOf(s, a)
         AlertDialog(
             onDismissRequest = { dialog = null },
-            confirmButton = { TextButton(onClick = { dialog = null }) { Text("تم", color = c.primary) } },
+            confirmButton = { TextButton(onClick = { dialog = null }) { Text(t("تم"), color = c.primary) } },
             title = { Text("$title · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold) },
             text = {
                 Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                     QuranVerse(q, s, a, fontSize = 22.sp, color = c.primary)
                     Text(
-                        body.ifBlank { "غير متوفر" },
+                        body.ifBlank { t("غير متوفر") },
                         fontSize = 15.sp, lineHeight = 26.sp, color = c.text,
                         modifier = Modifier.padding(top = 10.dp),
-                        style = TextStyle(textDirection = if (title.startsWith("التفسير")) TextDirection.Rtl else TextDirection.Ltr),
+                        style = TextStyle(textDirection = if (title == t("التفسير الميسر")) TextDirection.Rtl else TextDirection.Ltr),
                     )
                 }
             },
@@ -344,7 +345,7 @@ fun MushafScreen(
 
 private fun verseText(q: QuranData, key: String): String? {
     val (s, a) = parseKey(key) ?: return null
-    return "${q.simple(s, a)} ﴿${num(a)}﴾\n[سورة ${q.surahName(s)}]"
+    return t("{0} ﴿{1}﴾\n[سورة {2}]", q.simple(s, a), num(a), q.surahName(s))
 }
 
 @Composable
@@ -379,7 +380,10 @@ private fun PagesPager(
         androidx.compose.runtime.snapshotFlow { state.currentPage }.distinctUntilChanged().collect { onPage(it + 1) }
     }
     val landscape = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
+    // the mushaf always turns its pages from right to left, whatever the interface language
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
     HorizontalPager(state = state, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1, key = { it }) { idx ->
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         val p = idx + 1
         // a verse that runs over two pages is lit on both
         val onPage = remember(p, tajweed) { q.versesOnPage(p, tajweed).map { "${it.first}:${it.second}" }.toSet() }
@@ -401,6 +405,8 @@ private fun PagesPager(
                 mistakes = mistakes,
             )
         }
+    }
+    }
     }
 }
 
@@ -429,24 +435,24 @@ private fun TopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).springClick(label = "رجوع", onClick = onBack), contentAlignment = Alignment.Center) {
-                Icon(Ic.back, "رجوع", tint = c.text, modifier = Modifier.size(22.dp))
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).springClick(label = t("رجوع"), onClick = onBack), contentAlignment = Alignment.Center) {
+                Icon(Ic.back, t("رجوع"), tint = c.text, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(q.surahName(q.surahOfPage(page, tj)), color = c.text, fontSize = 18.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
                 Text(
-                    "صفحة ${num(page)} · الجزء ${num(q.juzOfPage(page, tj))} · الحزب ${num(q.hizbOfPage(page, tj))}",
+                    t("صفحة {0} · الجزء {1} · الحزب {2}", num(page), num(q.juzOfPage(page, tj)), num(q.hizbOfPage(page, tj))),
                     color = c.muted, fontSize = 11.sp, maxLines = 1,
                 )
             }
-            RoundIconButton(Ic.search, "بحث", onSearch, size = 40.dp)
+            RoundIconButton(Ic.search, t("بحث"), onSearch, size = 40.dp)
             RoundIconButton(
                 if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
-                if (pageBookmarked) "إزالة علامة الصفحة" else "علامة على الصفحة",
+                if (pageBookmarked) t("إزالة علامة الصفحة") else t("علامة على الصفحة"),
                 onBookmarkPage, tint = if (pageBookmarked) c.gold else c.text, size = 40.dp, haptic = Haptic.Confirm,
             )
-            if (tajweedOn) RoundIconButton(Ic.palette, "دليل ألوان التجويد", onTajweed, tint = c.primary, size = 40.dp)
-            RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) "وضع الصفحات" else "وضع الآيات", onToggleMode, size = 40.dp)
+            if (tajweedOn) RoundIconButton(Ic.palette, t("دليل ألوان التجويد"), onTajweed, tint = c.primary, size = 40.dp)
+            RoundIconButton(if (verseMode) Ic.page else Ic.lines, if (verseMode) t("وضع الصفحات") else t("وضع الآيات"), onToggleMode, size = 40.dp)
         }
     }
 }
@@ -474,12 +480,12 @@ private fun AyahActions(
             .background(Color(0xFF1E2A28))
             .padding(6.dp),
     ) {
-        ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, "علامة", Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
-        ActionItem(Ic.pen, "مراجعة", if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
-        ActionItem(Ic.book, "تفسير", Color.White, onTafsir)
-        ActionItem(Ic.translate, "ترجمة", Color.White, onTranslation)
-        ActionItem(Ic.copy, "نسخ", Color.White, onCopy)
-        ActionItem(Ic.share, "مشاركة", Color.White, onShare)
+        ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, t("علامة"), Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
+        ActionItem(Ic.pen, t("مراجعة"), if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
+        ActionItem(Ic.book, t("تفسير"), Color.White, onTafsir)
+        ActionItem(Ic.translate, t("ترجمة"), Color.White, onTranslation)
+        ActionItem(Ic.copy, t("نسخ"), Color.White, onCopy)
+        ActionItem(Ic.share, t("مشاركة"), Color.White, onShare)
     }
 }
 
@@ -545,7 +551,7 @@ private fun StudyPanel(q: QuranData, page: Int, tj: Boolean, tafsir: Boolean, tr
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .springClick(label = if (expanded) "تصغير" else "فتح", haptic = Haptic.Tick, pressedScale = 0.98f) { state = if (state == 0) 1 else 0 }
+                    .springClick(label = if (expanded) t("تصغير") else t("فتح"), haptic = Haptic.Tick, pressedScale = 0.98f) { state = if (state == 0) 1 else 0 }
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragEnd = {
@@ -573,12 +579,12 @@ private fun StudyPanel(q: QuranData, page: Int, tj: Boolean, tafsir: Boolean, tr
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     val title = when {
-                        tafsir && translation -> "التفسير والترجمة"
-                        tafsir -> "التفسير"
-                        else -> "الترجمة"
+                        tafsir && translation -> t("التفسير والترجمة")
+                        tafsir -> t("التفسير")
+                        else -> t("الترجمة")
                     }
-                    Text("$title · صفحة ${num(page)}", color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    if (tafsir) Chip("الميسر", c.primarySoft, c.primary)
+                    Text(t("{0} · صفحة {1}", title, num(page)), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    if (tafsir) Chip(t("الميسر"), c.primarySoft, c.primary)
                     if (translation) Chip("English", c.goldSoft, c.goldText)
                     val rot by animateFloatAsState(if (expanded) 180f else 0f, label = "chev")
                     Icon(Ic.up, null, tint = c.muted, modifier = Modifier.padding(start = 8.dp).size(20.dp).rotate(rot))
@@ -596,8 +602,8 @@ private fun StudyPanel(q: QuranData, page: Int, tj: Boolean, tafsir: Boolean, tr
                     ) {
                         Chip("${q.surahName(s)} · ${num(a)}", c.chip, c.text)
                         QuranVerse(q, s, a, fontSize = 22.sp, color = c.primary)
-                        if (tafsir) Labeled("التفسير", c.primary, q.tafsirOf(s, a), rtl = true)
-                        if (translation) Labeled("الترجمة", c.goldText, q.translationOf(s, a), rtl = false)
+                        if (tafsir) Labeled(t("التفسير"), c.primary, q.tafsirOf(s, a), rtl = true)
+                        if (translation) Labeled(t("الترجمة"), c.goldText, q.translationOf(s, a), rtl = false)
                     }
                     HorizontalDivider(color = c.border.copy(alpha = 0.5f))
                 }
@@ -623,7 +629,7 @@ private fun Labeled(label: String, accent: Color, body: String, rtl: Boolean) {
             Text(label, color = accent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                 Text(
-                    body.ifBlank { "غير متوفر" }, color = c.text, fontSize = 15.sp, lineHeight = 26.sp,
+                    body.ifBlank { t("غير متوفر") }, color = c.text, fontSize = 15.sp, lineHeight = 26.sp,
                     textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth(),
                 )
             }

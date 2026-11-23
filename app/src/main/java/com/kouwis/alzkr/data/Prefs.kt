@@ -42,6 +42,8 @@ data class AppPrefs(
     val mistakes: List<Pair<String, Set<Int>>> = emptyList(),
     /** when each adhkar section was last finished (epoch millis) */
     val adhkarDone: Map<String, Long> = emptyMap(),
+    /** the interface language (code), "ar" by default */
+    val lang: String = "ar",
     /** how the prayer times are worked out (مواقيت الصلاة in the settings) */
     val prayer: PrayerConfig = PrayerConfig(),
     /** the place updates itself from the phone's location; off once a place is picked by hand */
@@ -73,6 +75,7 @@ class Prefs(private val context: Context) {
         val mistakes = stringPreferencesKey("mistakes") // "s:a|0.3;s:a|"
         val adhkarDone = stringPreferencesKey("adhkar_done") // "morning=1732300000000;sleep=…"
         val prayer = stringPreferencesKey("prayer_config")
+        val lang = stringPreferencesKey("lang")
         val autoLocate = booleanPreferencesKey("auto_locate")
         val track = stringPreferencesKey("track") // "2026-11-23=morning,qiyam;2026-11-22=…"
         val tasbih = stringPreferencesKey("tasbih") // "text\u001F33\u001Etext\u001F100"
@@ -118,6 +121,7 @@ class Prefs(private val context: Context) {
             }.toMap(),
             track = parseTrack(p[K.track]),
             prayer = PrayerConfig.decode(p[K.prayer]),
+            lang = p[K.lang] ?: "ar",
             autoLocate = p[K.autoLocate] ?: true,
             tasbih = p[K.tasbih]?.split('\u001E')?.mapNotNull { e ->
                 val f = e.split('\u001F')
@@ -127,6 +131,7 @@ class Prefs(private val context: Context) {
         )
     }
 
+    suspend fun setLang(code: String) = context.store.edit { it[K.lang] = code }
     suspend fun setPrayer(c: PrayerConfig) = context.store.edit { it[K.prayer] = c.encode() }
     suspend fun setAutoLocate(on: Boolean) = context.store.edit { it[K.autoLocate] = on }
 

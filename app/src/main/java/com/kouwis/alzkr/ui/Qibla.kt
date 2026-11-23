@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.content.Context
 import android.hardware.GeomagneticField
 import android.hardware.Sensor
@@ -190,7 +191,7 @@ fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
     val hasPlace = prefs.lat != null && prefs.lng != null
     val lat = prefs.lat ?: 30.0444
     val lng = prefs.lng ?: 31.2357
-    val place = if (hasPlace) prefs.place.ifBlank { "موقعك الحالي" } else "القاهرة"
+    val place = if (hasPlace) prefs.place.ifBlank { t("موقعك الحالي") } else t("القاهرة")
     val bearing = remember(lat, lng) { qiblaBearing(lat, lng).toFloat() }
     val km = remember(lat, lng) { Locator.km(lat, lng, KAABA_LAT, KAABA_LNG).roundToInt() }
     val compass = rememberCompass(lat, lng)
@@ -211,12 +212,12 @@ fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.align(Alignment.CenterStart)) { RoundIconButton(Ic.back, "رجوع", { nav.back() }) }
-            Text("القبلة", color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold)
-            Box(Modifier.align(Alignment.CenterEnd)) { RoundIconButton(Ic.info, "معلومات", { info = true }, tint = c.primary) }
+            Box(Modifier.align(Alignment.CenterStart)) { RoundIconButton(Ic.back, t("رجوع"), { nav.back() }) }
+            Text(t("القبلة"), color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold)
+            Box(Modifier.align(Alignment.CenterEnd)) { RoundIconButton(Ic.info, t("معلومات"), { info = true }, tint = c.primary) }
         }
         Spacer(Modifier.height(10.dp))
-        Text("اتجاه القبلة في", color = c.muted, fontSize = 15.sp)
+        Text(t("اتجاه القبلة في"), color = c.muted, fontSize = 15.sp)
         Text(
             place, color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1,
             modifier = Modifier.padding(top = 8.dp).widthIn(max = 300.dp).clip(RoundedCornerShape(22.dp))
@@ -226,7 +227,7 @@ fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
 
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             if (!compass.available) {
-                Text("هذا الهاتف لا يحتوي على بوصلة", color = c.text, fontSize = 17.sp)
+                Text(t("هذا الهاتف لا يحتوي على بوصلة"), color = c.text, fontSize = 17.sp)
             } else {
                 val rim = c.card
                 val rimLine = c.border
@@ -258,7 +259,7 @@ fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
                         )
                     }
                     // the four directions just outside the dial, always upright
-                    listOf(0 to "شمال", 90 to "شرق", 180 to "جنوب", 270 to "غرب").forEach { (d, name) ->
+                    listOf(0 to t("شمال"), 90 to t("شرق"), 180 to t("جنوب"), 270 to t("غرب")).forEach { (d, name) ->
                         val a = Math.toRadians((d - h).toDouble())
                         val rr = r + labelRoom * 0.6f
                         val layout = measurer.measure(name, if (d == 0) northStyle else labelStyle)
@@ -299,13 +300,13 @@ fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
         }
 
         Text(
-            if (facing) "أنت في اتجاه القبلة" else "السهم يشير إلى اتجاه القبلة",
+            if (facing) t("أنت في اتجاه القبلة") else t("السهم يشير إلى اتجاه القبلة"),
             color = if (facing) c.primary else c.text, fontSize = 20.sp, fontWeight = FontWeight.Bold,
         )
         Text(
             if (compass.accuracy.value <= SensorManager.SENSOR_STATUS_ACCURACY_LOW)
-                "البوصلة تحتاج إلى معايرة: حرّك الهاتف في الهواء على شكل الرقم ٨ عدة مرات، بعيدًا عن المعادن والمغناطيس."
-            else "الاتجاه تقريبي ويعتمد على بوصلة الهاتف وموقعك، وقد يتأثر بالمعادن والمغناطيس. ضع الهاتف مستويًا للحصول على أدق نتيجة.",
+                t("البوصلة تحتاج إلى معايرة: حرّك الهاتف في الهواء على شكل الرقم ٨ عدة مرات، بعيدًا عن المعادن والمغناطيس.")
+            else t("الاتجاه تقريبي ويعتمد على بوصلة الهاتف وموقعك، وقد يتأثر بالمعادن والمغناطيس. ضع الهاتف مستويًا للحصول على أدق نتيجة."),
             color = if (compass.accuracy.value <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) c.goldText else c.muted,
             fontSize = 13.sp, lineHeight = 22.sp, textAlign = TextAlign.Center,
             modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 10.dp, bottom = 24.dp),
@@ -316,15 +317,15 @@ fun QiblaScreen(prefs: AppPrefs, nav: Nav) = AdhkarTheme {
         AlertDialog(
             onDismissRequest = { info = false },
             containerColor = c.card,
-            confirmButton = { TextButton(onClick = { info = false }) { Text("حسنًا", color = c.primary) } },
-            title = { Text("عن اتجاه القبلة", fontWeight = FontWeight.Bold, color = c.text) },
+            confirmButton = { TextButton(onClick = { info = false }) { Text(t("حسنًا"), color = c.primary) } },
+            title = { Text(t("عن اتجاه القبلة"), fontWeight = FontWeight.Bold, color = c.text) },
             text = {
                 Text(
-                    "الموقع: $place\n" +
-                        "اتجاه القبلة: ${num(bearing.roundToInt())}° من الشمال الحقيقي\n" +
-                        "المسافة إلى مكة المكرمة: ${num(km)} كم\n\n" +
-                        (if (!hasPlace) "لم يُحدَّد موقعك بعد، فالاتجاه محسوب للقاهرة. حدّد موقعك من بطاقة اليوم في قسم الأذكار.\n\n" else "") +
-                        "للحصول على أدق نتيجة: ضع الهاتف مستويًا على يدك، وابتعد عن الأجهزة والمعادن. وإذا بدا الاتجاه غير مستقر، فحرّك الهاتف على شكل الرقم ٨ لمعايرة البوصلة.",
+                    t("الموقع: {0}\n", place) +
+                        t("اتجاه القبلة: {0}° من الشمال الحقيقي\n", num(bearing.roundToInt())) +
+                        t("المسافة إلى مكة المكرمة: {0} كم\n\n", num(km)) +
+                        (if (!hasPlace) t("لم يُحدَّد موقعك بعد، فالاتجاه محسوب للقاهرة. حدّد موقعك من بطاقة اليوم في قسم الأذكار.\n\n") else "") +
+                        t("للحصول على أدق نتيجة: ضع الهاتف مستويًا على يدك، وابتعد عن الأجهزة والمعادن. وإذا بدا الاتجاه غير مستقر، فحرّك الهاتف على شكل الرقم ٨ لمعايرة البوصلة."),
                     color = c.text, lineHeight = 24.sp,
                 )
             },

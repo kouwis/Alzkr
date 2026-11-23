@@ -2,6 +2,7 @@
 
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,7 +65,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
     // a page number ("٢٥"، "25"، "ص ٢٥"، "صفحة 25") goes straight to that page
     val pageHit = remember(query) {
         val digits = query.trim()
-            .removePrefix("صفحة").removePrefix("صفحه").removePrefix("ص").trim()
+            .removePrefix("صفحة").removePrefix("صفحه").removePrefix("ص").removePrefix(t("صفحة")).trim()
             .map { ch ->
                 when (ch) {
                     in '٠'..'٩' -> '0' + (ch - '٠')
@@ -99,7 +100,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Row(
                 Modifier
                     .weight(1f)
@@ -122,19 +123,19 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { pageHit?.let { nav.openFromSearch(Screen.Mushaf(it)) } }),
                     modifier = Modifier.weight(1f).focusRequester(focus),
                     decorationBox = { inner ->
-                        if (query.isEmpty()) Text("سورة، كلمة، أو رقم صفحة", color = c.muted, fontSize = 16.sp)
+                        if (query.isEmpty()) Text(t("سورة، كلمة، أو رقم صفحة"), color = c.muted, fontSize = 16.sp)
                         inner()
                     },
                 )
                 if (query.isNotEmpty()) {
-                    Icon(Ic.close, "مسح", tint = c.muted, modifier = Modifier.size(18.dp).clickable { query = "" })
+                    Icon(Ic.close, t("مسح"), tint = c.muted, modifier = Modifier.size(18.dp).clickable { query = "" })
                 }
             }
         }
 
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (pageHit != null) {
-                item { SectionTitle("الصفحة") }
+                item { SectionTitle(t("الصفحة")) }
                 item(key = "page") {
                     CardBox(Modifier.fillMaxWidth()) {
                         Row(
@@ -144,8 +145,8 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                         ) {
                             NumberBadge(num(pageHit))
                             Column(Modifier.weight(1f)) {
-                                Text("صفحة ${num(pageHit)}", color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                Text("سورة ${q.surahName(q.surahOfPage(pageHit))} · الجزء ${num(q.juzOfPage(pageHit))}", color = c.muted, fontSize = 12.sp)
+                                Text(t("صفحة {0}", num(pageHit)), color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(t("سورة {0} · الجزء {1}", q.surahName(q.surahOfPage(pageHit)), num(q.juzOfPage(pageHit))), color = c.muted, fontSize = 12.sp)
                             }
                             Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
                         }
@@ -153,10 +154,10 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                 }
             }
             if (needle.isNotEmpty() && pageHit == null && surahHits.isEmpty() && verseHits.isEmpty()) {
-                item { Text("لا توجد نتائج", color = c.muted, modifier = Modifier.padding(top = 24.dp).fillMaxWidth()) }
+                item { Text(t("لا توجد نتائج"), color = c.muted, modifier = Modifier.padding(top = 24.dp).fillMaxWidth()) }
             }
             if (surahHits.isNotEmpty()) {
-                item { SectionTitle("السور") }
+                item { SectionTitle(t("السور")) }
                 items(surahHits, key = { "s${it.n}" }) { s ->
                     CardBox(Modifier.fillMaxWidth()) {
                         Row(
@@ -166,18 +167,18 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                         ) {
                             NumberBadge(num(s.n))
                             Column(Modifier.weight(1f)) {
-                                Text("سورة ${s.name}", color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                Text("${s.type} · ${num(s.ayahs)} آية", color = c.muted, fontSize = 12.sp)
+                                Text(t("سورة {0}", s.name), color = c.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(t("{0} · {1} آية", t(s.type), num(s.ayahs)), color = c.muted, fontSize = 12.sp)
                             }
-                            Text("ص ${num(s.page)}", color = c.muted, fontSize = 13.sp)
+                            Text(t("ص {0}", num(s.page)), color = c.muted, fontSize = 13.sp)
                         }
                     }
                 }
             }
             if (verseHits.isNotEmpty()) {
                 item {
-                    val more = if (verseHits.size >= MAX_VERSES) "أول ${num(MAX_VERSES)} نتيجة" else "${num(verseHits.size)} آية"
-                    SectionTitle("الآيات · $more")
+                    val more = if (verseHits.size >= MAX_VERSES) t("أول {0} نتيجة", num(MAX_VERSES)) else t("{0} آية", num(verseHits.size))
+                    SectionTitle(t("الآيات · {0}", more))
                 }
                 items(verseHits, key = { "v${it.first}:${it.second}" }) { (s, a) ->
                     CardBox(Modifier.fillMaxWidth()) {
@@ -187,7 +188,7 @@ fun SearchScreen(q: QuranData, nav: Nav) {
                         ) {
                             Row {
                                 Text("${q.surahName(s)} · ${num(a)}", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                                Text("ص ${num(q.pageOf(s, a))}", color = c.muted, fontSize = 12.sp)
+                                Text(t("ص {0}", num(q.pageOf(s, a))), color = c.muted, fontSize = 12.sp)
                             }
                             QuranVerse(q, s, a, fontSize = 22.sp)
                         }

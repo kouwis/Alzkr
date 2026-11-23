@@ -16,12 +16,15 @@ import kotlin.math.sin
 import kotlin.math.tan
 
 /** The six times of the day, in reading order. */
-enum class Prayer(val ar: String) {
-    Fajr("الفجر"), Sunrise("الشروق"), Dhuhr("الظهر"), Asr("العصر"), Maghrib("المغرب"), Isha("العشاء")
+enum class Prayer(val arName: String) {
+    Fajr("الفجر"), Sunrise("الشروق"), Dhuhr("الظهر"), Asr("العصر"), Maghrib("المغرب"), Isha("العشاء");
+
+    /** The name in the interface language. */
+    val ar: String get() = t(arName)
 }
 
 /** A way of working out Fajr and Isha: the sun's angle below the horizon, or Isha a set time after Maghrib. */
-enum class CalcMethod(val ar: String, val fajr: Double, val isha: Double, val ishaMinutes: Int = 0) {
+enum class CalcMethod(val arName: String, val fajr: Double, val isha: Double, val ishaMinutes: Int = 0) {
     Egypt("الهيئة المصرية العامة للمساحة", 19.5, 17.5),
     Makkah("أم القرى (مكة المكرمة)", 18.5, 0.0, ishaMinutes = 90),
     MWL("رابطة العالم الإسلامي", 18.0, 17.0),
@@ -32,6 +35,8 @@ enum class CalcMethod(val ar: String, val fajr: Double, val isha: Double, val is
     Qatar("قطر", 18.0, 0.0, ishaMinutes = 90),
     Turkey("رئاسة الشؤون الدينية التركية", 18.0, 17.0),
     ;
+
+    val ar: String get() = t(arName)
 
     companion object {
         /** The method a country uses, from where the place is (rough borders are enough for this). */
@@ -50,7 +55,7 @@ enum class CalcMethod(val ar: String, val fajr: Double, val isha: Double, val is
 }
 
 /** How to place Fajr and Isha where the night is short (high latitudes). */
-enum class HighLat(val ar: String) { Middle("منتصف الليل"), Seventh("سُبع الليل"), Angle("نسبة الزاوية"), None("بدون تعديل") }
+enum class HighLat(val arName: String) { Middle("منتصف الليل"), Seventh("سُبع الليل"), Angle("نسبة الزاوية"), None("بدون تعديل"); val ar: String get() = t(arName) }
 
 /**
  * The settings of «مواقيت الصلاة». [method] null = by country; [asrHanafi]: Asr when a shadow is twice the object;
@@ -208,12 +213,17 @@ object PrayerTimes {
 
 /** Hijri date (Umm al-Qura calendar, built into Android). */
 object Hijri {
-    val months = listOf(
+    private val monthsAr = listOf(
         "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
         "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
     )
-    private val weekdays = listOf("الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجُمُعة", "السبت", "الأحد")
-    val gMonths = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
+    private val weekdaysAr = listOf("الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجُمُعة", "السبت", "الأحد")
+    private val gMonthsAr = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
+
+    /** Month and day names in the interface language. */
+    val months: List<String> get() = monthsAr.map { t(it) }
+    val gMonths: List<String> get() = gMonthsAr.map { t(it) }
+    private val weekdays: List<String> get() = weekdaysAr.map { t(it) }
 
     data class Day(val weekday: String, val day: Int, val month: String, val year: Int, val gregorian: String, val friday: Boolean)
 

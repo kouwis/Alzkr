@@ -73,7 +73,7 @@ fun AlzkrTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = scheme) {
         CompositionLocalProvider(
             LocalColors provides c,
-            LocalLayoutDirection provides LayoutDirection.Rtl,
+            LocalLayoutDirection provides if (com.kouwis.alzkr.data.I18n.lang.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
             content = content,
         )
     }
@@ -104,8 +104,11 @@ object Ic {
     val trash = make("trash", "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6")
     val heart = make("heart", "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z", fill = true)
     val heartOutline = make("heartOutline", "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z")
-    val back = make("back", "M9 6l6 6-6 6")
-    val forward = make("forward", "M15 6l-6 6 6 6")
+    private val chevronRight = make("back", "M9 6l6 6-6 6")
+    private val chevronLeft = make("forward", "M15 6l-6 6 6 6")
+    /** «Back» points the way pages came from: right in Arabic, left in the left-to-right languages. */
+    val back: ImageVector get() = if (com.kouwis.alzkr.data.I18n.lang.rtl) chevronRight else chevronLeft
+    val forward: ImageVector get() = if (com.kouwis.alzkr.data.I18n.lang.rtl) chevronLeft else chevronRight
     val book = make("book", "M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2V5zM4 19a2 2 0 0 1 2-2h12M9 8h6M9 11h4")
     val translate = make("translate", "M4 5h8M8 3v2M10 5c-1 4-3.5 7-6 8.5M6 9c1.2 2 3 3.6 5 4.5M13 21l4-10 4 10M14.5 17.5h5")
     val copy = make("copy", "M9 9h10v12H9zM5 15V3h10")

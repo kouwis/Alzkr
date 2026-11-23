@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -108,17 +109,17 @@ private fun plainText(q: QuranData, d: Dhikr, sec: AdhkarSection): String = buil
             p.q != null -> {
                 val (s, a1, a2) = p.q
                 append((a1..a2).joinToString(" ") { "${q.simple(s, it)} ﴿${num(it)}﴾" })
-                append(" [سورة ${q.surahName(s)}]")
+                append(t(" [سورة {0}]", q.surahName(s)))
             }
             p.u != null -> append("﴿${p.u}﴾")
             p.t != null -> append(p.t)
         }
         append("\n")
     }
-    if (d.count > 1) append("(${num(d.count)} مرات)\n")
-    if (d.fadl.isNotBlank()) append("\nفضله: ${d.fadl}\n")
+    if (d.count > 1) append(t("({0} مرات)\n", num(d.count)))
+    if (d.fadl.isNotBlank()) append(t("\nفضله: {0}\n", d.fadl))
     if (d.src.isNotBlank()) append("\n${d.src.replace(" — ", "\n")}\n")
-    append("\n— ${sec.title} · تطبيق الذِّكر")
+    append(t("\n— {0} · تطبيق الذِّكر", sec.title))
 }
 
 /** How long the dhikr is, to pick a text size that fits the page without scrolling. */
@@ -187,22 +188,22 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                RoundIconButton(Ic.back, "رجوع", { nav.back() })
+                RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
                 Column(Modifier.weight(1f)) {
                     Text(sec.title, color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
                     Text(
-                        if (n > 1) "${num(pager.currentPage + 1)} من ${num(n)}" else "ذكر واحد",
+                        if (n > 1) t("{0} من {1}", num(pager.currentPage + 1), num(n)) else t("ذكر واحد"),
                         color = c.muted, fontSize = 13.sp,
                     )
                 }
                 if (counts.any { it > 0 }) {
-                    RoundIconButton(Ic.refresh, "البدء من جديد", {
+                    RoundIconButton(Ic.refresh, t("البدء من جديد"), {
                         for (k in 0 until n) counts[k] = 0
                         finished = false
                         scope.launch { pager.animateScrollToPage(0) }
                     }, haptic = Haptic.Delete)
                 }
-                if (n > 1) RoundIconButton(Ic.lines, "قائمة الأذكار", { showList = true }, tint = c.primary)
+                if (n > 1) RoundIconButton(Ic.lines, t("قائمة الأذكار"), { showList = true }, tint = c.primary)
             }
             if (n > 1 && sec.items.any { it.count > 0 }) {
                 val p by animateFloatAsState(doneCount / n.toFloat(), tween(400), label = "progress")
@@ -223,11 +224,11 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
                     onInfo = { info = d },
                     onCopy = {
                         clipboard.setText(AnnotatedString(plainText(q, d, sec)))
-                        Toast.makeText(context, "تم النسخ", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, t("تم النسخ"), Toast.LENGTH_SHORT).show()
                     },
                     onShare = {
                         val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, plainText(q, d, sec)) }
-                        context.startActivity(Intent.createChooser(send, "مشاركة الذكر"))
+                        context.startActivity(Intent.createChooser(send, t("مشاركة الذكر")))
                     },
                     modifier = Modifier.pointerInput(i) { detectTapGestures { tap(i) } },
                 )
@@ -240,11 +241,11 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    if (counts[i] > 0) SmallAction(Ic.refresh, "تصفير") { counts[i] = 0; finished = false; view.haptic(Haptic.Delete) }
+                    if (counts[i] > 0) SmallAction(Ic.refresh, t("تصفير")) { counts[i] = 0; finished = false; view.haptic(Haptic.Delete) }
                 }
                 DhikrCounter(count = counts[i], target = target(i), done = complete(i), onTap = { tap(i) })
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    if (target(i) > 0 && !complete(i)) SmallAction(Ic.check, "أتممته") { completeNow(i) }
+                    if (target(i) > 0 && !complete(i)) SmallAction(Ic.check, t("أتممته")) { completeNow(i) }
                 }
             }
         }
@@ -269,18 +270,18 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
         AlertDialog(
             onDismissRequest = { info = null },
             containerColor = c.card,
-            confirmButton = { TextButton(onClick = { info = null }) { Text("تم", color = c.primary) } },
-            title = { Text("الفضل والتخريج", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text) },
+            confirmButton = { TextButton(onClick = { info = null }) { Text(t("تم"), color = c.primary) } },
+            title = { Text(t("الفضل والتخريج"), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text) },
             text = {
                 Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (d.fadl.isNotBlank()) Column(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.goldSoft).padding(12.dp),
                     ) {
-                        Text("فضله", color = c.goldText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(t("فضله"), color = c.goldText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Text(d.fadl, color = c.text, fontSize = 15.sp, lineHeight = 26.sp)
                     }
                     if (d.src.isNotBlank()) Column {
-                        Text("التخريج", color = c.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(t("التخريج"), color = c.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Text(d.src.replace(" — ", "\n"), color = c.text, fontSize = 14.sp, lineHeight = 24.sp)
                     }
                 }
@@ -329,7 +330,7 @@ private fun DhikrPage(
                 val onlyQuran = d.parts.any { it.q != null } && d.parts.all { it.q != null || it.t?.startsWith("بِسْمِ") == true }
                 val caption = d.label.ifBlank {
                     if (onlyQuran) d.parts.firstNotNullOf { it.q }.let { (s, a1, a2) ->
-                        "سورة ${q.surahName(s)} · " + if (a1 == a2) "الآية ${num(a1)}" else "الآيات ${num(a1)}–${num(a2)}"
+                        t("سورة {0} · ", q.surahName(s)) + if (a1 == a2) t("الآية {0}", num(a1)) else t("الآيات {0}–{1}", num(a1), num(a2))
                     } else ""
                 }
                 AdhkarIc.byName(d.icon)?.let { pic ->
@@ -362,14 +363,14 @@ private fun DhikrPage(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (d.fadl.isNotBlank() || d.src.isNotBlank()) {
                         Text(
-                            if (d.fadl.isNotBlank()) "الفضل والتخريج" else "التخريج", color = c.goldText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                            if (d.fadl.isNotBlank()) t("الفضل والتخريج") else t("التخريج"), color = c.goldText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.goldSoft)
-                                .springClick(label = "الفضل والتخريج", pressedScale = 0.95f, onClick = onInfo)
+                                .springClick(label = t("الفضل والتخريج"), pressedScale = 0.95f, onClick = onInfo)
                                 .padding(horizontal = 12.dp, vertical = 7.dp),
                         )
                     }
-                    MiniIcon(Ic.copy, "نسخ", onCopy)
-                    MiniIcon(Ic.share, "مشاركة", onShare)
+                    MiniIcon(Ic.copy, t("نسخ"), onCopy)
+                    MiniIcon(Ic.share, t("مشاركة"), onShare)
                 }
             }
         }
@@ -416,7 +417,7 @@ private fun AdhkarList(q: QuranData, sec: AdhkarSection, counts: List<Int>, curr
                     val title = d.label.ifBlank {
                         d.parts.firstOrNull { it.t != null && !it.t.startsWith("بِسْمِ") }?.t?.let { if (it.length > 70) it.take(70) + "…" else it }
                             ?: d.parts.firstNotNullOfOrNull { it.q }?.let { (s, a1, a2) ->
-                                "سورة ${q.surahName(s)} " + if (a1 == a2) num(a1) else "${num(a1)}–${num(a2)}"
+                                t("سورة {0} ", q.surahName(s)) + if (a1 == a2) num(a1) else "${num(a1)}–${num(a2)}"
                             } ?: ""
                     }
                     Row(
@@ -454,7 +455,7 @@ fun DhikrCounter(count: Int, target: Int, done: Boolean, onTap: () -> Unit, modi
     val bg by androidx.compose.animation.animateColorAsState(if (done) c.primary else c.card, tween(250), label = "bg")
     Box(
         modifier.size(104.dp).clip(CircleShape).background(bg)
-            .springClick(role = Role.Button, label = "عدّ", haptic = Haptic.None, pressedScale = 0.9f, ripple = false, onClick = onTap),
+            .springClick(role = Role.Button, label = t("عدّ"), haptic = Haptic.None, pressedScale = 0.9f, ripple = false, onClick = onTap),
         contentAlignment = Alignment.Center,
     ) {
         val track = c.primarySoft
@@ -467,11 +468,11 @@ fun DhikrCounter(count: Int, target: Int, done: Boolean, onTap: () -> Unit, modi
             if (frac > 0f && !done) drawArc(fill, -90f, 360f * frac, false, Offset(inset, inset), sz, style = Stroke(w, cap = StrokeCap.Round))
         }
         if (done) {
-            Icon(Ic.check, "تم", tint = c.onPrimary, modifier = Modifier.size(40.dp))
+            Icon(Ic.check, t("تم"), tint = c.onPrimary, modifier = Modifier.size(40.dp))
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(num(count), color = c.text, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                if (target > 0) Text("من ${num(target)}", color = c.muted, fontSize = 11.sp)
+                if (target > 0) Text(t("من {0}", num(target)), color = c.muted, fontSize = 11.sp)
             }
         }
     }
@@ -494,11 +495,11 @@ private fun Finished(done: String, onBack: () -> Unit, onAgain: () -> Unit) {
                 Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(48.dp))
             }
             Text(done, color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold, textAlign = TextAlign.Center)
-            Text("الحمد لله", color = c.primary, fontSize = 40.sp, fontFamily = AppFonts.naskhBold, textAlign = TextAlign.Center)
+            Text(t("الحمد لله"), color = c.primary, fontSize = 40.sp, fontFamily = AppFonts.naskhBold, textAlign = TextAlign.Center)
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Pill("رجوع", filled = true, onClick = onBack)
-                Pill("من جديد", filled = false, onClick = onAgain)
+                Pill(t("رجوع"), filled = true, onClick = onBack)
+                Pill(t("من جديد"), filled = false, onClick = onAgain)
             }
         }
     }

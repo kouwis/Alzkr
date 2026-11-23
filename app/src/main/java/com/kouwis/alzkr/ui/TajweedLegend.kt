@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +42,7 @@ fun TajweedLegendDialog(onDismiss: () -> Unit) {
     val c = LocalColors.current
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl,
+            androidx.compose.ui.platform.LocalLayoutDirection provides if (com.kouwis.alzkr.data.I18n.lang.rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
         ) {
             Column(
                 Modifier
@@ -50,7 +51,7 @@ fun TajweedLegendDialog(onDismiss: () -> Unit) {
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text("دليل ألوان التجويد", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = c.text)
+                Text(t("دليل ألوان التجويد"), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = c.text)
                 Column(
                     Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -59,19 +60,19 @@ fun TajweedLegendDialog(onDismiss: () -> Unit) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(Modifier.size(22.dp).clip(CircleShape).background(color))
                             Column {
-                                Text(name, color = c.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                                Text(how, color = c.muted, fontSize = 13.sp)
+                                Text(t(name), color = c.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                                Text(t(how), color = c.muted, fontSize = 13.sp)
                             }
                         }
                     }
                     Text(
-                        "الألوان من مصحف التجويد الصادر عن مجمع الملك فهد، وهي مضمّنة في خط الصفحة نفسه.",
+                        t("الألوان من مصحف التجويد الصادر عن مجمع الملك فهد، وهي مضمّنة في خط الصفحة نفسه."),
                         color = c.muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp),
                     )
                 }
                 // "تم" on the right (the start side in Arabic)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                    TextButton(onClick = onDismiss) { Text("تم", color = c.primary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+                    TextButton(onClick = onDismiss) { Text(t("تم"), color = c.primary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
@@ -145,7 +146,7 @@ private fun PageCanvas(
         val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml; strokeJoin = Paint.Join.ROUND } }
         val labelPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.naskhTf } }
         val surahLabel = q.surahName(q.surahOfPage(page, useTajweed))
-        val juzLabel = "الجزء ${num(q.juzOfPage(page, useTajweed))}"
+        val juzLabel = t("الجزء {0}", num(q.juzOfPage(page, useTajweed)))
         val pageLabel = num(page)
         Canvas(
             Modifier

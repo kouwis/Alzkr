@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -64,7 +65,7 @@ import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 
 /** The deeds of the day in «متابعة العبادات». The adhkar sections tick themselves when finished, the ward too. */
-data class Deed(val id: String, val title: String, val icon: ImageVector)
+data class Deed(val id: String, val arTitle: String, val icon: ImageVector) { val title: String get() = t(arTitle) }
 
 val Deeds = listOf(
     Deed("morning", "أذكار الصباح", AdhkarIc.sun),
@@ -82,7 +83,7 @@ fun dayScore(prefs: AppPrefs, day: LocalDate): Float =
     prefs.track[day.toString()].orEmpty().count { id -> Deeds.any { it.id == id } } / Deeds.size.toFloat()
 
 /** An occasion of the Hijri year: its day ([day] of [month]), how many days it lasts, and its section. */
-data class Occasion(val title: String, val month: Int, val day: Int, val days: Int, val section: String?)
+data class Occasion(val arTitle: String, val month: Int, val day: Int, val days: Int, val section: String?) { val title: String get() = t(arTitle) }
 
 val Occasions = listOf(
     Occasion("رمضان", 9, 1, 30, "ramadan"),
@@ -134,10 +135,10 @@ fun TrackerScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Column {
-                Text("متابعتي", color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold)
-                Text("العبادات والتقويم الهجري والمناسبات", color = c.muted, fontSize = 13.sp)
+                Text(t("متابعتي"), color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold)
+                Text(t("العبادات والتقويم الهجري والمناسبات"), color = c.muted, fontSize = 13.sp)
             }
         }
         LazyColumn(
@@ -173,8 +174,8 @@ private fun Panel(title: String, trailing: @Composable () -> Unit = {}, content:
 private fun DeedsCard(prefs: AppPrefs, today: LocalDate, onToggle: (String, Boolean) -> Unit) {
     val c = LocalColors.current
     val done = prefs.track[today.toString()].orEmpty()
-    Panel("متابعة العبادات", trailing = {
-        Text("${num(Deeds.count { it.id in done })} من ${num(Deeds.size)}", color = c.muted, fontSize = 13.sp)
+    Panel(t("متابعة العبادات"), trailing = {
+        Text(t("{0} من {1}", num(Deeds.count { it.id in done }), num(Deeds.size)), color = c.muted, fontSize = 13.sp)
     }) {
         Deeds.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -212,16 +213,16 @@ private fun ProgressCard(prefs: AppPrefs, today: LocalDate) {
     val avg = week.take(upto + 1).average().toFloat()
     val up = avg >= lastWeek.average().toFloat()
     val todayPct = (week[upto] * 100).roundToInt()
-    Panel("تقدم هذا الأسبوع") {
+    Panel(t("تقدم هذا الأسبوع")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("إنجاز اليوم", color = c.muted, fontSize = 13.sp)
-                Text("${num(todayPct)}٪", color = c.text, fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                Text(t("إنجاز اليوم"), color = c.muted, fontSize = 13.sp)
+                Text(t("{0}٪", num(todayPct)), color = c.text, fontSize = 34.sp, fontWeight = FontWeight.Bold)
             }
             Box(Modifier.width(1.dp).height(44.dp).background(c.border))
             Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                Text("معدل الأسبوع", color = c.muted, fontSize = 13.sp)
-                Text("${num((avg * 100).roundToInt())}٪", color = c.text, fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                Text(t("معدل الأسبوع"), color = c.muted, fontSize = 13.sp)
+                Text(t("{0}٪", num((avg * 100).roundToInt())), color = c.text, fontSize = 34.sp, fontWeight = FontWeight.Bold)
             }
             Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(if (up) c.primarySoft else c.goldSoft), contentAlignment = Alignment.Center) {
                 Text(if (up) "↑" else "↓", color = if (up) c.primary else c.goldText, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -259,15 +260,15 @@ private fun ProgressCard(prefs: AppPrefs, today: LocalDate) {
             drawCircle(Color.White, 2.dp.toPx(), pt(upto))
         }
         Row(Modifier.fillMaxWidth()) {
-            listOf("سبت", "أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة").forEachIndexed { i, name ->
+            listOf(t("سبت"), t("أحد"), t("اثنين"), t("ثلاثاء"), t("أربعاء"), t("خميس"), t("جمعة")).forEachIndexed { i, name ->
                 Text(
-                    if (i == upto) "اليوم" else name,
+                    if (i == upto) t("اليوم") else name,
                     color = if (i == upto) c.text else if (i > upto) c.muted.copy(alpha = 0.5f) else c.muted,
                     fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f),
                 )
             }
         }
-        if (week[upto] >= 1f) Text("أتممت عبادات اليوم، تقبّل الله منك", color = c.primary, fontSize = 13.sp)
+        if (week[upto] >= 1f) Text(t("أتممت عبادات اليوم، تقبّل الله منك"), color = c.primary, fontSize = 13.sp)
     }
 }
 
@@ -298,16 +299,16 @@ private fun CalendarCard(today: LocalDate) {
             d to Occasions.filter { o -> o.month == m && dd >= o.day && dd < o.day + (if (o.days > 10) 1 else o.days) }.minByOrNull { it.days }?.title
         }
     }
-    Panel("التقويم", trailing = {
-        Segmented(listOf("هجري", "ميلادي"), if (hijri) 0 else 1, { hijri = it == 0; offset = 0; picked = null }, Modifier.width(150.dp), height = 34.dp)
+    Panel(t("التقويم"), trailing = {
+        Segmented(listOf(t("هجري"), t("ميلادي")), if (hijri) 0 else 1, { hijri = it == 0; offset = 0; picked = null }, Modifier.width(150.dp), height = 34.dp)
     }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            RoundIconButton(Ic.back, "الشهر السابق", { offset -= 1; picked = null }, size = 36.dp)
+            RoundIconButton(Ic.back, t("الشهر السابق"), { offset -= 1; picked = null }, size = 36.dp)
             Text(title, color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-            RoundIconButton(Ic.forward, "الشهر التالي", { offset += 1; picked = null }, size = 36.dp)
+            RoundIconButton(Ic.forward, t("الشهر التالي"), { offset += 1; picked = null }, size = 36.dp)
         }
         Row(Modifier.fillMaxWidth()) {
-            listOf("سبت", "أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة").forEach {
+            listOf(t("سبت"), t("أحد"), t("اثنين"), t("ثلاثاء"), t("أربعاء"), t("خميس"), t("جمعة")).forEach {
                 Text(it, color = c.muted, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
             }
         }
@@ -343,7 +344,7 @@ private fun CalendarCard(today: LocalDate) {
         }
         val p = picked ?: today
         Text(
-            "${hDate(p)} ${num(HijrahDate.from(p).get(ChronoField.YEAR))} هـ · ${gDate(p)} ${num(p.year)} م" + (marks[p]?.let { " · $it" } ?: ""),
+            t("{0} {1} هـ · {2} {3} م", hDate(p), num(HijrahDate.from(p).get(ChronoField.YEAR)), gDate(p), num(p.year)) + (marks[p]?.let { " · $it" } ?: ""),
             color = c.muted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -353,7 +354,7 @@ private fun CalendarCard(today: LocalDate) {
 private fun OccasionsCard(today: LocalDate, onOpen: (String) -> Unit) {
     val c = LocalColors.current
     val list = remember(today) { Occasions.map { it to nextOf(it, today) }.sortedBy { it.second.first } }
-    Panel("المناسبات") {
+    Panel(t("المناسبات")) {
         list.forEach { (o, at) ->
             val (date, now) = at
             val left = ChronoUnit.DAYS.between(today, date).toInt()
@@ -372,13 +373,13 @@ private fun OccasionsCard(today: LocalDate, onOpen: (String) -> Unit) {
                     }
                     if (now || left == 0) {
                         Text(
-                            if (left < 0) "جارٍ الآن" else "اليوم", color = c.onPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                            if (left < 0) t("جارٍ الآن") else t("اليوم"), color = c.onPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.primary).padding(horizontal = 14.dp, vertical = 6.dp),
                         )
                     } else {
-                        Cell(num(months), when (months) { 2 -> "شهران"; in 3..10 -> "أشهر"; 0, 1 -> "شهر"; else -> "شهرًا" }, Modifier.weight(0.7f), highlight = months == 0)
+                        Cell(num(months), when (months) { 2 -> t("شهران"); in 3..10 -> t("أشهر"); 0, 1 -> t("شهر"); else -> t("شهرًا") }, Modifier.weight(0.7f), highlight = months == 0)
                         Box(Modifier.width(1.dp).height(36.dp).background(c.border))
-                        Cell(num(days), when (days) { 2 -> "يومان"; in 3..10 -> "أيام"; 0, 1 -> "يوم"; else -> "يومًا" }, Modifier.weight(0.7f), highlight = months == 0)
+                        Cell(num(days), when (days) { 2 -> t("يومان"); in 3..10 -> t("أيام"); 0, 1 -> t("يوم"); else -> t("يومًا") }, Modifier.weight(0.7f), highlight = months == 0)
                     }
                 }
                 // how near it is: a year of ticks, the passed ones lit
@@ -419,7 +420,7 @@ fun TrackerEntry(prefs: AppPrefs, onClick: () -> Unit, modifier: Modifier = Modi
     val next = remember(today) { Occasions.map { it to nextOf(it, today) }.minByOrNull { it.second.first } }
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(20.dp))
-            .springClick(role = Role.Button, label = "متابعتي", pressedScale = 0.98f, onClick = onClick)
+            .springClick(role = Role.Button, label = t("متابعتي"), pressedScale = 0.98f, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -432,15 +433,15 @@ fun TrackerEntry(prefs: AppPrefs, onClick: () -> Unit, modifier: Modifier = Modi
                 drawArc(track, 0f, 360f, false, Offset(w / 2, w / 2), androidx.compose.ui.geometry.Size(size.width - w, size.height - w), style = Stroke(w))
                 if (ring > 0f) drawArc(fill, -90f, 360f * ring, false, Offset(w / 2, w / 2), androidx.compose.ui.geometry.Size(size.width - w, size.height - w), style = Stroke(w, cap = StrokeCap.Round))
             }
-            Text("${num((score * 100).roundToInt())}٪", color = c.text, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(t("{0}٪", num((score * 100).roundToInt())), color = c.text, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
         Column(Modifier.weight(1f)) {
-            Text("متابعتي والتقويم", color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(t("متابعتي والتقويم"), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             val sub = next?.let { (o, at) ->
                 val left = ChronoUnit.DAYS.between(today, at.first).toInt()
-                if (at.second) "${o.title} الآن" else "${o.title} بعد ${num(left)} ${if (left in 3..10) "أيام" else "يومًا"}"
+                if (at.second) t("{0} الآن", o.title) else if (left in 3..10) t("{0} بعد {1} أيام", o.title, num(left)) else t("{0} بعد {1} يومًا", o.title, num(left))
             }.orEmpty()
-            Text("${num(Deeds.count { it.id in prefs.track[today.toString()].orEmpty() })} من ${num(Deeds.size)} عبادات اليوم · $sub", color = c.muted, fontSize = 12.sp, maxLines = 1)
+            Text(t("{0} من {1} عبادات اليوم · {2}", num(Deeds.count { it.id in prefs.track[today.toString()].orEmpty() }), num(Deeds.size), sub), color = c.muted, fontSize = 12.sp, maxLines = 1)
         }
         Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
     }

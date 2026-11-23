@@ -2,6 +2,7 @@
 
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,16 +49,16 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Column {
-                Text("المفضلة", color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                Text(if (favs.isEmpty()) "لا توجد آيات محفوظة" else "${num(favs.size)} آيات محفوظة", color = c.muted, fontSize = 13.sp)
+                Text(t("المفضلة"), color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text(if (favs.isEmpty()) t("لا توجد آيات محفوظة") else t("{0} آيات محفوظة", num(favs.size)), color = c.muted, fontSize = 13.sp)
             }
         }
         if (favs.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "لا توجد آيات في المفضلة.",
+                    t("لا توجد آيات في المفضلة."),
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }
@@ -73,14 +74,14 @@ fun FavoritesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                Ic.heart, "إزالة من المفضلة", tint = c.heart,
+                                Ic.heart, t("إزالة من المفضلة"), tint = c.heart,
                                 modifier = Modifier.size(20.dp).springClick(haptic = Haptic.Delete) { scope.launch { store.toggleFavorite("$s:$a") } },
                             )
                             Text(
                                 "  ${q.surahName(s)} · ${num(a)}", color = c.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.weight(1f),
                             )
-                            Text("ص ${num(q.pageOf(s, a))}", color = c.muted, fontSize = 12.sp)
+                            Text(t("ص {0}", num(q.pageOf(s, a))), color = c.muted, fontSize = 12.sp)
                         }
                         QuranVerse(q, s, a, fontSize = 24.sp)
                     }

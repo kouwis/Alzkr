@@ -2,6 +2,7 @@
 
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -78,14 +79,14 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
 
     val rows = remember(tab) {
         when (tab) {
-            0 -> q.surahs.map { Row4(num(it.n), it.name, "${it.type} · ${num(it.ayahs)} آية", it.page, "${it.n}:1") }
+            0 -> q.surahs.map { Row4(num(it.n), it.name, t("{0} · {1} آية", t(it.type), num(it.ayahs)), it.page, "${it.n}:1") }
             1 -> q.meta.rub.map { r ->
                 val hizb = (r.n - 1) / 4 + 1
-                val quarter = listOf("", "ربع ", "نصف ", "ثلاثة أرباع ")[(r.n - 1) % 4]
-                Row4(num(r.n), r.text, "${quarter}الحزب ${num(hizb)} · ${q.surahName(r.s)} ${num(r.a)}", r.page, "${r.s}:${r.a}", quran = true)
+                val quarter = listOf("", t("ربع "), t("نصف "), t("ثلاثة أرباع "))[(r.n - 1) % 4]
+                Row4(num(r.n), r.text, t("{0}الحزب {1} · {2} {3}", quarter, num(hizb), q.surahName(r.s), num(r.a)), r.page, "${r.s}:${r.a}", quran = true)
             }
-            2 -> q.meta.hizb.map { h -> Row4(num(h.n), "الحزب ${num(h.n)}", "يبدأ من ${q.surahName(h.s)} ${num(h.a)}", h.page, "${h.s}:${h.a}") }
-            else -> q.meta.juz.map { j -> Row4(num(j.n), "الجزء ${num(j.n)}", "يبدأ من ${q.surahName(j.s)} ${num(j.a)}", j.page, "${j.s}:${j.a}") }
+            2 -> q.meta.hizb.map { h -> Row4(num(h.n), t("الحزب {0}", num(h.n)), t("يبدأ من {0} {1}", q.surahName(h.s), num(h.a)), h.page, "${h.s}:${h.a}") }
+            else -> q.meta.juz.map { j -> Row4(num(j.n), t("الجزء {0}", num(j.n)), t("يبدأ من {0} {1}", q.surahName(j.s), num(j.a)), j.page, "${j.s}:${j.a}") }
         }
     }
 
@@ -144,15 +145,15 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                 Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp).height(HomeHeaderHeight), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("القرآن الكريم", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
-                            Text("مصحف المدينة · رواية حفص", color = c.muted, fontSize = 13.sp)
+                            Text(t("القرآن الكريم"), color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
+                            Text(t("مصحف المدينة · رواية حفص"), color = c.muted, fontSize = 13.sp)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            RoundIconButton(Ic.search, "بحث", { nav.go(Screen.Search) })
-                            RoundIconButton(Ic.bookmarkFilled, "العلامات", { nav.go(Screen.Bookmarks) }, tint = c.gold)
+                            RoundIconButton(Ic.search, t("بحث"), { nav.go(Screen.Search) })
+                            RoundIconButton(Ic.bookmarkFilled, t("العلامات"), { nav.go(Screen.Bookmarks) }, tint = c.gold)
                             // favourites open from the bookmarks screen
-                            RoundIconButton(Ic.pen, "مراجعة الحفظ", { nav.go(Screen.Mistakes) }, tint = c.heart)
-                            RoundIconButton(Ic.settings, "الإعدادات", { nav.go(Screen.Settings) })
+                            RoundIconButton(Ic.pen, t("مراجعة الحفظ"), { nav.go(Screen.Mistakes) }, tint = c.heart)
+                            RoundIconButton(Ic.settings, t("الإعدادات"), { nav.go(Screen.Settings) })
                         }
                     }
                     ContinueCard(q, prefs, nav,
@@ -168,7 +169,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                                     }
                                     if (have < 604) android.widget.Toast.makeText(
                                         context,
-                                        "يُنزَّل مصحف التجويد مرة واحدة (نحو ٧٠ ميجابايت)، وتتلوّن الصفحات فور وصولها",
+                                        t("يُنزَّل مصحف التجويد مرة واحدة (نحو ٧٠ ميجابايت)، وتتلوّن الصفحات فور وصولها"),
                                         android.widget.Toast.LENGTH_LONG,
                                     ).show()
                                 }
@@ -182,7 +183,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
             }
             stickyHeader {
                 Box(Modifier.fillMaxWidth().background(c.bg).then(swipeTabs).padding(horizontal = 20.dp, vertical = 8.dp)) {
-                    Segmented(listOf("السور", "الأرباع", "الأحزاب", "الأجزاء"), tab, { tab = it }, Modifier.fillMaxWidth())
+                    Segmented(listOf(t("السور"), t("الأرباع"), t("الأحزاب"), t("الأجزاء")), tab, { tab = it }, Modifier.fillMaxWidth())
                 }
             }
             itemsIndexed(rows, key = { _, r -> "$tab-${r.n}" }) { i, r ->
@@ -207,7 +208,7 @@ fun HomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSectionS
                             Text(r.title, color = c.text, fontSize = 20.sp, fontFamily = if (r.quran) AppFonts.hafs else AppFonts.naskhBold, maxLines = 1)
                             Text(r.sub, color = c.muted, fontSize = 12.sp, maxLines = 1)
                         }
-                        Text("ص ${num(r.page)}", color = c.muted, fontSize = 13.sp)
+                        Text(t("ص {0}", num(r.page)), color = c.muted, fontSize = 13.sp)
                     }
                     if (i != rows.lastIndex) HorizontalDivider(color = c.border.copy(alpha = 0.6f))
                 }
@@ -268,10 +269,10 @@ private fun ContinueCard(
     ) {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
-                Text(if (started) "أكمل القراءة" else "ابدأ القراءة", color = Color(0xFFCFE3DD), fontSize = 13.sp)
-                Text("سورة ${q.surahName(surah)}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                val ayahPart = verse?.let { " · آية ${num(it[1])}" } ?: ""
-                Text("الجزء ${num(q.juzOfPage(page))} · صفحة ${num(page)}$ayahPart", color = Color(0xFFE3EEEA), fontSize = 13.sp)
+                Text(if (started) t("أكمل القراءة") else t("ابدأ القراءة"), color = Color(0xFFCFE3DD), fontSize = 13.sp)
+                Text(t("سورة {0}", q.surahName(surah)), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                val ayahPart = verse?.let { t(" · آية {0}", num(it[1])) } ?: ""
+                Text(t("الجزء {0} · صفحة {1}{2}", num(q.juzOfPage(page)), num(page), ayahPart), color = Color(0xFFE3EEEA), fontSize = 13.sp)
             }
             Row(
                 Modifier
@@ -283,7 +284,7 @@ private fun ContinueCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("متابعة", color = LightColors.primary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(t("متابعة"), color = LightColors.primary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 Icon(Ic.forward, null, tint = LightColors.primary, modifier = Modifier.size(16.dp))
             }
         }
@@ -298,7 +299,7 @@ private fun ContinueCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(Ic.bookmark, null, tint = Color(0xFFCFE3DD), modifier = Modifier.size(15.dp))
-                Text("ستظهر هنا آخر ثلاثة مواضع قرأت فيها", color = Color(0xFFCFE3DD), fontSize = 13.sp, maxLines = 1)
+                Text(t("ستظهر هنا آخر ثلاثة مواضع قرأت فيها"), color = Color(0xFFCFE3DD), fontSize = 13.sp, maxLines = 1)
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -319,7 +320,7 @@ private fun ContinueCard(
                     ) {
                         Icon(Ic.bookmark, null, tint = Color(0xFFCFE3DD), modifier = Modifier.size(15.dp))
                         Text(q.surahName(s), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f))
-                        Text("ص ${num(pg)}", color = Color(0xFFCFE3DD), fontSize = 12.sp, maxLines = 1)
+                        Text(t("ص {0}", num(pg)), color = Color(0xFFCFE3DD), fontSize = 12.sp, maxLines = 1)
                     }
                 }
                 if (others.size == 1) Spacer(Modifier.weight(1f))
@@ -329,9 +330,9 @@ private fun ContinueCard(
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             val done = prefs.wardDone.coerceAtMost(prefs.wardTarget)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("وردك اليوم", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(t("وردك اليوم"), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Text(
-                    if (done >= prefs.wardTarget) "أتممت وردك ✓" else "${num(done)} من ${num(prefs.wardTarget)} صفحات",
+                    if (done >= prefs.wardTarget) t("أتممت وردك ✓") else t("{0} من {1} صفحات", num(done), num(prefs.wardTarget)),
                     color = Color(0xFFE3EEEA), fontSize = 12.sp,
                 )
             }
@@ -346,9 +347,9 @@ private fun ContinueCard(
             val pct = (page * 100) / 604
             val days = if (prefs.wardTarget > 0) (left + prefs.wardTarget - 1) / prefs.wardTarget else 0
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("الختمة · ${num(pct)}٪", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(t("الختمة · {0}٪", num(pct)), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Text(
-                    if (left <= 0) "ختمت المصحف ✓" else "بوردك تختم بعد ${num(days)} يومًا",
+                    if (left <= 0) t("ختمت المصحف ✓") else t("بوردك تختم بعد {0} يومًا", num(days)),
                     color = Color(0xFFE3EEEA), fontSize = 12.sp,
                 )
             }
@@ -360,7 +361,7 @@ private fun ContinueCard(
         Spacer(Modifier.weight(1f))
         HorizontalDivider(color = c.primaryLine)
         Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("اعرض أسفل الصفحة أثناء القراءة", color = Color(0xFFCFE3DD), fontSize = 12.sp, modifier = Modifier.weight(1f))
+            Text(t("اعرض أسفل الصفحة أثناء القراءة"), color = Color(0xFFCFE3DD), fontSize = 12.sp, modifier = Modifier.weight(1f))
             // the tajweed colour guide sits on this same line and only fades, so nothing moves
             val legendAlpha by androidx.compose.animation.core.animateFloatAsState(
                 if (tajweedL) 1f else 0f, androidx.compose.animation.core.tween(280), label = "legend",
@@ -376,13 +377,13 @@ private fun ContinueCard(
                 TajweedLegend.take(4).forEach { (col, _, _) ->
                     Box(Modifier.padding(end = 2.dp).size(8.dp).clip(RoundedCornerShape(4.dp)).background(col))
                 }
-                Text(" دليل الألوان", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(t(" دليل الألوان"), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
-            ToggleChip("التفسير", Ic.book, tafsirL, { tafsirL = !tafsirL; onTafsir() }, Modifier.weight(1f))
-            ToggleChip("الترجمة", Ic.translate, translationL, { translationL = !translationL; onTranslation() }, Modifier.weight(1f))
-            ToggleChip("المجوّد", Ic.tajweed, tajweedL, { tajweedL = !tajweedL; onTajweed() }, Modifier.weight(1f))
+            ToggleChip(t("التفسير"), Ic.book, tafsirL, { tafsirL = !tafsirL; onTafsir() }, Modifier.weight(1f))
+            ToggleChip(t("الترجمة"), Ic.translate, translationL, { translationL = !translationL; onTranslation() }, Modifier.weight(1f))
+            ToggleChip(t("المجوّد"), Ic.tajweed, tajweedL, { tajweedL = !tajweedL; onTajweed() }, Modifier.weight(1f))
         }
     }
 }

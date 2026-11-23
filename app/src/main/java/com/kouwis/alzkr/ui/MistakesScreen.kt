@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -107,8 +108,8 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
         containerColor = c.card,
         title = {
             Column {
-                Text("للمراجعة · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text)
-                Text("اختر الكلمات التي تحتاج إلى مراجعتها، أو لا تختر شيئًا لتحديد الآية كلها", fontSize = 13.sp, color = c.muted)
+                Text(t("للمراجعة · {0} {1}", q.surahName(s), num(a)), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.text)
+                Text(t("اختر الكلمات التي تحتاج إلى مراجعتها، أو لا تختر شيئًا لتحديد الآية كلها"), fontSize = 13.sp, color = c.muted)
             }
         },
         text = {
@@ -138,13 +139,13 @@ fun MistakePicker(q: QuranData, s: Int, a: Int, current: Set<Int>?, onDismiss: (
         },
         confirmButton = {
             TextButton(onClick = { onSave(picked) }) {
-                Text(if (picked.isEmpty()) "الآية كلها" else "حفظ ${num(picked.size)} كلمة", color = c.primary, fontWeight = FontWeight.Bold)
+                Text(if (picked.isEmpty()) t("الآية كلها") else t("حفظ {0} كلمة", num(picked.size)), color = c.primary, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             Row {
-                if (current != null) TextButton(onClick = { onSave(null) }) { Text("إزالتها من المراجعة", color = c.heart) }
-                TextButton(onClick = onDismiss) { Text("إلغاء", color = c.muted) }
+                if (current != null) TextButton(onClick = { onSave(null) }) { Text(t("إزالتها من المراجعة"), color = c.heart) }
+                TextButton(onClick = onDismiss) { Text(t("إلغاء"), color = c.muted) }
             }
         },
     )
@@ -168,16 +169,16 @@ fun MistakesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Column {
-                Text("مراجعة الحفظ", color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                Text(if (list.isEmpty()) "لا توجد آيات للمراجعة" else "${num(list.size)} آيات للمراجعة", color = c.muted, fontSize = 13.sp)
+                Text(t("مراجعة الحفظ"), color = c.text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text(if (list.isEmpty()) t("لا توجد آيات للمراجعة") else t("{0} آيات للمراجعة", num(list.size)), color = c.muted, fontSize = 13.sp)
             }
         }
         if (list.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
-                    "اضغط مطوّلًا على أي آية في المصحف واختر «مراجعة»،\nثم حدّد الكلمات التي تحتاج إلى مراجعتها.",
+                    t("اضغط مطوّلًا على أي آية في المصحف واختر «مراجعة»،\nثم حدّد الكلمات التي تحتاج إلى مراجعتها."),
                     color = c.muted, fontSize = 15.sp, textAlign = TextAlign.Center, lineHeight = 26.sp,
                 )
             }
@@ -199,10 +200,10 @@ fun MistakesScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav) {
                                     modifier = Modifier.weight(1f),
                                 )
                                 Text(
-                                    if (w.isEmpty()) "الآية كلها" else "${num(w.size)} كلمة", color = c.heart, fontSize = 12.sp,
+                                    if (w.isEmpty()) t("الآية كلها") else t("{0} كلمة", num(w.size)), color = c.heart, fontSize = 12.sp,
                                     modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { editing = s to a }.padding(horizontal = 6.dp, vertical = 2.dp),
                                 )
-                                Text("  ص ${num(q.pageOf(s, a))}", color = c.muted, fontSize = 12.sp)
+                                Text(t("  ص {0}", num(q.pageOf(s, a))), color = c.muted, fontSize = 12.sp)
                             }
                             MarkedVerse(q, s, a, w)
                         }

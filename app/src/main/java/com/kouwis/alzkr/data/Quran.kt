@@ -65,7 +65,8 @@ class QuranData(
 ) {
     val surahs get() = meta.surahs
 
-    fun surahName(n: Int) = meta.surahs[n - 1].name
+    /** The surah's name: in Arabic, or written in Latin letters for the other interface languages. */
+    fun surahName(n: Int) = if (I18n.lang.rtl) meta.surahs[n - 1].name else SurahLatin[n - 1]
     fun pageOf(s: Int, a: Int) = verses.page[s - 1][a - 1]
     fun simple(s: Int, a: Int) = verses.simple[s - 1][a - 1]
     fun tafsirOf(s: Int, a: Int) = tafsir.getOrNull(s - 1)?.getOrNull(a - 1).orEmpty()
@@ -199,5 +200,27 @@ object ArabicText {
         .trim()
 
     private val digits = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
-    fun num(n: Int): String = n.toString().map { if (it in '0'..'9') digits[it - '0'] else it }.joinToString("")
+    /** A number in Arabic-Indic digits for Arabic, Western digits for the other languages. */
+    fun num(n: Int): String = digitsOf(n.toString())
+    fun digitsOf(s: String): String = if (!I18n.lang.rtl) s.map { if (it in '٠'..'٩') '0' + (it - '٠') else it }.joinToString("")
+        else s.map { if (it in '0'..'9') digits[it - '0'] else it }.joinToString("")
 }
+
+/** Surah names in Latin letters, in mushaf order. */
+val SurahLatin = listOf(
+    "Al-Fatihah", "Al-Baqarah", "Al-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal",
+    "At-Tawbah", "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl",
+    "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha", "Al-Anbiya", "Al-Hajj", "Al-Mu'minun", "An-Nur",
+    "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-Ankabut", "Ar-Rum", "Luqman", "As-Sajdah",
+    "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir",
+    "Fussilat", "Ash-Shura", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiyah", "Al-Ahqaf", "Muhammad", "Al-Fath",
+    "Al-Hujurat", "Qaf", "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqi'ah",
+    "Al-Hadid", "Al-Mujadilah", "Al-Hashr", "Al-Mumtahanah", "As-Saff", "Al-Jumu'ah", "Al-Munafiqun", "At-Taghabun",
+    "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqah", "Al-Ma'arij", "Nuh", "Al-Jinn",
+    "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyamah", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "Abasa",
+    "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiyah",
+    "Al-Fajr", "Al-Balad", "Ash-Shams", "Al-Layl", "Ad-Duha", "Ash-Sharh", "At-Tin", "Al-Alaq",
+    "Al-Qadr", "Al-Bayyinah", "Az-Zalzalah", "Al-Adiyat", "Al-Qari'ah", "At-Takathur", "Al-Asr", "Al-Humazah",
+    "Al-Fil", "Quraysh", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr", "Al-Masad", "Al-Ikhlas",
+    "Al-Falaq", "An-Nas",
+)

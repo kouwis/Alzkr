@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.graphics.Typeface as AndroidTypeface
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -106,18 +107,18 @@ fun VerseList(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     if ("a:$key" in prefs.bookmarks) {
-                        Icon(Ic.bookmarkFilled, "علامة", tint = c.gold, modifier = Modifier.size(20.dp))
+                        Icon(Ic.bookmarkFilled, t("علامة"), tint = c.gold, modifier = Modifier.size(20.dp))
                     }
                     QuranVerse(q, s, a)
-                    if (prefs.tafsirOn) Inline("التفسير", c.primary, q.tafsirOf(s, a))
-                    if (prefs.translationOn) Inline("الترجمة", c.goldText, q.translationOf(s, a))
+                    if (prefs.tafsirOn) Inline(t("التفسير"), c.primary, q.tafsirOf(s, a))
+                    if (prefs.translationOn) Inline(t("الترجمة"), c.goldText, q.translationOf(s, a))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "${q.surahName(s)} · ${num(a)}", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(c.primarySoft).padding(horizontal = 10.dp, vertical = 3.dp),
                         )
                         Box(Modifier.weight(1f))
-                        Text("ص ${num(q.pageOf(s, a))}", color = c.muted, fontSize = 12.sp)
+                        Text(t("ص {0}", num(q.pageOf(s, a))), color = c.muted, fontSize = 12.sp)
                     }
                 }
                 HorizontalDivider(color = c.frame2)
@@ -222,7 +223,7 @@ private fun Inline(label: String, accent: Color, body: String) {
         Box(Modifier.width(3.dp).height(22.dp).background(accent))
         Column(Modifier.padding(start = 10.dp)) {
             Text(label, color = accent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            Text(body.ifBlank { "غير متوفر" }, color = c.text, fontSize = 15.sp, lineHeight = 26.sp)
+            Text(body.ifBlank { t("غير متوفر") }, color = c.text, fontSize = 15.sp, lineHeight = 26.sp)
         }
     }
 }

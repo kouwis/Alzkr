@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -94,12 +95,12 @@ fun TasbihScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            RoundIconButton(Ic.back, "رجوع", { nav.back() })
+            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
             Column(Modifier.weight(1f)) {
-                Text("السبحة", color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold)
-                Text("اضغط في أي مكان · ضغطة طويلة على الذكر لتعديله", color = c.muted, fontSize = 12.sp)
+                Text(t("السبحة"), color = c.text, fontSize = 24.sp, fontFamily = AppFonts.naskhBold)
+                Text(t("اضغط في أي مكان · ضغطة طويلة على الذكر لتعديله"), color = c.muted, fontSize = 12.sp)
             }
-            if (count > 0) RoundIconButton(Ic.refresh, "تصفير", { counts[text] = 0 }, haptic = Haptic.Delete)
+            if (count > 0) RoundIconButton(Ic.refresh, t("تصفير"), { counts[text] = 0 }, haptic = Haptic.Delete)
         }
         FlowRow(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp),
@@ -127,9 +128,9 @@ fun TasbihScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                 }
             }
             Text(
-                "+ ذكر جديد", color = c.primary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                t("+ ذكر جديد"), color = c.primary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(c.primarySoft)
-                    .springClick(label = "ذكر جديد", pressedScale = 0.95f) { editing = -1 }
+                    .springClick(label = t("ذكر جديد"), pressedScale = 0.95f) { editing = -1 }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
@@ -139,8 +140,8 @@ fun TasbihScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                 Text(num(count), color = c.primary, fontSize = 72.sp, fontWeight = FontWeight.Bold)
                 if (target > 0) {
                     Text(
-                        if (count >= target) "${num(count / target)} × ${num(target)}" + (if (count % target > 0) " و${num(count % target)}" else "")
-                        else "من ${num(target)}",
+                        if (count >= target) "${num(count / target)} × ${num(target)}" + (if (count % target > 0) t(" و{0}", num(count % target)) else "")
+                        else t("من {0}", num(target)),
                         color = c.muted, fontSize = 14.sp,
                     )
                 }
@@ -195,21 +196,21 @@ private fun TasbihEditor(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = c.card,
-        title = { Text(if (initial == null) "ذكر جديد" else "تعديل الذكر", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.text) },
+        title = { Text(if (initial == null) t("ذكر جديد") else t("تعديل الذكر"), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.text) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 OutlinedTextField(
                     value = text, onValueChange = { text = it.take(120) },
-                    label = { Text("الذكر") }, singleLine = false, maxLines = 3,
+                    label = { Text(t("الذكر")) }, singleLine = false, maxLines = 3,
                     textStyle = androidx.compose.ui.text.TextStyle(fontFamily = AppFonts.naskh, fontSize = 18.sp),
                     colors = fieldColors, modifier = Modifier.fillMaxWidth(),
                 )
-                Text("كم مرة؟", color = c.muted, fontSize = 13.sp)
+                Text(t("كم مرة؟"), color = c.muted, fontSize = 13.sp)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     presets.forEach { n ->
                         val on = custom.isBlank() && target == n
                         Text(
-                            if (n == 0) "بلا عدد" else num(n),
+                            if (n == 0) t("بلا عدد") else num(n),
                             color = if (on) c.onPrimary else c.text, fontSize = 14.sp,
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) c.primary else c.chip)
                                 .springClick(pressedScale = 0.95f, haptic = Haptic.Tick) { target = n; custom = "" }
@@ -224,7 +225,7 @@ private fun TasbihEditor(
                         custom = toArabicDigits(d)
                         d.toIntOrNull()?.let { if (it > 0) target = it }
                     },
-                    label = { Text("أو اكتب عددًا") }, singleLine = true,
+                    label = { Text(t("أو اكتب عددًا")) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = fieldColors, modifier = Modifier.fillMaxWidth(),
                 )
@@ -232,13 +233,13 @@ private fun TasbihEditor(
         },
         confirmButton = {
             TextButton(onClick = { if (text.isNotBlank()) onSave(text.trim(), target) }, enabled = text.isNotBlank()) {
-                Text("حفظ", color = if (text.isNotBlank()) c.primary else c.muted, fontWeight = FontWeight.Bold)
+                Text(t("حفظ"), color = if (text.isNotBlank()) c.primary else c.muted, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             Row {
-                if (canDelete) TextButton(onClick = onDelete) { Text("حذف", color = c.heart) }
-                TextButton(onClick = onDismiss) { Text("إلغاء", color = c.muted) }
+                if (canDelete) TextButton(onClick = onDelete) { Text(t("حذف"), color = c.heart) }
+                TextButton(onClick = onDismiss) { Text(t("إلغاء"), color = c.muted) }
             }
         },
     )

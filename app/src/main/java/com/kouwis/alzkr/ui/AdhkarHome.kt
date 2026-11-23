@@ -1,5 +1,6 @@
 package com.kouwis.alzkr.ui
 
+import com.kouwis.alzkr.data.t
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -80,7 +81,7 @@ import kotlin.math.cos
 private const val CAIRO_LAT = 30.0444
 private const val CAIRO_LNG = 31.2357
 
-private fun ar(s: String) = s.map { if (it in '0'..'9') '٠' + (it - '0') else it }.joinToString("")
+private fun ar(s: String) = com.kouwis.alzkr.data.ArabicText.digitsOf(s)
 
 /** "٤:٥٥" — 12-hour clock with Arabic digits. */
 fun clock(min: Int): String {
@@ -127,9 +128,9 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val lat = prefs.lat ?: CAIRO_LAT
     val lng = prefs.lng ?: CAIRO_LNG
     val place = when {
-        !hasPlace -> "القاهرة"
+        !hasPlace -> t("القاهرة")
         prefs.place.isNotBlank() -> prefs.place
-        else -> "موقعك"
+        else -> t("موقعك")
     }
     val today = now.toLocalDate()
     val times = remember(today, lat, lng, prefs.prayer) { PrayerTimes.forDay(today, lat, lng, prefs.prayer) }
@@ -159,7 +160,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                     val name = f.place.ifBlank { if (moved) "" else prefs.place }
                     if (moved || name != prefs.place) store.setLocation(f.lat, f.lng, name)
                     if (!quiet && !prefs.autoLocate) store.setAutoLocate(true)
-                    if (!quiet) toast(if (name.isNotBlank()) "المواقيت الآن حسب $name" else "تم تحديد موقعك")
+                    if (!quiet) toast(if (name.isNotBlank()) t("المواقيت الآن حسب {0}", name) else t("تم تحديد موقعك"))
                 }
                 Locator.Result.Off -> if (!quiet) toast("خدمة الموقع مغلقة في الهاتف — فعّلها ثم حاول مرة أخرى")
                 Locator.Result.NotFound -> if (!quiet) toast("تعذّر تحديد موقعك الآن — حاول مرة أخرى بعد قليل")
@@ -229,51 +230,51 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val suggestions = buildList {
         // the adhkar after a prayer, for an hour after its adhan
         listOf(Prayer.Fajr, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha).lastOrNull { minuteNow >= times.getValue(it) }?.let { p ->
-            val t = times.getValue(p)
-            if (minuteNow < t + 60 && !doneSince("after_prayer", at(today, t))) {
-                add(Suggestion("الأذكار بعد صلاة ${p.ar}", "تُقال بعد السلام من الصلاة", AdhkarIc.afterPrayer) { nav.go(Screen.Adhkar("after_prayer")) })
+            val adhan = times.getValue(p)
+            if (minuteNow < adhan + 60 && !doneSince("after_prayer", at(today, adhan))) {
+                add(Suggestion(t("الأذكار بعد صلاة {0}", p.ar), t("تُقال بعد السلام من الصلاة"), AdhkarIc.afterPrayer) { nav.go(Screen.Adhkar("after_prayer")) })
             }
         }
         // the night: waking, qiyam in its last third, witr, sleep, and the evening adhkar if still not said
         if (beforeFajr && inLastThird && !doneSince("waking", at(today, 0))) {
-            add(Suggestion("أذكار الاستيقاظ", "عند الاستيقاظ من النوم", AdhkarIc.alarm) { nav.go(Screen.Adhkar("waking")) })
+            add(Suggestion(t("أذكار الاستيقاظ"), t("عند الاستيقاظ من النوم"), AdhkarIc.alarm) { nav.go(Screen.Adhkar("waking")) })
         }
         if (inLastThird && !doneSince("qiyam", nightStart) && "qiyam" !in tracked) {
-            add(Suggestion("قيام الليل", "ثلث الليل الآخر، حتى أذان الفجر", AdhkarIc.prayer) { nav.go(Screen.Adhkar("qiyam")) })
+            add(Suggestion(t("قيام الليل"), t("ثلث الليل الآخر، حتى أذان الفجر"), AdhkarIc.prayer) { nav.go(Screen.Adhkar("qiyam")) })
         }
         if (afterIsha && !doneSince("witr", nightStart) && "witr" !in tracked) {
-            add(Suggestion("صلاة الوتر", "من بعد العشاء إلى الفجر", AdhkarIc.star) { nav.go(Screen.Adhkar("witr")) })
+            add(Suggestion(t("صلاة الوتر"), t("من بعد العشاء إلى الفجر"), AdhkarIc.star) { nav.go(Screen.Adhkar("witr")) })
         }
         if (afterIsha && !sleepDone) {
-            add(Suggestion("أذكار النوم", "من بعد العشاء، عند الاضطجاع للنوم", AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
+            add(Suggestion(t("أذكار النوم"), t("من بعد العشاء، عند الاضطجاع للنوم"), AdhkarIc.bed) { nav.go(Screen.Adhkar("sleep")) })
         }
         if ((minuteNow >= asr || beforeFajr) && !eveningDone) {
-            add(Suggestion("أذكار المساء", "تُقال من العصر إلى قبل الفجر", AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
+            add(Suggestion(t("أذكار المساء"), t("تُقال من العصر إلى قبل الفجر"), AdhkarIc.moon) { nav.go(Screen.Adhkar("evening")) })
         }
         // the day: morning adhkar from Fajr till Asr; waking till sunrise; duha from the sun's rising till just before Dhuhr
         if (!beforeFajr && minuteNow < sunrise && !doneSince("waking", at(today, 0))) {
-            add(Suggestion("أذكار الاستيقاظ", "عند الاستيقاظ من النوم", AdhkarIc.alarm) { nav.go(Screen.Adhkar("waking")) })
+            add(Suggestion(t("أذكار الاستيقاظ"), t("عند الاستيقاظ من النوم"), AdhkarIc.alarm) { nav.go(Screen.Adhkar("waking")) })
         }
         if (!beforeFajr && minuteNow < asr && !morningDone) {
-            add(Suggestion("أذكار الصباح", "تُقال من الفجر إلى ما قبل العصر", AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
+            add(Suggestion(t("أذكار الصباح"), t("تُقال من الفجر إلى ما قبل العصر"), AdhkarIc.sun) { nav.go(Screen.Adhkar("morning")) })
         }
         if (minuteNow >= sunrise + 15 && minuteNow < dhuhr - 10 && !doneSince("duha", at(today, fajr)) && "duha" !in tracked) {
             add(Suggestion(
-                "صلاة الضحى",
-                if (minuteNow >= dhuhr - 40) "قارب وقتها على الانتهاء، تُصلّى قبيل الظهر" else "وقتها من ارتفاع الشمس إلى قبيل الظهر",
+                t("صلاة الضحى"),
+                if (minuteNow >= dhuhr - 40) t("قارب وقتها على الانتهاء، تُصلّى قبيل الظهر") else t("وقتها من ارتفاع الشمس إلى قبيل الظهر"),
                 AdhkarIc.rise,
             ) { nav.go(Screen.Adhkar("duha")) })
         }
         if (fridayTime) {
-            add(Suggestion("الصلاة على النبي ﷺ", "يُكثَر منها ليلة الجمعة ويومها، من مغرب الخميس إلى مغرب الجمعة", AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
-            add(Suggestion("سورة الكهف", "تُقرأ يوم الجمعة، من مغرب الخميس إلى مغرب الجمعة", AdhkarIc.book) {
+            add(Suggestion(t("الصلاة على النبي ﷺ"), t("يُكثَر منها ليلة الجمعة ويومها، من مغرب الخميس إلى مغرب الجمعة"), AdhkarIc.star) { nav.go(Screen.Adhkar("salawat")) })
+            add(Suggestion(t("سورة الكهف"), t("تُقرأ يوم الجمعة، من مغرب الخميس إلى مغرب الجمعة"), AdhkarIc.book) {
                 nav.go(Screen.Mushaf(kahfPage, "18:1"))
             })
         }
         // the hour of answer: the last hour of Friday before Maghrib
         val maghrib = times.getValue(Prayer.Maghrib)
         if (dow == DayOfWeek.FRIDAY && minuteNow in (maghrib - 60) until maghrib) {
-            add(0, Suggestion("ساعة الإجابة", "آخر ساعة من يوم الجمعة، حتى أذان المغرب", AdhkarIc.clock) {
+            add(0, Suggestion(t("ساعة الإجابة"), t("آخر ساعة من يوم الجمعة، حتى أذان المغرب"), AdhkarIc.clock) {
                 nav.go(Screen.Adhkar("friday_hour"))
             })
         }
@@ -282,34 +283,34 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         val hMonth = hd.get(java.time.temporal.ChronoField.MONTH_OF_YEAR)
         val hDay = hd.get(java.time.temporal.ChronoField.DAY_OF_MONTH)
         when {
-            hMonth == 9 -> add(Suggestion("رمضان", "الصيام والقيام وليلة القدر", AdhkarIc.moon) { nav.go(Screen.Adhkar("ramadan")) })
-            hMonth == 10 && hDay <= 3 -> add(Suggestion("عيد الفطر", "زكاة الفطر وسنن العيد وصيام ست من شوال", AdhkarIc.star) { nav.go(Screen.Adhkar("eid_fitr")) })
-            hMonth == 12 && hDay == 9 -> add(Suggestion("يوم عرفة", "خير الدعاء دعاء يوم عرفة", AdhkarIc.sun) { nav.go(Screen.Adhkar("arafa")) })
-            hMonth == 12 && hDay <= 13 -> add(Suggestion("العشر وعيد الأضحى", "أفضل أيام الدنيا، والأضحية وأيام التشريق", AdhkarIc.sheep) { nav.go(Screen.Adhkar("dhul_hijja")) })
-            hMonth == 1 && hDay <= 10 -> add(Suggestion("عاشوراء وتاسوعاء", "صيام التاسع والعاشر من المحرم", AdhkarIc.moon) { nav.go(Screen.Adhkar("ashura")) })
+            hMonth == 9 -> add(Suggestion(t("رمضان"), t("الصيام والقيام وليلة القدر"), AdhkarIc.moon) { nav.go(Screen.Adhkar("ramadan")) })
+            hMonth == 10 && hDay <= 3 -> add(Suggestion(t("عيد الفطر"), t("زكاة الفطر وسنن العيد وصيام ست من شوال"), AdhkarIc.star) { nav.go(Screen.Adhkar("eid_fitr")) })
+            hMonth == 12 && hDay == 9 -> add(Suggestion(t("يوم عرفة"), t("خير الدعاء دعاء يوم عرفة"), AdhkarIc.sun) { nav.go(Screen.Adhkar("arafa")) })
+            hMonth == 12 && hDay <= 13 -> add(Suggestion(t("العشر وعيد الأضحى"), t("أفضل أيام الدنيا، والأضحية وأيام التشريق"), AdhkarIc.sheep) { nav.go(Screen.Adhkar("dhul_hijja")) })
+            hMonth == 1 && hDay <= 10 -> add(Suggestion(t("عاشوراء وتاسوعاء"), t("صيام التاسع والعاشر من المحرم"), AdhkarIc.moon) { nav.go(Screen.Adhkar("ashura")) })
         }
     }
 
     data class Item(val name: String, val icon: ImageVector, val id: String? = null)
     val groups = listOf(
-        Triple("الأذكار", "اليوم والليلة", listOf(
-            Item("أذكار الصباح", AdhkarIc.sun, "morning"), Item("أذكار المساء", AdhkarIc.moon, "evening"),
-            Item("أذكار النوم", AdhkarIc.bed, "sleep"), Item("أذكار الاستيقاظ", AdhkarIc.alarm, "waking"),
-            Item("بعد الصلاة", AdhkarIc.afterPrayer, "after_prayer"), Item("المسجد والأذان", AdhkarIc.mosque, "mosque"),
+        Triple(t("الأذكار"), t("اليوم والليلة"), listOf(
+            Item(t("أذكار الصباح"), AdhkarIc.sun, "morning"), Item(t("أذكار المساء"), AdhkarIc.moon, "evening"),
+            Item(t("أذكار النوم"), AdhkarIc.bed, "sleep"), Item(t("أذكار الاستيقاظ"), AdhkarIc.alarm, "waking"),
+            Item(t("بعد الصلاة"), AdhkarIc.afterPrayer, "after_prayer"), Item(t("المسجد والأذان"), AdhkarIc.mosque, "mosque"),
         )),
-        Triple("الجمعة", "", listOf(
-            Item("الصلاة على النبي ﷺ", AdhkarIc.star, "salawat"), Item("سورة الكهف", AdhkarIc.book, "kahf"),
-            Item("ساعة الإجابة", AdhkarIc.clock, "friday_hour"), Item("سنن الجمعة", AdhkarIc.list, "friday_sunan"),
+        Triple(t("الجمعة"), "", listOf(
+            Item(t("الصلاة على النبي ﷺ"), AdhkarIc.star, "salawat"), Item(t("سورة الكهف"), AdhkarIc.book, "kahf"),
+            Item(t("ساعة الإجابة"), AdhkarIc.clock, "friday_hour"), Item(t("سنن الجمعة"), AdhkarIc.list, "friday_sunan"),
         )),
-        Triple("المناسبات", "", listOf(
-            Item("رمضان", AdhkarIc.moon, "ramadan"), Item("عيد الفطر", AdhkarIc.star, "eid_fitr"),
-            Item("العشر والأضحى", AdhkarIc.sheep, "dhul_hijja"), Item("يوم عرفة", AdhkarIc.sun, "arafa"),
-            Item("الحج والعمرة", AdhkarIc.kaaba, "hajj_umrah"), Item("عاشوراء", AdhkarIc.calendar, "ashura"),
+        Triple(t("المناسبات"), "", listOf(
+            Item(t("رمضان"), AdhkarIc.moon, "ramadan"), Item(t("عيد الفطر"), AdhkarIc.star, "eid_fitr"),
+            Item(t("العشر والأضحى"), AdhkarIc.sheep, "dhul_hijja"), Item(t("يوم عرفة"), AdhkarIc.sun, "arafa"),
+            Item(t("الحج والعمرة"), AdhkarIc.kaaba, "hajj_umrah"), Item(t("عاشوراء"), AdhkarIc.calendar, "ashura"),
         )),
-        Triple("الأدعية", "", listOf(
-            Item("أدعية من القرآن", AdhkarIc.book, "quran_duas"), Item("أدعية نبوية", AdhkarIc.hands, "prophetic"),
-            Item("الهم والكرب", AdhkarIc.sorrow, "worry"), Item("الرقية الشرعية", AdhkarIc.shield, "ruqya"),
-            Item("الاستخارة", AdhkarIc.istikhara, "istikhara"), Item("المريض", AdhkarIc.sick, "sick"),
+        Triple(t("الأدعية"), "", listOf(
+            Item(t("أدعية من القرآن"), AdhkarIc.book, "quran_duas"), Item(t("أدعية نبوية"), AdhkarIc.hands, "prophetic"),
+            Item(t("الهم والكرب"), AdhkarIc.sorrow, "worry"), Item(t("الرقية الشرعية"), AdhkarIc.shield, "ruqya"),
+            Item(t("الاستخارة"), AdhkarIc.istikhara, "istikhara"), Item(t("المريض"), AdhkarIc.sick, "sick"),
         )),
     )
 
@@ -328,14 +329,14 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                 Column(Modifier.then(swipeSection).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp).height(HomeHeaderHeight), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("الأذكار", color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
-                            Text("حصن المسلم · مواقيت الصلاة", color = c.muted, fontSize = 13.sp)
+                            Text(t("الأذكار"), color = c.text, fontSize = 30.sp, fontFamily = AppFonts.naskhBold)
+                            Text(t("حصن المسلم · مواقيت الصلاة"), color = c.muted, fontSize = 13.sp)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            RoundIconButton(AdhkarIc.beads, "السبحة", { nav.go(Screen.Tasbih) }, tint = c.primary)
-                            RoundIconButton(AdhkarIc.qibla, "القبلة", { nav.go(Screen.Qibla) }, tint = c.primary)
-                            RoundIconButton(Ic.search, "بحث", { nav.go(Screen.AdhkarSearch) })
-                            RoundIconButton(Ic.settings, "الإعدادات", { nav.go(Screen.Settings) })
+                            RoundIconButton(AdhkarIc.beads, t("السبحة"), { nav.go(Screen.Tasbih) }, tint = c.primary)
+                            RoundIconButton(AdhkarIc.qibla, t("القبلة"), { nav.go(Screen.Qibla) }, tint = c.primary)
+                            RoundIconButton(Ic.search, t("بحث"), { nav.go(Screen.AdhkarSearch) })
+                            RoundIconButton(Ic.settings, t("الإعدادات"), { nav.go(Screen.Settings) })
                         }
                     }
                     DayCard(
@@ -355,9 +356,9 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         hijriDay = hijri.day,
                         onPick = { p -> view.haptic(Haptic.Tick); preview = if (p == current) null else p },
                     )
-                    Text("مقترح لك الآن", color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp))
+                    Text(t("مقترح لك الآن"), color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp))
                     if (suggestions.isEmpty()) {
-                        Text("أتممت أذكار هذا الوقت، والحمد لله", color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+                        Text(t("أتممت أذكار هذا الوقت، والحمد لله"), color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
                     }
                 }
             }
@@ -426,7 +427,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                 Row(
                     Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp).fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(20.dp))
-                        .springClick(role = Role.Button, label = "كل أبواب حصن المسلم", pressedScale = 0.98f) { nav.go(Screen.HisnIndex) }
+                        .springClick(role = Role.Button, label = t("كل أبواب حصن المسلم"), pressedScale = 0.98f) { nav.go(Screen.HisnIndex) }
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -435,8 +436,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         Icon(AdhkarIc.books, null, tint = c.primary, modifier = Modifier.size(21.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text("كل أبواب حصن المسلم", color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("السفر والطعام والمطر والسوق والمرض وغيرها", color = c.muted, fontSize = 12.sp)
+                        Text(t("كل أبواب حصن المسلم"), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(t("السفر والطعام والمطر والسوق والمرض وغيرها"), color = c.muted, fontSize = 12.sp)
                     }
                     Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
                 }
@@ -545,19 +546,19 @@ private fun DayCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(AdhkarIc.pin, null, tint = soft, modifier = Modifier.size(14.dp))
                 Text(
-                    if (locating && !placeIsDefault) "جارٍ تحديث الموقع…" else place,
+                    if (locating && !placeIsDefault) t("جارٍ تحديث الموقع…") else place,
                     color = soft, fontSize = 13.sp,
                     // tap the place to locate again (after travelling, say)
-                    modifier = if (placeIsDefault) Modifier else Modifier.springClick(role = Role.Button, label = "تحديث الموقع", ripple = false) { if (!locating) onLocate() },
+                    modifier = if (placeIsDefault) Modifier else Modifier.springClick(role = Role.Button, label = t("تحديث الموقع"), ripple = false) { if (!locating) onLocate() },
                 )
                 if (placeIsDefault) {
                     Text(
-                        if (locating) "جارٍ تحديد الموقع…" else "استخدم موقعي",
+                        if (locating) t("جارٍ تحديد الموقع…") else t("استخدم موقعي"),
                         color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color.White.copy(alpha = 0.18f))
-                            .springClick(role = Role.Button, label = "استخدم موقعي") { if (!locating) onLocate() }
+                            .springClick(role = Role.Button, label = t("استخدم موقعي")) { if (!locating) onLocate() }
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
@@ -581,14 +582,14 @@ private fun DayCard(
         ) {
             // the prayer that has come is done with: the strip is about the next one, live
             Column(Modifier.weight(1f)) {
-                Text(if (iqama != null) "الإقامة" else if (next == Prayer.Sunrise) "الشروق" else "الصلاة القادمة", color = soft, fontSize = 12.sp)
+                Text(if (iqama != null) t("الإقامة") else if (next == Prayer.Sunrise) t("الشروق") else t("الصلاة القادمة"), color = soft, fontSize = 12.sp)
                 Text(
-                    if (iqama != null) "إقامة ${iqama.first.ar} · ${clock(iqama.second)}" else "${next.ar} · ${clock(times.getValue(next))}",
+                    if (iqama != null) t("إقامة {0} · {1}", iqama.first.ar, clock(iqama.second)) else "${next.ar} · ${clock(times.getValue(next))}",
                     color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold,
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("باقي", color = soft, fontSize = 12.sp)
+                Text(t("باقي"), color = soft, fontSize = 12.sp)
                 Text(countdown(iqama?.third ?: untilNext), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                     style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"))
             }
