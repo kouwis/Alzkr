@@ -56,6 +56,49 @@ import kotlinx.coroutines.launch
 private data class Setting(val title: String, val icon: ImageVector, val tint: Color, val sub: String = "", val onClick: () -> Unit)
 
 private const val RELEASES = "https://github.com/kouwis/Alzkr/releases/latest"
+/** «ادعم التطبيق»: a gift to the app's maker through InstaPay (Egypt). */
+private const val INSTAPAY = "https://ipn.eg/S/mkouwis/instapay/1U7MKE"
+private const val INSTAPAY_ADDRESS = "mkouwis@instapay"
+
+/** A voluntary gift: open InstaPay, or copy the address to pay from any bank app. */
+@Composable
+private fun SupportDialog(onOpen: () -> Unit, onDismiss: () -> Unit) {
+    val c = LocalColors.current
+    val context = LocalContext.current
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.card,
+        icon = { Icon(Ic.gift, null, tint = Color(0xFFD9A62E), modifier = Modifier.size(34.dp)) },
+        title = { Text(t("ادعم التطبيق"), color = c.text, fontFamily = AppFonts.naskhBold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    t("التطبيق مجاني بالكامل وبلا إعلانات. إن أحببت أن تدعم استمراره فهدية اختيارية عبر إنستاباي، وجزاك الله خيرًا."),
+                    color = c.muted, fontSize = 14.sp, lineHeight = 22.sp,
+                )
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.chip)
+                        .clickable {
+                            val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("InstaPay", INSTAPAY_ADDRESS))
+                            android.widget.Toast.makeText(context, t("تم النسخ"), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(INSTAPAY_ADDRESS, color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Icon(Ic.copy, t("نسخ"), tint = c.primary, modifier = Modifier.size(18.dp))
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onOpen(); onDismiss() }) {
+                Text(t("ادفع عبر إنستاباي"), color = c.primary, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(t("إغلاق"), color = c.muted) } },
+    )
+}
 
 /**
  * The settings: one list in groups, each row opening its own page (filled in one by one).
@@ -67,6 +110,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
     val c = LocalColors.current
     val scope = rememberCoroutineScope()
     var pickLang by remember { mutableStateOf(false) }
+    var support by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var crash by remember { mutableStateOf(com.kouwis.alzkr.data.CrashLog.read(context)) }
     val soon = soon()
@@ -96,7 +140,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, t("انشر التطبيق")))
             },
             Setting(t("الاقتراحات والشكاوى"), Ic.mail, Color(0xFF1A9BD7)) { open("https://github.com/kouwis/Alzkr/issues") },
-            Setting(t("ادعم التطبيق"), Ic.gift, Color(0xFFD9A62E), t("دعم اختياري لصاحب التطبيق")) { soon(t("ادعم التطبيق")) },
+            Setting(t("ادعم التطبيق"), Ic.gift, Color(0xFFD9A62E), t("دعم اختياري لصاحب التطبيق")) { support = true },
         ) + listOfNotNull(crash?.let { report ->
             Setting(t("إرسال تقرير العطل"), Ic.info, Color(0xFFE5484D), t("توقّف التطبيق مرة، فأرسل التقرير لنصلحه")) {
                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, report) }, t("إرسال تقرير العطل")))
@@ -146,6 +190,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
         }
     }
 
+    if (support) SupportDialog(onOpen = { open(INSTAPAY) }) { support = false }
     if (pickLang) LanguageDialog(Lang.of(prefs.lang), { l -> pickLang = false; scope.launch { store.setLang(l.code) } }) { pickLang = false }
 }
 
