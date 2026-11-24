@@ -24,9 +24,11 @@ class MainActivity : ComponentActivity() {
         // the opening animation, on a fresh start only (not when a widget or a notification opens the app)
         val splash = mutableStateOf(savedInstanceState == null && open.value == null)
         setContent {
-            androidx.compose.foundation.layout.Box {
-                AlzkrApp(open.value) { open.value = null }
-                if (splash.value) com.kouwis.alzkr.ui.Splash { splash.value = false }
+            com.kouwis.alzkr.ui.Responsive {
+                androidx.compose.foundation.layout.Box {
+                    AlzkrApp(open.value) { open.value = null }
+                    if (splash.value) com.kouwis.alzkr.ui.Splash { splash.value = false }
+                }
             }
         }
     }
