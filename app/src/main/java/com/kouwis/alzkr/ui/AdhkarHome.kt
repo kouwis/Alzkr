@@ -138,8 +138,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val minuteNow = now.hour * 60 + now.minute
     val secondNow = minuteNow * 60 + now.second
     val untilNext = (times.getValue(next) * 60 - secondNow).let { if (it < 0) it + 86_400 else it }
-    // the Islamic day begins at Maghrib: from then on the Hijri date is the next day's
-    val afterMaghrib = minuteNow >= times.getValue(Prayer.Maghrib)
+    // the Hijri date turns at midnight with the Gregorian one (as the user asked), not at Maghrib
+    val afterMaghrib = false
     val hijri = remember(today, afterMaghrib, prefs.hijriOffset) { Hijri.of(today, afterMaghrib) }
     // after the adhan, the time left to the iqama (then the strip moves on to the next prayer)
     val iqamaAt = prefs.prayer.iqama[current]?.takeIf { it > 0 }?.let { times.getValue(current) + it }
@@ -178,7 +178,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         if (granted()) locateNow() else permission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
-    // swipe the top part to change section: right -> left goes back to القرآن, left -> right to الفقه
+    // swipe the top part to change section: right -> left goes back to القرآن, left -> right to علوم الدين
     var sectionDrag by remember { mutableFloatStateOf(0f) }
 
     val swipeSection = Modifier.pointerInput(Unit) {

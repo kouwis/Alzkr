@@ -78,14 +78,14 @@ fun SectionsHost(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, section:
             modifier = Modifier.fillMaxSize(),
         ) { page ->
             if (page == 0) HomeScreen(q, prefs, store, nav) { dir -> if (dir > 0) go(1) }
-            else AdhkarHomeScreen(q, prefs, store, nav) { dir -> if (dir < 0) go(0) else soon(t("الفقه")) }
+            else AdhkarHomeScreen(q, prefs, store, nav) { dir -> if (dir < 0) go(0) else soon(t("علوم الدين")) }
         }
         SectionBar(
             position = pager.currentPage + pager.currentPageOffsetFraction,
             modifier = Modifier.align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
                 .padding(bottom = 12.dp),
-            onPick = { i -> if (i == 2) soon(t("الفقه")) else go(i) },
+            onPick = { i -> if (i == 2) soon(t("علوم الدين")) else go(i) },
         )
     }
 }
@@ -115,7 +115,7 @@ private fun SectionBar(position: Float, modifier: Modifier, onPick: (Int) -> Uni
                 .background(pillColor),
         )
         Row {
-            listOf(t("القرآن"), t("الأذكار"), t("الفقه")).forEachIndexed { i, label ->
+            listOf(t("القرآن"), t("الأذكار"), t("علوم الدين")).forEachIndexed { i, label ->
                 val near = 1f - abs(position - i).coerceIn(0f, 1f) // 1 when the pill is on it
                 Box(
                     Modifier

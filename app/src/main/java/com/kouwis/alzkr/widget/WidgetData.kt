@@ -156,7 +156,7 @@ object WidgetData {
         val progress = ((nowMs - fromMs).toFloat() / (targetMs - fromMs).coerceAtLeast(1)).coerceIn(0f, 1f)
 
         // the Islamic day starts at Maghrib
-        val day = Hijri.of(today, afterMaghrib = nowMin >= times.getValue(Prayer.Maghrib))
+        val day = Hijri.of(today) // the Hijri date turns at midnight, with the Gregorian
         val gMonths = Hijri.gMonths
         val weekStart = today.minusDays(((today.dayOfWeek.value + 1) % 7).toLong()) // Saturday
         val week = (0..6).map { i ->
