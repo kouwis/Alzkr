@@ -39,6 +39,8 @@ enum class WidgetKind(val id: String, val arTitle: String, val arDesc: String, v
     ;
     val title: String get() = t(arTitle)
     val desc: String get() = t(arDesc)
+    /** shows the day's times, so sunrise and the last third can be added */
+    val hasTimes: Boolean get() = this in setOf(Prayers, Row, DateTimes, Table, Custom)
     /** width ÷ height on a typical phone */
     val aspect: Float get() = (w * 82f) / (h * 92f).coerceAtLeast(1f)
 
@@ -102,6 +104,9 @@ data class WidgetStyle(
     val accent: String = "gold",
     val radius: Int = 28,
     val blocks: List<String> = listOf("next", "times", "date"),
+    /** sunrise and the last third of the night among the times (off unless chosen) */
+    val sunrise: Boolean = false,
+    val lastThird: Boolean = false,
 ) {
     private val theme: WidgetTheme? get() = WidgetThemes.firstOrNull { it.id == bg }
     /** the background is pale, so the text is dark */

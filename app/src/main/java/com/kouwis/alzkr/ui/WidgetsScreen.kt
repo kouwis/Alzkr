@@ -224,6 +224,14 @@ fun WidgetDesigner(kind: WidgetKind, style: WidgetStyle, onChange: (WidgetStyle)
                 Modifier.fillMaxWidth().padding(vertical = 10.dp),
             )
         }
+        if (kind.hasTimes) {
+            Header(t("المواقيت"))
+            Group {
+                ToggleRow(t("الشروق"), "", style.sunrise) { onChange(style.copy(sunrise = it)) }
+                Line()
+                ToggleRow(t("الثلث الأخير من الليل"), "", style.lastThird) { onChange(style.copy(lastThird = it)) }
+            }
+        }
         if (kind == WidgetKind.Custom) {
             Header(t("ما يظهر في الودجت"))
             Group {

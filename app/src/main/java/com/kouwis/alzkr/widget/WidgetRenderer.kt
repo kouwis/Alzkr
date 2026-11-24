@@ -154,10 +154,11 @@ object WidgetRenderer {
     /** One line of times: a name, a time, and whether it is the one coming. */
     private class Slot(val name: String, val time: String, val on: Boolean, val iqama: String? = null)
 
-    /** All the day's times to show: the five prayers, sunrise, and the last third of the night. */
-    private fun slots(d: WidgetSnapshot): List<Slot> =
-        d.rows.map { Slot(it.name, it.time, it.prayer == d.next.prayer, if (it.prayer.name == "Sunrise") null else it.iqama ?: "—") } +
-            listOfNotNull(d.lastThird.takeIf { it.isNotBlank() }?.let { Slot(t("الثلث الأخير"), it, false) })
+    /** The day's times to show: the five prayers, and sunrise and the last third if the style asks. */
+    private fun Ink.slots(d: WidgetSnapshot): List<Slot> =
+        d.rows.filter { s.sunrise || it.prayer.name != "Sunrise" }
+            .map { Slot(it.name, it.time, it.prayer == d.next.prayer, if (it.prayer.name == "Sunrise") null else it.iqama ?: "—") } +
+            listOfNotNull(d.lastThird.takeIf { s.lastThird && it.isNotBlank() }?.let { Slot(t("الثلث الأخير"), it, false) })
 
     // ---------------- prayer widgets ----------------
 
