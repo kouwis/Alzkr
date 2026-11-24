@@ -348,6 +348,7 @@ fun WidgetsScreen(nav: Nav) = AdhkarTheme {
 }
 
 /** One widget's design page: the live preview on top, the controls under it, and «أضف إلى الشاشة الرئيسية». */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WidgetDesignScreen(nav: Nav, kindId: String) = AdhkarTheme {
     val c = LocalColors.current
