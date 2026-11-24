@@ -202,6 +202,13 @@ object ArabicText {
     private val digits = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
     /** A number in Arabic-Indic digits for Arabic, Western digits for the other languages. */
     fun num(n: Int): String = digitsOf(n.toString())
+    /**
+     * The ornate brackets ﴿ ﴾ kept facing the verse they hold, whatever the direction around them:
+     * each is set apart as left-to-right, so the phone never mirrors its shape. Text keeps the usual
+     * order (﴿ first, on the right in Arabic).
+     */
+    fun brackets(s: String): String = s.replace("\uFD3F", "\u2066\uFD3F\u2069").replace("\uFD3E", "\u2066\uFD3E\u2069")
+
     fun digitsOf(s: String): String = if (!I18n.lang.rtl) s.map { if (it in '٠'..'٩') '0' + (it - '٠') else it }.joinToString("")
         else s.map { if (it in '0'..'9') digits[it - '0'] else it }.joinToString("")
 }

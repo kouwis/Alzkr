@@ -117,9 +117,9 @@ fun Splash(onDone: () -> Unit) {
                 // the verse in the Quran's script; its ornate brackets from the naskh font (the Quran font has none)
                 androidx.compose.ui.text.buildAnnotatedString {
                     val br = androidx.compose.ui.text.SpanStyle(fontFamily = AppFonts.naskh, color = Gold)
-                    withStyle(br) { append("\uFD3E ") }
+                    withStyle(br) { append(com.kouwis.alzkr.data.ArabicText.brackets("\uFD3F") + " ") }
                     append("إِنَّ لِلْمُتَّقِينَ مَفَازًا")
-                    withStyle(br) { append(" \uFD3F") }
+                    withStyle(br) { append(" " + com.kouwis.alzkr.data.ArabicText.brackets("\uFD3E")) }
                 }, color = Color.White.copy(alpha = 0.92f), fontSize = 26.sp,
                 fontFamily = AppFonts.hafs, textAlign = TextAlign.Center, lineHeight = 48.sp,
                 modifier = Modifier.padding(horizontal = 24.dp).alpha(verse.value).graphicsLayer { translationY = (1f - verse.value) * 18.dp.toPx() },

@@ -363,11 +363,11 @@ object WidgetRenderer {
         val foot = px(6f) + lineH(12f)
         val tmpH = run {
             val p = TextPaint().apply { typeface = AppFonts.naskhBoldTf; textSize = px(19f) }
-            StaticLayout.Builder.obtain("﴿ ${d.ayah} ﴾", 0, d.ayah.length + 4, p, inner.toInt().coerceAtLeast(1)).setMaxLines(lines).build().height.toFloat()
+            ArabicText.brackets("﴿ ${d.ayah} ﴾").let { b -> StaticLayout.Builder.obtain(b, 0, b.length, p, inner.toInt().coerceAtLeast(1)).setMaxLines(lines).build().height.toFloat() }
         }
         var y = ((h - head - tmpH - foot) / 2f).coerceAtLeast(pad * 0.5f)
         text(t("آية اليوم"), pad, y, inner, 12f, accent, align = Align.Center); y += head
-        y += text("﴿ ${d.ayah} ﴾", pad, y, inner, 19f, ink, align = Align.Center, lines = lines, fit = false) + px(6f)
+        y += text(ArabicText.brackets("﴿ ${d.ayah} ﴾"), pad, y, inner, 19f, ink, align = Align.Center, lines = lines, fit = false) + px(6f)
         text(dg(d.ayahRef), pad, y, inner, 12f, soft, bold = false, align = Align.Center)
     }
 
@@ -441,7 +441,7 @@ object WidgetRenderer {
                     pair("${d.weekday} · ${dg(d.hijriDay.toString())} ${d.hijriMonth}", dg(d.gregorianShort), pad, y, inner, 15f, 13f, endColor = soft)
                 }
                 "dhikr" -> text(d.dhikr, pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false)
-                "ayah" -> text("﴿ ${d.ayah} ﴾", pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false)
+                "ayah" -> text(ArabicText.brackets("﴿ ${d.ayah} ﴾"), pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false)
             }
             y += hOf(b) + gap
         }
