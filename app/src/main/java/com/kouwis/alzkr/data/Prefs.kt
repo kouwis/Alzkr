@@ -56,6 +56,12 @@ data class AppPrefs(
     val tasbih: List<Pair<String, Int>>? = null,
     /** «الأذان والتنبيهات» */
     val alerts: AlertsConfig = AlertsConfig(),
+    /** «التاريخ»: days added to the Hijri date (−2…+2), and how each date is written */
+    val hijriOffset: Int = 0,
+    val hijriFormat: Int = 0,
+    val gregFormat: Int = 0,
+    /** «المصحف»: the page background ("" = follow the phone's light or dark mode) */
+    val mushafBg: String = "",
 )
 
 class Prefs(private val context: Context) {
@@ -84,6 +90,10 @@ class Prefs(private val context: Context) {
         val autoLocate = booleanPreferencesKey("auto_locate")
         val track = stringPreferencesKey("track") // "2026-11-23=morning,qiyam;2026-11-22=…"
         val alerts = stringPreferencesKey("alerts") // JSON
+        val hijriOffset = intPreferencesKey("hijri_offset")
+        val hijriFormat = intPreferencesKey("hijri_format")
+        val gregFormat = intPreferencesKey("greg_format")
+        val mushafBg = stringPreferencesKey("mushaf_bg")
         val tasbih = stringPreferencesKey("tasbih") // "text\u001F33\u001Etext\u001F100"
     }
 
@@ -131,6 +141,10 @@ class Prefs(private val context: Context) {
             lang = p[K.lang] ?: "ar",
             autoLocate = p[K.autoLocate] ?: true,
             alerts = AlertsConfig.decode(p[K.alerts]),
+            hijriOffset = p[K.hijriOffset] ?: 0,
+            hijriFormat = p[K.hijriFormat] ?: 0,
+            gregFormat = p[K.gregFormat] ?: 0,
+            mushafBg = p[K.mushafBg] ?: "",
             tasbih = p[K.tasbih]?.split('\u001E')?.mapNotNull { e ->
                 val f = e.split('\u001F')
                 val t = f[0].trim()
@@ -139,6 +153,9 @@ class Prefs(private val context: Context) {
         )
     }
 
+    suspend fun setHijriOffset(n: Int) = context.store.edit { it[K.hijriOffset] = n.coerceIn(-2, 2) }
+    suspend fun setDateFormats(hijri: Int, greg: Int) = context.store.edit { it[K.hijriFormat] = hijri; it[K.gregFormat] = greg }
+    suspend fun setMushafBg(id: String) = context.store.edit { it[K.mushafBg] = id }
     suspend fun setAlerts(a: AlertsConfig) = context.store.edit { it[K.alerts] = a.encode() }
     suspend fun setLang(code: String) = context.store.edit { it[K.lang] = code }
     suspend fun setPrayer(c: PrayerConfig) = context.store.edit { it[K.prayer] = c.encode() }

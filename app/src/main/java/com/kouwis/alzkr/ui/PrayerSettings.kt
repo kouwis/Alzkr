@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -348,15 +349,16 @@ internal fun Modifier.widthInMax(max: androidx.compose.ui.unit.Dp) = this.then(M
 @Composable
 internal fun ToggleRow(title: String, sub: String, on: Boolean, onChange: (Boolean) -> Unit) {
     val c = LocalColors.current
-    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onChange(!on) }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f)) {
             Text(title, color = c.text, fontSize = 17.sp)
             Text(sub, color = c.muted, fontSize = 12.sp)
         }
-        Switch(
-            checked = on, onCheckedChange = onChange,
-            colors = SwitchDefaults.colors(checkedTrackColor = c.primary, checkedThumbColor = c.onPrimary, uncheckedTrackColor = c.chip, uncheckedBorderColor = c.border),
-        )
+        AnimatedToggle(on, onChange)
     }
 }
 

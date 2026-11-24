@@ -193,7 +193,7 @@ object AlertEvents {
                 val base = times.getValue(p) + if (al.iqama) (prefs.prayer.iqama[p] ?: 0) else 0
                 out += AlertEvent(at(base + al.offset), "alarm", "alarm:${al.id}", al.sound, al.label.ifBlank { alarmTitle(al) }, alarmTitle(al), prayer = p.name)
             }
-            val hijriDay = HijrahDate.from(d).get(ChronoField.DAY_OF_MONTH)
+            val hijriDay = Hijri.hijrah(d).get(ChronoField.DAY_OF_MONTH)
             for (r in Reminder.entries) {
                 val s = cfg.reminder(r)
                 if (!s.on) continue

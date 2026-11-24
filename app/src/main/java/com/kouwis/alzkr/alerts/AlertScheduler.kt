@@ -45,6 +45,7 @@ object AlertScheduler {
     suspend fun rescheduleNow(context: Context) {
         val prefs = Prefs(context).flow.first()
         I18n.set(context, Lang.of(prefs.lang))
+        com.kouwis.alzkr.data.Hijri.offset = prefs.hijriOffset
         Channels.ensure(context)
         val catalog = Sounds.catalog(context)
         Silence.settle(context, prefs.alerts.silent.on)

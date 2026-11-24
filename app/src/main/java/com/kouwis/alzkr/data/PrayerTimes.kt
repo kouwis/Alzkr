@@ -114,7 +114,7 @@ object PrayerTimes {
         val t = raw.toMutableMap()
         // Isha a set time after Maghrib (Umm al-Qura: 90 minutes, 120 in Ramadan)
         if (m.ishaMinutes > 0) {
-            val ramadan = HijrahDate.from(date).get(ChronoField.MONTH_OF_YEAR) == 9
+            val ramadan = Hijri.hijrah(date).get(ChronoField.MONTH_OF_YEAR) == 9
             t[Prayer.Isha] = raw.getValue(Prayer.Maghrib) + m.ishaMinutes + if (m == CalcMethod.Makkah && ramadan) 30 else 0
         }
         // short nights: Fajr and Isha no further from sunrise and sunset than a part of the night
@@ -225,11 +225,44 @@ object Hijri {
     val gMonths: List<String> get() = gMonthsAr.map { t(it) }
     private val weekdays: List<String> get() = weekdaysAr.map { t(it) }
 
-    data class Day(val weekday: String, val day: Int, val month: String, val year: Int, val gregorian: String, val friday: Boolean)
+    data class Day(val weekday: String, val day: Int, val month: String, val year: Int, val gregorian: String, val friday: Boolean, val monthNo: Int = 0, val date: LocalDate = LocalDate.now())
+
+    /** «التاريخ» settings, set from the preferences: days added to the Hijri date, and the formats. */
+    @Volatile var offset: Int = 0
+    @Volatile var hijriFormat: Int = 0
+    @Volatile var gregFormat: Int = 0
+
+    /** The Hijri date of a day, with the user's adjustment. */
+    fun hijrah(date: LocalDate): HijrahDate = HijrahDate.from(date.plusDays(offset.toLong()))
+
+    /** The Gregorian day of a Hijri date, with the user's adjustment. */
+    fun gregorianOf(h: HijrahDate): LocalDate = LocalDate.from(h).minusDays(offset.toLong())
+
+    /** The Hijri date written in the chosen format. */
+    fun hijriText(d: Day, format: Int = hijriFormat): String {
+        val n = { x: Int -> ArabicText.num(x) }
+        return when (format) {
+            1 -> t("{0} {1} {2} هـ", n(d.day), d.month, n(d.year))
+            2 -> t("{0} هـ", ArabicText.digitsOf("%02d/%02d/%d".format(java.util.Locale.US, d.day, d.monthNo, d.year)))
+            3 -> "${d.weekday} ${n(d.day)} ${d.month}"
+            else -> "${n(d.day)} ${d.month} ${n(d.year)}"
+        }
+    }
+
+    /** The Gregorian date written in the chosen format. */
+    fun gregorianText(date: LocalDate, format: Int = gregFormat): String {
+        val n = { x: Int -> ArabicText.num(x) }
+        return when (format) {
+            1 -> ArabicText.digitsOf("%02d/%02d/%d".format(java.util.Locale.US, date.dayOfMonth, date.monthValue, date.year))
+            2 -> "${weekdays[date.dayOfWeek.value - 1]} ${n(date.dayOfMonth)} ${gMonths[date.monthValue - 1]}"
+            3 -> t("{0} {1} {2} م", n(date.dayOfMonth), gMonths[date.monthValue - 1], n(date.year))
+            else -> "${n(date.dayOfMonth)} ${gMonths[date.monthValue - 1]} ${n(date.year)}"
+        }
+    }
 
     /** [afterMaghrib]: the Islamic day starts at Maghrib, so from then on the Hijri date is tomorrow's (the weekday stays). */
     fun of(date: LocalDate, afterMaghrib: Boolean = false): Day {
-        val h = HijrahDate.from(if (afterMaghrib) date.plusDays(1) else date)
+        val h = hijrah(if (afterMaghrib) date.plusDays(1) else date)
         return Day(
             weekday = weekdays[date.dayOfWeek.value - 1],
             day = h.get(ChronoField.DAY_OF_MONTH),
@@ -237,6 +270,8 @@ object Hijri {
             year = h.get(ChronoField.YEAR),
             gregorian = "${date.dayOfMonth} ${gMonths[date.monthValue - 1]} ${date.year}",
             friday = date.dayOfWeek.value == 5,
+            monthNo = h.get(ChronoField.MONTH_OF_YEAR),
+            date = date,
         )
     }
 }

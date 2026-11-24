@@ -61,6 +61,31 @@ val DarkColors = AlzkrColors(
 
 val LocalColors = staticCompositionLocalOf { LightColors }
 
+/** A mushaf page background («المصحف» in the settings): the page, the text, and the ornaments (verse markers, frame). */
+data class MushafBg(val id: String, val paper: Color, val ink: Color, val accent: Color, val dark: Boolean)
+
+val MushafBgs = listOf(
+    MushafBg("white", Color(0xFFFFFFFF), Color(0xFF1B1B1B), Color(0xFF6B6B6B), false),
+    MushafBg("cream", Color(0xFFFBF7F2), Color(0xFF2A2118), Color(0xFF8C6A45), false),
+    MushafBg("green", Color(0xFFEEF3DC), Color(0xFF1F2A16), Color(0xFF4F7A3A), false),
+    MushafBg("blue", Color(0xFFE4EEF8), Color(0xFF15233A), Color(0xFF2E6599), false),
+    MushafBg("forest", Color(0xFF1B221E), Color(0xFFE5ECE3), Color(0xFFA9C29A), true),
+    MushafBg("navy", Color(0xFF0F172A), Color(0xFFE6EAF2), Color(0xFFB7C4DA), true),
+    MushafBg("black", Color(0xFF1A1A1A), Color(0xFFEDEDED), Color(0xFFD9D9D9), true),
+    MushafBg("gray", Color(0xFF474747), Color(0xFFF2F2F2), Color(0xFFDADADA), true),
+)
+
+/** The colours inside the mushaf for the chosen background ("" = the app's own light or dark colours). */
+fun mushafColors(base: AlzkrColors, id: String): AlzkrColors {
+    val b = MushafBgs.firstOrNull { it.id == id } ?: return base
+    val c = if (b.dark) DarkColors else LightColors
+    fun mix(a: Float) = androidx.compose.ui.graphics.lerp(b.paper, b.accent, a)
+    return c.copy(
+        paper = b.paper, pageOuter = b.paper, ink = b.ink, text = b.ink,
+        gold = b.accent, frame = mix(0.45f), frame2 = mix(0.25f), highlight = mix(0.22f),
+    )
+}
+
 @Composable
 fun AlzkrTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()

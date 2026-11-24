@@ -330,10 +330,7 @@ private fun TileRow(icon: ImageVector, tint: Color, title: String, sub: String, 
 @Composable
 private fun AppSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
     val c = LocalColors.current
-    Switch(
-        checked = on, onCheckedChange = onChange,
-        colors = SwitchDefaults.colors(checkedTrackColor = c.primary, checkedThumbColor = c.onPrimary, uncheckedTrackColor = c.chip, uncheckedBorderColor = c.border),
-    )
+    AnimatedToggle(on, onChange)
 }
 
 @Composable
@@ -405,7 +402,7 @@ fun PrayerAlertScreen(prefs: AppPrefs, store: Prefs, nav: Nav, prayerName: Strin
             item {
                 Group {
                     ToggleRow(if (p == Prayer.Sunrise) t("تنبيه الشروق") else t("تنبيه الأذان"), t("اليوم {0}", clock(times.getValue(p))), a.on) { on -> save(a.copy(on = on)) }
-                    if (a.on) {
+                    Reveal(a.on) {
                         Line()
                         ValueRow(if (p == Prayer.Sunrise) t("الصوت") else t("صوت الأذان"), Sounds.label(catalog, adhanSound)) { picker = "adhan" }
                     }
@@ -415,7 +412,7 @@ fun PrayerAlertScreen(prefs: AppPrefs, store: Prefs, nav: Nav, prayerName: Strin
             item {
                 Group {
                     ValueRow(t("قبل الوقت بـ"), if (a.pre == 0) t("مغلق") else t("{0} دقيقة", num(a.pre))) { preDialog = true }
-                    if (a.pre > 0) {
+                    Reveal(a.pre > 0) {
                         Line()
                         ValueRow(t("صوت التنبيه"), Sounds.label(catalog, a.preSound)) { picker = "pre" }
                     }
@@ -428,7 +425,7 @@ fun PrayerAlertScreen(prefs: AppPrefs, store: Prefs, nav: Nav, prayerName: Strin
                         ToggleRow(t("تنبيه الإقامة"), if (iq > 0) t("الإقامة بعد الأذان بـ {0} دقيقة", num(iq)) else t("لم يُضبط وقت للإقامة"), a.iqama) { on ->
                             save(a.copy(iqama = on))
                         }
-                        if (a.iqama) {
+                        Reveal(a.iqama) {
                             Line()
                             StepperRow(t("قبل الإقامة"), a.iqamaBefore, 0..iq.coerceAtLeast(0), { v -> if (v == 0) t("عند الإقامة") else t("{0} دقائق", num(v)) }) { v ->
                                 save(a.copy(iqamaBefore = v))
@@ -770,7 +767,7 @@ fun SilentScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                         save(s.copy(on = on))
                         if (on && !com.kouwis.alzkr.alerts.Silence.allowed(context)) askAccess()
                     }
-                    if (s.on) {
+                    Reveal(s.on) {
                         Line()
                         Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(t("إعادة الصوت بعد الإقامة بـ"), color = c.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
@@ -781,20 +778,20 @@ fun SilentScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                     }
                 }
             }
-            if (s.on) item {
+            item { Reveal(s.on) {
                 Text(
                     t("يُفعَّل الصمت التام بعد انتهاء الأذان حتى المدة المحددة بعد الإقامة، فيُكتم الرنين والإشعارات والوسائط والمنبّهات والاهتزاز، ثم يعود الهاتف إلى وضعه السابق. ولا يشمل صوت المكالمة الجارية."),
                     color = c.muted, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 6.dp),
                 )
-            }
-            if (s.on) item {
+            } }
+            item { Reveal(s.on) {
                 Text(
                     t("تعتمد هذه الميزة على نظام الهاتف ومواقيت الصلاة، وقد لا تعمل كما يُتوقَّع في بعض الحالات، فقد يبقى الهاتف صامتًا بعد الوقت المحدد، أو يصدر صوتًا رغم تفعيلها. استخدمها على مسؤوليتك."),
                     color = c.heart, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 6.dp),
                 )
-            }
-            if (s.on) item { Header(t("مواقيت الصمت اليوم")) }
-            if (s.on) item {
+            } }
+            item { Reveal(s.on) { Header(t("مواقيت الصمت اليوم")) } }
+            item { Reveal(s.on) {
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(22.dp))) {
                     Row(Modifier.fillMaxWidth().background(c.chip.copy(alpha = 0.4f)).padding(vertical = 14.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(t("الصلاة"), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1.1f))
@@ -819,13 +816,13 @@ fun SilentScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                         }
                     }
                 }
-            }
-            if (s.on) item {
+            } }
+            item { Reveal(s.on) {
                 Text(
                     t("تُضبط مدة الإقامة لكل صلاة من «مواقيت الصلاة»."),
                     color = c.muted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 )
-            }
+            } }
         }
     }
 }

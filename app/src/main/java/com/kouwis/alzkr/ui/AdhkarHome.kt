@@ -140,7 +140,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val untilNext = (times.getValue(next) * 60 - secondNow).let { if (it < 0) it + 86_400 else it }
     // the Islamic day begins at Maghrib: from then on the Hijri date is the next day's
     val afterMaghrib = minuteNow >= times.getValue(Prayer.Maghrib)
-    val hijri = remember(today, afterMaghrib) { Hijri.of(today, afterMaghrib) }
+    val hijri = remember(today, afterMaghrib, prefs.hijriOffset) { Hijri.of(today, afterMaghrib) }
     // after the adhan, the time left to the iqama (then the strip moves on to the next prayer)
     val iqamaAt = prefs.prayer.iqama[current]?.takeIf { it > 0 }?.let { times.getValue(current) + it }
     val untilIqama = iqamaAt?.let { at -> (at * 60 - secondNow).takeIf { it > 0 && secondNow >= times.getValue(current) * 60 } }
@@ -275,7 +275,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
             })
         }
         // the occasions of the Hijri year, while they are on
-        val hd = java.time.chrono.HijrahDate.from(if (afterMaghrib) today.plusDays(1) else today)
+        val hd = Hijri.hijrah(if (afterMaghrib) today.plusDays(1) else today)
         val hMonth = hd.get(java.time.temporal.ChronoField.MONTH_OF_YEAR)
         val hDay = hd.get(java.time.temporal.ChronoField.DAY_OF_MONTH)
         when {
@@ -337,8 +337,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                     }
                     DayCard(
                         weekday = hijri.weekday,
-                        hijriLine = "${ar(hijri.day.toString())} ${hijri.month} ${ar(hijri.year.toString())}",
-                        gregorian = ar(hijri.gregorian),
+                        hijriLine = Hijri.hijriText(hijri),
+                        gregorian = Hijri.gregorianText(today),
                         place = place,
                         placeIsDefault = !hasPlace,
                         locating = locating,

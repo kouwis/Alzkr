@@ -97,9 +97,9 @@ val Occasions = listOf(
 
 /** When an occasion next starts (today or later), or the start of the one going on now; and whether it is on now. */
 fun nextOf(o: Occasion, today: LocalDate): Pair<LocalDate, Boolean> {
-    val hy = HijrahDate.from(today).get(ChronoField.YEAR)
+    val hy = Hijri.hijrah(today).get(ChronoField.YEAR)
     for (y in listOf(hy - 1, hy, hy + 1)) {
-        val start = runCatching { LocalDate.from(HijrahDate.of(y, o.month, o.day)) }.getOrNull() ?: continue
+        val start = runCatching { Hijri.gregorianOf(HijrahDate.of(y, o.month, o.day)) }.getOrNull() ?: continue
         val end = start.plusDays(o.days.toLong() - 1)
         if (!today.isAfter(end)) return start to !today.isBefore(start)
     }
@@ -108,7 +108,7 @@ fun nextOf(o: Occasion, today: LocalDate): Pair<LocalDate, Boolean> {
 
 private fun gDate(d: LocalDate) = "${num(d.dayOfMonth)} ${Hijri.gMonths[d.monthValue - 1]}"
 private fun hDate(d: LocalDate): String {
-    val h = HijrahDate.from(d)
+    val h = Hijri.hijrah(d)
     return "${num(h.get(ChronoField.DAY_OF_MONTH))} ${Hijri.months[h.get(ChronoField.MONTH_OF_YEAR) - 1]}"
 }
 
@@ -282,9 +282,9 @@ private fun CalendarCard(today: LocalDate) {
     // the month shown: its first day and its length
     val (first, length, title) = remember(hijri, offset) {
         if (hijri) {
-            val h = HijrahDate.from(today).plus(offset.toLong(), ChronoUnit.MONTHS)
+            val h = Hijri.hijrah(today).plus(offset.toLong(), ChronoUnit.MONTHS)
             val f = h.with(ChronoField.DAY_OF_MONTH, 1)
-            Triple(LocalDate.from(f), f.lengthOfMonth(), "${Hijri.months[f.get(ChronoField.MONTH_OF_YEAR) - 1]} ${num(f.get(ChronoField.YEAR))}")
+            Triple(Hijri.gregorianOf(f), f.lengthOfMonth(), "${Hijri.months[f.get(ChronoField.MONTH_OF_YEAR) - 1]} ${num(f.get(ChronoField.YEAR))}")
         } else {
             val f = today.plusMonths(offset.toLong()).withDayOfMonth(1)
             Triple(f, f.lengthOfMonth(), "${Hijri.gMonths[f.monthValue - 1]} ${num(f.year)}")
@@ -294,7 +294,7 @@ private fun CalendarCard(today: LocalDate) {
     val marks = remember(first, length) {
         (0 until length).associate { k ->
             val d = first.plusDays(k.toLong())
-            val h = HijrahDate.from(d)
+            val h = Hijri.hijrah(d)
             val m = h.get(ChronoField.MONTH_OF_YEAR); val dd = h.get(ChronoField.DAY_OF_MONTH)
             // a long occasion (Ramadan) is marked on its first day; the shortest one wins (عرفة inside the ten days)
             d to Occasions.filter { o -> o.month == m && dd >= o.day && dd < o.day + (if (o.days > 10) 1 else o.days) }.minByOrNull { it.days }?.title
@@ -325,8 +325,8 @@ private fun CalendarCard(today: LocalDate) {
                             val d = first.plusDays(k.toLong())
                             val isToday = d == today
                             val mark = marks[d]
-                            val main = if (hijri) HijrahDate.from(d).get(ChronoField.DAY_OF_MONTH) else d.dayOfMonth
-                            val sub = if (hijri) d.dayOfMonth else HijrahDate.from(d).get(ChronoField.DAY_OF_MONTH)
+                            val main = if (hijri) Hijri.hijrah(d).get(ChronoField.DAY_OF_MONTH) else d.dayOfMonth
+                            val sub = if (hijri) d.dayOfMonth else Hijri.hijrah(d).get(ChronoField.DAY_OF_MONTH)
                             Column(
                                 Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
                                     .background(if (isToday) c.primary else if (d == picked) c.primarySoft else Color.Transparent)
@@ -345,7 +345,7 @@ private fun CalendarCard(today: LocalDate) {
         }
         val p = picked ?: today
         Text(
-            t("{0} {1} هـ · {2} {3} م", hDate(p), num(HijrahDate.from(p).get(ChronoField.YEAR)), gDate(p), num(p.year)) + (marks[p]?.let { " · $it" } ?: ""),
+            t("{0} {1} هـ · {2} {3} م", hDate(p), num(Hijri.hijrah(p).get(ChronoField.YEAR)), gDate(p), num(p.year)) + (marks[p]?.let { " · $it" } ?: ""),
             color = c.muted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
     }

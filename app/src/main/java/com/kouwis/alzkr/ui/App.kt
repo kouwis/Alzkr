@@ -50,6 +50,8 @@ sealed interface Screen {
     data object PrayerSettings : Screen
     data object Alerts : Screen
     data object Silent : Screen
+    data object DateSettings : Screen
+    data object MushafSettings : Screen
     data class PrayerAlert(val prayer: String) : Screen
 }
 
@@ -81,6 +83,9 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
     // the interface language: everything below is rebuilt when it changes (text, and right-to-left or left-to-right)
     val lang = com.kouwis.alzkr.data.Lang.of(state.lang)
     com.kouwis.alzkr.data.I18n.set(context, lang)
+    com.kouwis.alzkr.data.Hijri.offset = state.hijriOffset
+    com.kouwis.alzkr.data.Hijri.hijriFormat = state.hijriFormat
+    com.kouwis.alzkr.data.Hijri.gregFormat = state.gregFormat
     androidx.compose.runtime.key(lang) { AlzkrTheme {
         val c = LocalColors.current
         val data by produceState<QuranData?>(Quran.peek()) { value = Quran.load(context) }
@@ -144,7 +149,9 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
                     Screen.Search -> SearchScreen(q, nav)
                     Screen.Favorites -> FavoritesScreen(q, state, prefs, nav)
                     Screen.Bookmarks -> BookmarksScreen(q, state, prefs, nav)
-                    is Screen.Mushaf -> MushafScreen(q, state, prefs, nav, screen.page, screen.verse, screen.highlight)
+                    is Screen.Mushaf -> androidx.compose.runtime.CompositionLocalProvider(LocalColors provides mushafColors(LocalColors.current, state.mushafBg)) {
+                        MushafScreen(q, state, prefs, nav, screen.page, screen.verse, screen.highlight)
+                    }
                     Screen.Tasbih -> TasbihScreen(state, prefs, nav)
                     Screen.Mistakes -> MistakesScreen(q, state, prefs, nav)
                     is Screen.Adhkar -> AdhkarReaderScreen(q, state, prefs, nav, screen.id, screen.start)
@@ -156,6 +163,8 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
                     Screen.PrayerSettings -> PrayerSettingsScreen(state, prefs, nav)
                     Screen.Alerts -> AlertsScreen(state, prefs, nav)
                     Screen.Silent -> SilentScreen(state, prefs, nav)
+                    Screen.DateSettings -> DateSettingsScreen(state, prefs, nav)
+                    Screen.MushafSettings -> MushafSettingsScreen(state, prefs, nav)
                     is Screen.PrayerAlert -> PrayerAlertScreen(state, prefs, nav, screen.prayer)
                 } }
             }
