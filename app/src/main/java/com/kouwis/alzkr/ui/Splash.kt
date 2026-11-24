@@ -113,7 +113,13 @@ fun Splash(onDone: () -> Unit) {
                 modifier = Modifier.alpha(name.value).graphicsLayer { translationY = (1f - name.value) * 24.dp.toPx() },
             )
             Text(
-                "﴿ إِنَّ لِلْمُتَّقِينَ مَفَازًا ﴾", color = Color.White.copy(alpha = 0.92f), fontSize = 26.sp,
+                // the verse in the Quran's script; its ornate brackets from the naskh font (the Quran font has none)
+                androidx.compose.ui.text.buildAnnotatedString {
+                    val br = androidx.compose.ui.text.SpanStyle(fontFamily = AppFonts.naskh, color = Gold)
+                    withStyle(br) { append("﴿ ") }
+                    append("إِنَّ لِلْمُتَّقِينَ مَفَازًا")
+                    withStyle(br) { append(" ﴾") }
+                }, color = Color.White.copy(alpha = 0.92f), fontSize = 26.sp,
                 fontFamily = AppFonts.hafs, textAlign = TextAlign.Center, lineHeight = 48.sp,
                 modifier = Modifier.padding(horizontal = 24.dp).alpha(verse.value).graphicsLayer { translationY = (1f - verse.value) * 18.dp.toPx() },
             )
