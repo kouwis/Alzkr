@@ -55,7 +55,8 @@ import kotlinx.coroutines.launch
 /** One row of the settings: a coloured tile with an icon, a title, maybe a line under it. */
 private data class Setting(val title: String, val icon: ImageVector, val tint: Color, val sub: String = "", val onClick: () -> Unit)
 
-private const val RELEASES = "https://github.com/kouwis/Alzkr/releases/latest"
+/** Downloads the newest version straight away (every release carries the same file as Alzkr.apk). */
+private const val RELEASES = "https://github.com/kouwis/Alzkr/releases/latest/download/Alzkr.apk"
 /** «ادعم التطبيق»: a gift to the app's maker through InstaPay (Egypt). */
 private const val INSTAPAY = "https://ipn.eg/S/mkouwis/instapay/1U7MKE"
 private const val INSTAPAY_ADDRESS = "mkouwis@instapay"
