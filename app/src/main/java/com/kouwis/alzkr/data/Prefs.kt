@@ -46,6 +46,8 @@ data class AppPrefs(
     val adhkarDone: Map<String, Long> = emptyMap(),
     /** the interface language (code), "ar" by default */
     val lang: String = "ar",
+    /** the user's own deeds in «متابعة العبادات» («أخرى») */
+    val customDeeds: List<String> = emptyList(),
     /** how the prayer times are worked out (مواقيت الصلاة in the settings) */
     val prayer: PrayerConfig = PrayerConfig(),
     /** the place updates itself from the phone's location; off once a place is picked by hand */
@@ -87,6 +89,7 @@ class Prefs(private val context: Context) {
         val adhkarDone = stringPreferencesKey("adhkar_done") // "morning=1732300000000;sleep=…"
         val prayer = stringPreferencesKey("prayer_config")
         val lang = stringPreferencesKey("lang")
+        val customDeeds = stringPreferencesKey("custom_deeds")
         val autoLocate = booleanPreferencesKey("auto_locate")
         val track = stringPreferencesKey("track") // "2026-11-23=morning,qiyam;2026-11-22=…"
         val alerts = stringPreferencesKey("alerts") // JSON
@@ -139,6 +142,7 @@ class Prefs(private val context: Context) {
             track = parseTrack(p[K.track]),
             prayer = PrayerConfig.decode(p[K.prayer]),
             lang = p[K.lang] ?: "ar",
+            customDeeds = p[K.customDeeds]?.split('\n')?.filter { it.isNotBlank() }.orEmpty(),
             autoLocate = p[K.autoLocate] ?: true,
             alerts = AlertsConfig.decode(p[K.alerts]),
             hijriOffset = p[K.hijriOffset] ?: 0,
@@ -158,6 +162,7 @@ class Prefs(private val context: Context) {
     suspend fun setMushafBg(id: String) = context.store.edit { it[K.mushafBg] = id }
     suspend fun setAlerts(a: AlertsConfig) = context.store.edit { it[K.alerts] = a.encode() }
     suspend fun setLang(code: String) = context.store.edit { it[K.lang] = code }
+    suspend fun setCustomDeeds(list: List<String>) = context.store.edit { it[K.customDeeds] = list.joinToString("\n") }
     suspend fun setPrayer(c: PrayerConfig) = context.store.edit { it[K.prayer] = c.encode() }
     suspend fun setAutoLocate(on: Boolean) = context.store.edit { it[K.autoLocate] = on }
 

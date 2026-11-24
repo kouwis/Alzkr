@@ -57,6 +57,8 @@ import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.ArabicText.num
 import com.kouwis.alzkr.data.Hijri
 import com.kouwis.alzkr.data.Prefs
+import com.kouwis.alzkr.data.Prayer
+import com.kouwis.alzkr.data.PrayerTimes
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.chrono.HijrahDate
@@ -64,23 +66,104 @@ import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 
-/** The deeds of the day in «متابعة العبادات». The adhkar sections tick themselves when finished, the ward too. */
-data class Deed(val id: String, val arTitle: String, val icon: ImageVector) { val title: String get() = t(arTitle) }
+/*
+ * «متابعة العبادات»: the deeds change with the day. Each prayer opens when its time comes, the
+ * sunnahs with their prayers, the fast only on the days it is sunnah (or Ramadan), Friday's own
+ * deeds on Friday. The day's achievement weighs each group (the prayers half of it).
+ */
 
-val Deeds = listOf(
-    Deed("morning", "أذكار الصباح", AdhkarIc.sun),
-    Deed("evening", "أذكار المساء", AdhkarIc.moon),
-    Deed("after_prayer", "أذكار الصلاة", AdhkarIc.afterPrayer),
-    Deed("sleep", "أذكار النوم", AdhkarIc.bed),
-    Deed("ward", "ورد القرآن", AdhkarIc.book),
-    Deed("duha", "صلاة الضحى", AdhkarIc.rise),
-    Deed("qiyam", "قيام الليل", AdhkarIc.prayer),
-    Deed("witr", "صلاة الوتر", AdhkarIc.star),
-)
+enum class DeedGroup(val arTitle: String, val weight: Int) {
+    Prayers("الصلوات", 50), Adhkar("الأذكار", 10), Quran("القرآن الكريم", 10), Daily("عبادات يومية", 10),
+    Rawatib("سنن رواتب", 0), Night("قيام الليل والوتر", 0), Fasting("الصيام", 10), Other("أخرى", 0),
+    ;
+    val title: String get() = t(arTitle)
+    /** the group whose weight it shares (the sunnahs and the night count with the nawafil) */
+    val scoreGroup: String get() = when (this) { Rawatib, Night -> "nawafil"; Other -> "daily"; Daily -> "daily"; else -> name }
+}
 
-/** A day's share of the deeds done, 0..1. */
-fun dayScore(prefs: AppPrefs, day: LocalDate): Float =
-    prefs.track[day.toString()].orEmpty().count { id -> Deeds.any { it.id == id } } / Deeds.size.toFloat()
+/** One deed: it opens [after] minutes past [anchor]'s time on the day itself (null: open all day). */
+data class Deed(
+    val id: String, val arTitle: String, val icon: ImageVector, val group: DeedGroup,
+    val anchor: Prayer? = null, val after: Int = 0, val sub: String = "", val plainTitle: String? = null,
+) {
+    val title: String get() = plainTitle ?: t(arTitle)
+    fun opensAt(times: Map<Prayer, Int>): Int? = anchor?.let { (times[it] ?: 0) + after }
+}
+
+private val ScoreWeights = mapOf("Prayers" to 50, "Adhkar" to 10, "Quran" to 10, "nawafil" to 10, "daily" to 10, "Fasting" to 10)
+
+/** Why the day is one to fast, if it is: (the short label, the line under «صمت اليوم»). */
+fun fastOf(day: LocalDate): Pair<String, String>? {
+    val h = Hijri.hijrah(day)
+    val m = h.get(ChronoField.MONTH_OF_YEAR); val d = h.get(ChronoField.DAY_OF_MONTH)
+    if ((m == 10 && d == 1) || (m == 12 && d in 10..13)) return null // the Eids and the days of tashreeq
+    val dow = day.dayOfWeek.value
+    val ordinal = listOf("الأول", "الثاني", "الثالث")
+    return when {
+        m == 9 -> t("رمضان") to t("صيام رمضان")
+        m == 12 && d == 9 -> t("يوم عرفة") to t("صيام يوم عرفة")
+        m == 12 && d < 9 -> t("العشر من ذي الحجة") to t("صيام العشر من ذي الحجة")
+        m == 1 && d == 9 -> t("تاسوعاء") to t("صيام تاسوعاء")
+        m == 1 && d == 10 -> t("عاشوراء") to t("صيام عاشوراء")
+        d in 13..15 -> t("الأيام البيض") to t("صيام اليوم {0} من الأيام البيض", t(ordinal[d - 13]))
+        m == 10 -> t("ست من شوال") to t("صيام الست من شوال")
+        dow == 1 -> t("الاثنين") to t("صيام يوم الاثنين")
+        dow == 4 -> t("الخميس") to t("صيام يوم الخميس")
+        else -> null
+    }
+}
+
+/** The deeds of a day. */
+fun deedsOf(day: LocalDate, custom: List<String>): List<Deed> = buildList {
+    val friday = day.dayOfWeek.value == 5
+    add(Deed("prayer_Fajr", "الفجر", AdhkarIc.rise, DeedGroup.Prayers, Prayer.Fajr))
+    add(Deed("prayer_Dhuhr", if (friday) "الجمعة" else "الظهر", AdhkarIc.sun, DeedGroup.Prayers, Prayer.Dhuhr))
+    add(Deed("prayer_Asr", "العصر", AdhkarIc.cloud, DeedGroup.Prayers, Prayer.Asr))
+    add(Deed("prayer_Maghrib", "المغرب", AdhkarIc.set, DeedGroup.Prayers, Prayer.Maghrib))
+    add(Deed("prayer_Isha", "العشاء", AdhkarIc.moon, DeedGroup.Prayers, Prayer.Isha))
+
+    add(Deed("morning", "أذكار الصباح", AdhkarIc.rise, DeedGroup.Adhkar, Prayer.Fajr))
+    add(Deed("evening", "أذكار المساء", AdhkarIc.cloud, DeedGroup.Adhkar, Prayer.Asr))
+    add(Deed("after_prayer", "أذكار الصلاة", AdhkarIc.afterPrayer, DeedGroup.Adhkar, Prayer.Fajr))
+    add(Deed("sleep", "أذكار النوم", AdhkarIc.bed, DeedGroup.Adhkar, Prayer.Isha))
+
+    add(Deed("ward", "ورد القرآن", AdhkarIc.book, DeedGroup.Quran, sub = t("ورد يومي من القرآن الكريم")))
+    if (friday) add(Deed("kahf", "سورة الكهف", AdhkarIc.book, DeedGroup.Quran, sub = t("قراءتها يوم الجمعة")))
+
+    add(Deed("duha", "صلاة الضحى", AdhkarIc.sun, DeedGroup.Daily, Prayer.Sunrise, 15, t("من ركعتين إلى ثماني ركعات بعد شروق الشمس")))
+    if (friday) {
+        add(Deed("salawat", "الصلاة على النبي ﷺ", AdhkarIc.hands, DeedGroup.Daily, sub = t("الإكثار منها يوم الجمعة")))
+        add(Deed("jumua_hour", "دعاء ساعة الإجابة", AdhkarIc.hands, DeedGroup.Daily, Prayer.Asr, sub = t("آخر ساعة من يوم الجمعة")))
+    }
+
+    add(Deed("sunnah_fajr", "سنة الفجر", AdhkarIc.rise, DeedGroup.Rawatib, Prayer.Fajr, sub = t("ركعتان قبل صلاة الفجر")))
+    if (!friday) add(Deed("sunnah_dhuhr_before", "سنة الظهر القبلية", AdhkarIc.sun, DeedGroup.Rawatib, Prayer.Dhuhr, sub = t("أربع ركعات قبل صلاة الظهر")))
+    add(Deed("sunnah_dhuhr_after", if (friday) "سنة الجمعة" else "سنة الظهر البعدية", AdhkarIc.sun, DeedGroup.Rawatib, Prayer.Dhuhr,
+        sub = if (friday) t("ركعتان أو أربع بعد صلاة الجمعة") else t("ركعتان بعد صلاة الظهر")))
+    add(Deed("sunnah_maghrib", "سنة المغرب", AdhkarIc.set, DeedGroup.Rawatib, Prayer.Maghrib, sub = t("ركعتان بعد صلاة المغرب")))
+    add(Deed("sunnah_isha", "سنة العشاء", AdhkarIc.moon, DeedGroup.Rawatib, Prayer.Isha, sub = t("ركعتان بعد صلاة العشاء")))
+
+    add(Deed("qiyam", "قيام الليل", AdhkarIc.star, DeedGroup.Night, Prayer.Isha, sub = t("وأفضله في الثلث الأخير من الليل")))
+    add(Deed("witr", "صلاة الوتر", AdhkarIc.moon, DeedGroup.Night, Prayer.Isha, sub = t("ركعة أو ثلاث أو خمس أو سبع أو إحدى عشرة")))
+
+    fastOf(day)?.let { (_, line) -> add(Deed("fast", "صمت اليوم", AdhkarIc.dates, DeedGroup.Fasting, sub = line)) }
+
+    custom.forEach { add(Deed("custom:$it", it, Ic.check, DeedGroup.Other, plainTitle = it)) }
+}
+
+/** A day's achievement, 0..1: each group's share done, weighed (an excused day leaves the prayers out). */
+fun dayScore(prefs: AppPrefs, day: LocalDate): Float {
+    val done = prefs.track[day.toString()].orEmpty()
+    val excused = "excused" in done
+    val groups = deedsOf(day, prefs.customDeeds).filter { !(excused && it.group == DeedGroup.Prayers) }.groupBy { it.group.scoreGroup }
+    var sum = 0f; var weights = 0
+    groups.forEach { (g, list) ->
+        val w = ScoreWeights[g] ?: 0
+        if (w == 0 || list.isEmpty()) return@forEach
+        sum += w * list.count { it.id in done } / list.size.toFloat(); weights += w
+    }
+    return if (weights == 0) 0f else sum / weights
+}
 
 /** An occasion of the Hijri year: its day ([day] of [month]), how many days it lasts, and its section. */
 data class Occasion(val arTitle: String, val month: Int, val day: Int, val days: Int, val section: String?) { val title: String get() = t(arTitle) }
@@ -112,13 +195,23 @@ private fun hDate(d: LocalDate): String {
     return "${num(h.get(ChronoField.DAY_OF_MONTH))} ${Hijri.months[h.get(ChronoField.MONTH_OF_YEAR) - 1]}"
 }
 
-/** «متابعة العبادات», the progress of the last week, the Hijri calendar and the coming occasions. */
+/** «متابعة العبادات»: the day's deeds (as the time, day and date bring them), and the statistics. */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TrackerScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
     val c = LocalColors.current
     val scope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
+    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var day by remember { mutableStateOf(today) }
+    // the minute now, so deeds open as their time comes
+    var nowMin by remember { mutableIntStateOf(java.time.LocalTime.now().let { it.hour * 60 + it.minute }) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000L - System.currentTimeMillis() % 60_000L + 200L)
+            nowMin = java.time.LocalTime.now().let { it.hour * 60 + it.minute }
+        }
+    }
     // the ward of the Quran ticks itself once it is read
     LaunchedEffect(prefs.wardDone, prefs.wardTarget) {
         if (prefs.wardTarget > 0 && prefs.wardDone >= prefs.wardTarget && "ward" !in prefs.track[today.toString()].orEmpty()) {
@@ -130,26 +223,24 @@ fun TrackerScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
             .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility),
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RoundIconButton(Ic.back, t("رجوع"), { nav.back() })
-            Column {
-                Text(t("متابعتي"), color = c.text, fontSize = 26.sp, fontFamily = AppFonts.naskhBold)
-                Text(t("العبادات والتقويم الهجري والمناسبات"), color = c.muted, fontSize = 13.sp)
-            }
+        Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.CenterStart)) { RoundIconButton(Ic.back, t("رجوع"), { nav.back() }) }
+            Text(t("متابعة العبادات"), color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold)
         }
+        Segmented(listOf(t("المتابعة"), t("الإحصائيات")), tab, { tab = it }, Modifier.fillMaxWidth().padding(horizontal = 20.dp))
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item { DeedsCard(prefs, today) { id, on -> scope.launch { store.setTracked(today.toString(), id, on) } } }
-            item { ProgressCard(prefs, today) }
-            item { CalendarCard(today) }
-            item { OccasionsCard(today) { id -> nav.go(Screen.Adhkar(id)) } }
+            if (tab == 0) {
+                item(key = "week") { WeekCard(prefs, today, day) { day = it } }
+                deedSections(prefs, day, today, nowMin, store) { id, on -> scope.launch { store.setTracked(day.toString(), id, on) } }
+            } else {
+                item { ProgressCard(prefs, today) }
+                item { CalendarCard(today) }
+                item { OccasionsCard(today) { id -> nav.go(Screen.Adhkar(id)) } }
+            }
         }
     }
 }
@@ -170,36 +261,228 @@ private fun Panel(title: String, trailing: @Composable () -> Unit = {}, content:
     }
 }
 
+/** The day picked, its achievement, and the week to pick another day (not one to come). */
 @Composable
-private fun DeedsCard(prefs: AppPrefs, today: LocalDate, onToggle: (String, Boolean) -> Unit) {
+private fun WeekCard(prefs: AppPrefs, today: LocalDate, day: LocalDate, onPick: (LocalDate) -> Unit) {
     val c = LocalColors.current
-    val done = prefs.track[today.toString()].orEmpty()
-    Panel(t("متابعة العبادات"), trailing = {
-        Text(t("{0} من {1}", num(Deeds.count { it.id in done }), num(Deeds.size)), color = c.muted, fontSize = 13.sp)
-    }) {
-        Deeds.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { d ->
-                    val on = d.id in done
-                    val bg by animateColorAsState(if (on) c.primarySoft else c.bg, tween(200), label = "deed")
-                    Row(
-                        Modifier.weight(1f).height(58.dp).clip(RoundedCornerShape(18.dp)).background(bg)
-                            .springClick(role = Role.Checkbox, label = d.title, haptic = Haptic.Toggle, pressedScale = 0.97f) { onToggle(d.id, !on) }
-                            .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Box(
-                            Modifier.size(26.dp).clip(CircleShape).background(if (on) c.primary else Color.Transparent)
-                                .border(1.5.dp, if (on) c.primary else c.muted, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) { if (on) Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(15.dp)) }
-                        Text(d.title, color = c.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f))
-                    }
+    val score = dayScore(prefs, day)
+    val ring by animateFloatAsState(score, tween(500), label = "ring")
+    val sat = day.minusDays(((day.dayOfWeek.value + 1) % 7).toLong())
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(26.dp)).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                val h = Hijri.hijrah(day)
+                Text(if (day == today) t("اليوم") else com.kouwis.alzkr.data.Hijri.of(day).weekday, color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold)
+                Text("${num(h.get(ChronoField.DAY_OF_MONTH))} ${Hijri.months[h.get(ChronoField.MONTH_OF_YEAR) - 1]} · ${gDate(day)}", color = c.muted, fontSize = 14.sp)
+                fastOf(day)?.let { (label, _) ->
+                    Text(label, color = c.goldText, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp).clip(RoundedCornerShape(12.dp)).background(c.goldSoft).padding(horizontal = 10.dp, vertical = 3.dp))
+                }
+            }
+            Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                val track = c.chip; val fill = c.primary
+                Canvas(Modifier.fillMaxSize()) {
+                    val w = 6.dp.toPx()
+                    val sz = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
+                    drawArc(track, 0f, 360f, false, Offset(w / 2, w / 2), sz, style = Stroke(w))
+                    if (ring > 0f) drawArc(fill, -90f, 360f * ring, false, Offset(w / 2, w / 2), sz, style = Stroke(w, cap = StrokeCap.Round))
+                }
+                Text(t("{0}٪", num((score * 100).roundToInt())), color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            (0..6).forEach { i ->
+                val d = sat.plusDays(i.toLong())
+                val future = d.isAfter(today)
+                val on = d == day
+                val sc = if (future) 0f else dayScore(prefs, d)
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
+                        .then(if (future) Modifier else Modifier.springClick(label = d.toString(), ripple = false) { onPick(d) })
+                        .padding(vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(listOf(t("سبت"), t("أحد"), t("اثنين"), t("ثلاثاء"), t("أربعاء"), t("خميس"), t("جمعة"))[i],
+                        color = if (on) c.goldText else if (future) c.muted.copy(alpha = 0.5f) else c.muted, fontSize = 11.sp, maxLines = 1)
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape)
+                            .background(if (sc > 0f) c.primary.copy(alpha = 0.25f + 0.75f * sc) else c.chip.copy(alpha = if (future) 0.4f else 1f))
+                            .border(if (on) 2.dp else 0.dp, if (on) c.gold else Color.Transparent, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) { if (sc >= 1f) Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(14.dp)) }
+                    Text(num(d.dayOfMonth), color = if (on) c.goldText else if (future) c.muted.copy(alpha = 0.5f) else c.text,
+                        fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal)
                 }
             }
         }
     }
+}
+
+/** The day's deeds, group by group. A deed whose time has not come today is locked. */
+private fun androidx.compose.foundation.lazy.LazyListScope.deedSections(
+    prefs: AppPrefs, day: LocalDate, today: LocalDate, nowMin: Int, store: Prefs, onToggle: (String, Boolean) -> Unit,
+) {
+    val done = prefs.track[day.toString()].orEmpty()
+    val excused = "excused" in done
+    val times = PrayerTimes.forDay(day, prefs.lat ?: 30.0444, prefs.lng ?: 31.2357, prefs.prayer)
+    fun locked(d: Deed) = day == today && (d.opensAt(times)?.let { nowMin < it } ?: false)
+    val deeds = deedsOf(day, prefs.customDeeds)
+    DeedGroup.entries.forEach { g ->
+        val list = deeds.filter { it.group == g }
+        if (list.isEmpty() && g != DeedGroup.Other) return@forEach
+        item(key = "h:${g.name}") { GroupHeader(g, list, done, excused, day, prefs.customDeeds, store) }
+        if (g == DeedGroup.Prayers) {
+            item(key = "prayers") {
+                val c = LocalColors.current
+                if (excused) Text(t("الصلوات موقوفة اليوم للعذر الشرعي"), color = c.muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 6.dp))
+                else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    list.forEach { d -> PrayerChip(d, d.id in done, locked(d), Modifier.weight(1f)) { onToggle(d.id, it) } }
+                }
+            }
+        } else list.forEach { d ->
+            item(key = "d:${d.id}") { DeedRow(d, d.id in done, locked(d), d.opensAt(times)) { onToggle(d.id, it) } }
+        }
+    }
+    item(key = "excused") {
+        val c = LocalColors.current
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(if (excused) c.goldSoft else c.card)
+                .springClick(role = Role.Switch, label = t("العذر الشرعي")) { onToggle("excused", !excused) }
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(t("العذر الشرعي"), color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                Text(t("إيقاف تتبع الصلوات لهذا اليوم"), color = c.muted, fontSize = 13.sp)
+            }
+            AnimatedToggle(excused, { onToggle("excused", it) })
+        }
+    }
+    item(key = "weights") {
+        val c = LocalColors.current
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).border(1.dp, c.border, RoundedCornerShape(22.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(t("كيف يُحسب الإنجاز؟"), color = c.muted, fontSize = 14.sp)
+            Text(
+                t("الصلوات {0}٪ · الأذكار {1}٪ · القرآن {1}٪ · النوافل {1}٪ · عبادات يومية {1}٪ · الصيام {1}٪ في أيامه", num(50), num(10)),
+                color = c.text, fontSize = 13.sp, lineHeight = 20.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupHeader(g: DeedGroup, list: List<Deed>, done: Set<String>, excused: Boolean, day: LocalDate, custom: List<String>, store: Prefs) {
+    val c = LocalColors.current
+    val scope = rememberCoroutineScope()
+    var adding by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp, start = 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(g.title, color = c.text, fontSize = 20.sp, fontFamily = AppFonts.naskhBold, modifier = Modifier.weight(1f))
+        when {
+            g == DeedGroup.Fasting -> fastOf(day)?.let { (label, _) ->
+                Text(label, color = c.goldText, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.goldSoft).padding(horizontal = 12.dp, vertical = 5.dp))
+            }
+            g == DeedGroup.Other -> Box(
+                Modifier.size(34.dp).clip(CircleShape).background(c.gold).springClick(label = t("إضافة")) { adding = true },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Ic.plus, t("إضافة"), tint = Color(0xFF1B1B1B), modifier = Modifier.size(18.dp)) }
+            !(g == DeedGroup.Prayers && excused) && list.isNotEmpty() ->
+                Text(t("{0}/{1}", num(list.count { it.id in done }), num(list.size)), color = c.muted, fontSize = 14.sp)
+        }
+    }
+    if (adding) CustomDeedsDialog(custom, onSave = { scope.launch { store.setCustomDeeds(it) } }) { adding = false }
+}
+
+@Composable
+private fun PrayerChip(d: Deed, on: Boolean, locked: Boolean, modifier: Modifier, onToggle: (Boolean) -> Unit) {
+    val c = LocalColors.current
+    val bg by animateColorAsState(if (on) c.primary else c.card, tween(200), label = "chip")
+    val fg = if (on) c.onPrimary else if (locked) c.muted.copy(alpha = 0.6f) else c.text
+    Column(
+        modifier.height(92.dp).clip(RoundedCornerShape(22.dp)).background(bg)
+            .border(1.dp, if (on) c.primary else c.border, RoundedCornerShape(22.dp))
+            .then(if (locked) Modifier else Modifier.springClick(role = Role.Checkbox, label = d.title, haptic = Haptic.Toggle, pressedScale = 0.95f) { onToggle(!on) }),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+        Text(d.title, color = fg, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Icon(if (on) Ic.check else if (locked) Ic.lock else d.icon, null, tint = fg, modifier = Modifier.padding(top = 8.dp).size(22.dp))
+    }
+}
+
+@Composable
+private fun DeedRow(d: Deed, on: Boolean, locked: Boolean, opensAt: Int?, onToggle: (Boolean) -> Unit) {
+    val c = LocalColors.current
+    val bg by animateColorAsState(if (on) c.primarySoft else c.card, tween(200), label = "deed")
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(bg)
+            .border(1.dp, if (on) c.primary.copy(alpha = 0.5f) else c.border, RoundedCornerShape(22.dp))
+            .then(if (locked) Modifier else Modifier.springClick(role = Role.Checkbox, label = d.title, haptic = Haptic.Toggle, pressedScale = 0.98f) { onToggle(!on) })
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(d.icon, null, tint = if (locked) c.muted.copy(alpha = 0.5f) else c.goldText, modifier = Modifier.size(26.dp))
+        Column(Modifier.weight(1f)) {
+            Text(d.title, color = if (locked) c.muted else c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            val sub = if (locked && opensAt != null) t("يبدأ {0}", clock(opensAt)) else d.sub
+            if (sub.isNotBlank()) Text(sub, color = c.muted, fontSize = 13.sp, lineHeight = 18.sp)
+        }
+        Box(
+            Modifier.size(28.dp).clip(CircleShape).background(if (on) c.primary else Color.Transparent)
+                .border(1.5.dp, if (on) c.primary else if (locked) Color.Transparent else c.muted, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (on) Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(16.dp))
+            else if (locked) Icon(Ic.lock, null, tint = c.muted, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/** «أخرى»: add the user's own deeds, or remove them. */
+@Composable
+private fun CustomDeedsDialog(list: List<String>, onSave: (List<String>) -> Unit, onDismiss: () -> Unit) {
+    val c = LocalColors.current
+    var items by remember { mutableStateOf(list) }
+    var text by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.card,
+        title = { Text(t("عبادات أخرى"), color = c.text, fontFamily = AppFonts.naskhBold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.OutlinedTextField(
+                        text, { text = it.take(40) }, singleLine = true, modifier = Modifier.weight(1f),
+                        placeholder = { Text(t("مثلًا: صدقة، صلة رحم"), color = c.muted) },
+                        colors = fieldColors(),
+                    )
+                    Box(
+                        Modifier.size(44.dp).clip(CircleShape).background(c.gold).springClick(label = t("إضافة")) {
+                            val v = text.trim()
+                            if (v.isNotEmpty() && v !in items) { items = items + v; onSave(items) }
+                            text = ""
+                        },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Ic.plus, t("إضافة"), tint = Color(0xFF1B1B1B), modifier = Modifier.size(18.dp)) }
+                }
+                items.forEach { name ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(name, color = c.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                        Box(
+                            Modifier.size(36.dp).clip(CircleShape).springClick(label = t("حذف")) { items = items - name; onSave(items) },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Ic.trash, t("حذف"), tint = c.heart, modifier = Modifier.size(18.dp)) }
+                    }
+                }
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(t("تم"), color = c.primary, fontWeight = FontWeight.Bold) } },
+    )
 }
 
 @Composable
@@ -442,7 +725,8 @@ fun TrackerEntry(prefs: AppPrefs, onClick: () -> Unit, modifier: Modifier = Modi
                 val left = ChronoUnit.DAYS.between(today, at.first).toInt()
                 if (at.second) t("{0} الآن", o.title) else if (left in 3..10) t("{0} بعد {1} أيام", o.title, num(left)) else t("{0} بعد {1} يومًا", o.title, num(left))
             }.orEmpty()
-            Text(t("{0} من {1} عبادات اليوم · {2}", num(Deeds.count { it.id in prefs.track[today.toString()].orEmpty() }), num(Deeds.size), sub), color = c.muted, fontSize = 12.sp, maxLines = 1)
+            val all = deedsOf(today, prefs.customDeeds)
+            Text(t("{0} من {1} عبادات اليوم · {2}", num(all.count { it.id in prefs.track[today.toString()].orEmpty() }), num(all.size), sub), color = c.muted, fontSize = 12.sp, maxLines = 1)
         }
         Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
     }

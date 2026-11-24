@@ -125,6 +125,7 @@ object Ic {
     )
     val palette = make("palette", "M12 3a9 9 0 0 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1 .1-2.2 1.3-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10zM7.5 11.5h.01M10 7.5h.01M14.5 7.5h.01M17 11h.01")
     val check = make("check", "M5 12.5l4.5 4.5L19 7.5")
+    val lock = make("lock", "M8 11V8a4 4 0 0 1 8 0v3M6.5 11h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM12 14.5v2")
     val play = make("play", "M8 5.5v13l10.5-6.5z", fill = true)
     val stop = make("stop", "M7 7h10v10H7z", fill = true)
     val download = make("download", "M12 4v11M7 10.5l5 5 5-5M5 20h14")
