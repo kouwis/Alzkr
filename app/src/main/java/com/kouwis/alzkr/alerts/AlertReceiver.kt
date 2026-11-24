@@ -77,8 +77,8 @@ class AlertReceiver : BroadcastReceiver() {
             val n = NotificationCompat.Builder(context, channel)
                 .setSmallIcon(R.drawable.ic_stat)
                 .setContentTitle(e.title)
-                .setContentText(e.text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(e.text))
+                .setContentText(e.text.takeIf { it.isNotBlank() })
+                .apply { if (e.text.isNotBlank()) setStyle(NotificationCompat.BigTextStyle().bigText(e.text)) }
                 .setCategory(if (e.kind == "reminder") NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_EVENT)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)

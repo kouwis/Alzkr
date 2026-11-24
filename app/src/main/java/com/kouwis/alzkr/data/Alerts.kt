@@ -171,7 +171,7 @@ object AlertEvents {
                     out += AlertEvent(
                         at(adhan), "adhan", "adhan:${p.name}", sound,
                         if (p == Prayer.Sunrise) t("الشروق") else t("حان الآن موعد أذان {0}", p.ar),
-                        if (p == Prayer.Sunrise) t("انتهى وقت صلاة الفجر") else t("الصلاة خير من الدنيا وما فيها"),
+                        if (p == Prayer.Sunrise) t("انتهى وقت صلاة الفجر") else "",
                         prayer = p.name,
                     )
                 }

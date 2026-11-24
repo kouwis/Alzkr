@@ -519,18 +519,29 @@ fun SoundPicker(kind: SoundKind, fajr: Boolean, catalog: List<SoundEntry>, selec
     val c = LocalColors.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val groups: List<Pair<String, List<String>>> = remember(kind, fajr, catalog) {
-        val fajrFull = catalog.filter { it.fajr }.map { "full:${it.id}" }
-        val full = catalog.filter { !it.fajr }.map { "full:${it.id}" }
-        val shorts = catalog.filter { it.short != null && !it.fajr }.map { "short:${it.id}" } +
-            catalog.filter { it.short != null && it.fajr && catalog.none { o -> !o.fajr && o.name == it.name } }.map { "short:${it.id}" }
+    var byPlace by remember { mutableStateOf(false) }
+    val groups: List<Pair<String, List<String>>> = remember(kind, fajr, catalog, byPlace) {
+        // alphabetical by the muezzin's name (in the interface language)
+        val collator = java.text.Collator.getInstance(java.util.Locale(com.kouwis.alzkr.data.I18n.lang.code))
+        val sorted = catalog.sortedWith { a, b -> collator.compare(t(a.name), t(b.name)) }
+        val fajrFull = sorted.filter { it.fajr }.map { "full:${it.id}" }
+        val full = sorted.filter { !it.fajr }.map { "full:${it.id}" }
+        val shorts = (sorted.filter { it.short != null && !it.fajr } +
+            sorted.filter { it.short != null && it.fajr && catalog.none { o -> !o.fajr && o.name == it.name } })
+            .sortedWith { a, b -> collator.compare(t(a.name), t(b.name)) }.map { "short:${it.id}" }
         val phone = when (kind) { SoundKind.Alarm -> listOf("alarm", "sys"); else -> listOf("sys", "vib") }
         when (kind) {
             SoundKind.Adhan -> if (fajr) listOf(t("أذان الفجر") to fajrFull, t("التكبيرات فقط") to shorts, t("أذان كامل") to full, t("أصوات الهاتف") to phone)
             else listOf(t("أذان كامل") to full, t("التكبيرات فقط") to shorts, t("أصوات الهاتف") to phone)
             SoundKind.Alert -> listOf(t("أصوات الهاتف") to phone, t("التكبيرات فقط") to shorts)
             SoundKind.Alarm -> listOf(t("أصوات الهاتف") to phone, t("التكبيرات فقط") to shorts, t("أذان كامل") to full + fajrFull)
-        }.filter { it.second.isNotEmpty() }
+        }.filter { it.second.isNotEmpty() }.flatMap { (title, list) ->
+            // by place: each group split by where the muezzin is from
+            if (!byPlace || list.none { it.startsWith("full:") || it.startsWith("short:") }) listOf(title to list)
+            else list.groupBy { Sounds.entry(catalog, it)?.place.orEmpty() }.toList()
+                .sortedWith { a, b -> collator.compare(t(a.first), t(b.first)) }
+                .map { (place, l) -> (if (place.isBlank()) title else "$title · ${t(place)}") to l }
+        }
     }
     var playing by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf<String?>(null) }
@@ -559,6 +570,10 @@ fun SoundPicker(kind: SoundKind, fajr: Boolean, catalog: List<SoundEntry>, selec
             Text(
                 if (kind == SoundKind.Adhan) t("اختر صوت الأذان") else t("اختر الصوت"), color = c.text, fontSize = 20.sp,
                 fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            )
+            if (kind != SoundKind.Alert) Segmented(
+                listOf(t("أبجدي"), t("حسب المكان")), if (byPlace) 1 else 0, { byPlace = it == 1 },
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
             )
             LazyColumn(Modifier.weight(1f, fill = false), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 groups.forEach { (title, list) ->

@@ -92,7 +92,7 @@ class SoundService : Service() {
         val n = NotificationCompat.Builder(this, Channels.ADHAN)
             .setSmallIcon(R.drawable.ic_stat)
             .setContentTitle(e.title)
-            .setContentText(e.text)
+            .setContentText(e.text.takeIf { it.isNotBlank() })
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
@@ -102,6 +102,7 @@ class SoundService : Service() {
             .build()
         foreground(ID_PLAY, n)
         if (!startPlayer(e.sound, loop = false, prayer = e.prayer)) finish(keepNote = true)
+        else listenForKeys()
     }
 
     private fun ring(e: AlertEvent) {
@@ -115,7 +116,7 @@ class SoundService : Service() {
         val n = NotificationCompat.Builder(this, Channels.ALARM)
             .setSmallIcon(R.drawable.ic_stat)
             .setContentTitle(e.title)
-            .setContentText(e.text)
+            .setContentText(e.text.takeIf { it.isNotBlank() })
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
@@ -185,7 +186,59 @@ class SoundService : Service() {
         AlertScheduler.setAt(this, am, at, AlertScheduler.pending(this, AlertScheduler.RC_SNOOZE, listOf(e.copy(at = at))), clock = true)
     }
 
+    /*
+     * While the adhan plays, a press of the power button or a volume button stops it (as with the
+     * phone's alarm clock). The volume buttons reach the app through a media session whose volume the
+     * app handles itself; the power button through the screen turning off or on.
+     */
+    private var session: android.media.session.MediaSession? = null
+    private var screen: android.content.BroadcastReceiver? = null
+    private var startedAt = 0L
+
+    private fun listenForKeys() {
+        startedAt = System.currentTimeMillis()
+        runCatching {
+            session = android.media.session.MediaSession(this, "adhan").apply {
+                setPlaybackToRemote(object : android.media.VolumeProvider(VOLUME_CONTROL_RELATIVE, 100, 50) {
+                    override fun onAdjustVolume(direction: Int) { if (direction != 0) handler.post { stopByKey() } }
+                })
+                setCallback(object : android.media.session.MediaSession.Callback() {
+                    override fun onStop() { handler.post { stopByKey() } }
+                    override fun onPause() { handler.post { stopByKey() } }
+                    override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean { handler.post { stopByKey() }; return true }
+                })
+                setPlaybackState(
+                    android.media.session.PlaybackState.Builder()
+                        .setActions(android.media.session.PlaybackState.ACTION_STOP or android.media.session.PlaybackState.ACTION_PAUSE or android.media.session.PlaybackState.ACTION_PLAY_PAUSE)
+                        .setState(android.media.session.PlaybackState.STATE_PLAYING, 0, 1f).build(),
+                )
+                isActive = true
+            }
+        }
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context, i: Intent) {
+                // a moment's grace: the adhan's own notification may light the screen as it starts
+                if (System.currentTimeMillis() - startedAt > 2500) stopByKey()
+            }
+        }
+        val f = android.content.IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_SCREEN_ON) }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 33) registerReceiver(r, f, Context.RECEIVER_NOT_EXPORTED) else registerReceiver(r, f)
+            screen = r
+        }
+    }
+
+    private fun stopByKey() { if (mode == ACTION_PLAY) finish(keepNote = true) }
+
+    private fun stopListening() {
+        session?.runCatching { isActive = false; release() }
+        session = null
+        screen?.let { runCatching { unregisterReceiver(it) } }
+        screen = null
+    }
+
     private fun release() {
+        stopListening()
         handler.removeCallbacksAndMessages(null)
         player?.runCatching { stop(); release() }
         player = null
