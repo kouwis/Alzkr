@@ -207,7 +207,17 @@ object ArabicText {
      * each is set apart as left-to-right, so the phone never mirrors its shape. Text keeps the usual
      * order (﴿ first, on the right in Arabic).
      */
-    fun brackets(s: String): String = s.replace("\uFD3F", "\u2066\uFD3F\u2069").replace("\uFD3E", "\u2066\uFD3E\u2069")
+    fun brackets(s: String): String {
+        // in a left-to-right interface the phone draws the pair the other way round, so swap them there
+        val (open, close) = if (I18n.lang.rtl) '\uFD3F' to '\uFD3E' else '\uFD3E' to '\uFD3F'
+        return s.map {
+            when (it) {
+                '\uFD3F' -> "\u2066$open\u2069"
+                '\uFD3E' -> "\u2066$close\u2069"
+                else -> it.toString()
+            }
+        }.joinToString("")
+    }
 
     fun digitsOf(s: String): String = if (!I18n.lang.rtl) s.map { if (it in '٠'..'٩') '0' + (it - '٠') else it }.joinToString("")
         else s.map { if (it in '0'..'9') digits[it - '0'] else it }.joinToString("")
