@@ -490,7 +490,7 @@ object WidgetRenderer {
     }
 
     /** Short adhkar, one each hour. */
-    private val ShortAdhkar = listOf(
+    val shortAdhkar = listOf(
         "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ", "لَا إِلَهَ إِلَّا اللَّهُ", "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
         "الْحَمْدُ لِلَّهِ", "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ", "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
         "سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ", "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ",
@@ -500,7 +500,7 @@ object WidgetRenderer {
     private fun lockDhikr(i: Ink, d: WidgetSnapshot) = with(i) {
         val pad = px(12f)
         val inner = w - pad * 2
-        val txt = ShortAdhkar[(java.time.LocalDate.now().dayOfYear * 24 + java.time.LocalTime.now().hour) % ShortAdhkar.size]
+        val txt = shortAdhkar[(java.time.LocalDate.now().dayOfYear * 24 + java.time.LocalTime.now().hour) % shortAdhkar.size]
         val p = TextPaint().apply { typeface = AppFonts.naskhBoldTf; textSize = px(18f) }
         val th = StaticLayout.Builder.obtain(txt, 0, txt.length, p, inner.toInt().coerceAtLeast(1)).setMaxLines(2).build().height.toFloat()
         text(txt, pad, ((h - th) / 2f).coerceAtLeast(0f), inner, 18f, ink, align = Align.Center, lines = 2, fit = false)

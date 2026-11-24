@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- A Samsung lock-screen (and always-on display) widget: small, drawn as a capsule by the phone. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="110dp"
-    android:minHeight="40dp"
-    android:minResizeWidth="80dp"
-    android:minResizeHeight="40dp"
-    android:targetCellWidth="2"
-    android:targetCellHeight="1"
-    android:resizeMode="horizontal|vertical"
-    android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/glance_default_loading_layout"
-    android:configure="com.kouwis.alzkr.widget.WidgetConfigActivity"
-    android:widgetFeatures="reconfigurable|configuration_optional"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:minWidth="56dp"
+    android:minHeight="56dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/lock_lines"
+    android:previewLayout="@layout/lock_lines"
+    android:resizeMode="none"
     android:description="@string/widget_lock_next_desc"
-    android:widgetCategory="home_screen|keyguard" />
+    android:widgetCategory="keyguard"
+    app:targetHost="lockAndAod"
+    app:widgetStyle="colorful|monotone"
+    app:lockWidgetSize="small"
+    app:monotoneWidgetSize="small" />

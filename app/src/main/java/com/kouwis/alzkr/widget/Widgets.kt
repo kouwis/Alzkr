@@ -207,13 +207,6 @@ class TasbihResetAction : ActionCallback {
 /* ---------- the receivers the phone talks to ---------- */
 
 class PrayersWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = PrayersWidget() }
-class LockDayWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockDayWidget() }
-class LockHijriWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockHijriWidget() }
-class LockDatesWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockDatesWidget() }
-class LockNextWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockNextWidget() }
-class LockBarWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockBarWidget() }
-class LockTimesWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockTimesWidget() }
-class LockDhikrWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockDhikrWidget() }
 class NextWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = NextWidget() }
 class RowWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = RowWidget() }
 class DateTimesWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = DateTimesWidget() }
@@ -291,6 +284,7 @@ object WidgetUpdater {
     suspend fun updateAll(context: Context) {
         val app = context.applicationContext
         runCatching { LockNotice.update(app) }
+        runCatching { LockWidgets.updateAll(app) }
         if (!placed(app)) { scheduleNext(app); return }
         WidgetBus.bump()
         WidgetKind.entries.forEach { k -> runCatching { k.widget().updateAll(app) } }

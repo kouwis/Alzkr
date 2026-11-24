@@ -25,7 +25,6 @@ import androidx.core.content.ContextCompat
 import com.kouwis.alzkr.data.t
 import com.kouwis.alzkr.widget.LockNotice
 import com.kouwis.alzkr.widget.WidgetKind
-import com.kouwis.alzkr.widget.WidgetStyles
 
 /** «شاشة القفل»: the prayer as a quiet notification, and the small widgets made for the lock screen. */
 @Composable
@@ -54,18 +53,16 @@ fun LockScreenScreen(nav: Nav) = AdhkarTheme {
         }
         item { Header(t("ودجات شاشة القفل")) }
         items(WidgetKind.entries.filter { it.lock }, key = { it.id }) { k ->
-            Column(
-                Modifier.fillMaxWidth().springClick(label = k.title, pressedScale = 0.98f) { nav.go(Screen.WidgetDesign(k.id)) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                WidgetPreview(k, remember(k) { WidgetStyles.forKind(context, k) }, Modifier.fillMaxWidth(0.72f))
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                // as the phone shows it: a dark capsule (the phone draws it, and may tint the text)
+                WidgetPreview(k, remember { com.kouwis.alzkr.widget.WidgetStyle(bg = "midnight", radius = 36) }, Modifier.fillMaxWidth(0.62f))
                 Text(k.title, color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
                 Text(k.desc, color = c.muted, fontSize = 12.sp)
             }
         }
         item {
             Text(
-                t("على هواتف سامسونج: اضغط مطوّلًا على شاشة القفل ثم «الودجات» واختر ودجت الذِّكر (في One UI 7 قد تحتاج تطبيق Good Lock ثم LockStar). وعلى أندرويد 16 وما بعده تظهر في ودجات شاشة القفل مباشرة. ويمكن وضعها على الشاشة الرئيسية أيضًا."),
+                t("على هواتف سامسونج: اضغط مطوّلًا على شاشة القفل، ثم «تحرير» أو «الودجات»، واختر ودجات الذِّكر. الهاتف يرسم الكبسولة ويلوّن النص بلون شاشة القفل."),
                 color = c.muted, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 6.dp),
             )
         }

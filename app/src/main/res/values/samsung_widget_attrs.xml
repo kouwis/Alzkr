@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Samsung One UI reads these from a widget's provider file to offer it on the lock screen and the
+  always-on display (they are not part of Android's own widget API, so they are declared here).
+-->
+<resources>
+    <attr name="targetHost">
+        <flag name="home" value="0x1" />
+        <flag name="lockAndAod" value="0x2" />
+    </attr>
+    <attr name="widgetStyle">
+        <flag name="colorful" value="0x1" />
+        <flag name="monotone" value="0x2" />
+    </attr>
+    <attr name="lockWidgetSize">
+        <flag name="tiny" value="0x1" />
+        <flag name="small" value="0x2" />
+    </attr>
+    <attr name="monotoneWidgetSize">
+        <flag name="tiny" value="0x1" />
+        <flag name="small" value="0x2" />
+    </attr>
+    <attr name="initialLayoutTiny" format="reference" />
+    <attr name="previewLayoutTiny" format="reference" />
+    <attr name="monotoneInitialLayoutTiny" format="reference" />
+    <attr name="monotonePreviewLayoutTiny" format="reference" />
+    <declare-styleable name="AppWidgetProviderInfo">
+        <attr name="targetHost" />
+        <attr name="widgetStyle" />
+        <attr name="lockWidgetSize" />
+        <attr name="monotoneWidgetSize" />
+        <attr name="initialLayoutTiny" />
+        <attr name="previewLayoutTiny" />
+        <attr name="monotoneInitialLayoutTiny" />
+        <attr name="monotonePreviewLayoutTiny" />
+    </declare-styleable>
+</resources>
