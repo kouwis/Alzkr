@@ -121,7 +121,7 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
             LaunchedEffect(open) {
                 if (open != null) {
                     // from a widget: its page in «الودجت»
-                    if (open.startsWith("widget:")) nav.go(Screen.WidgetDesign(open.removePrefix("widget:"))) else nav.go(Screen.Adhkar(open))
+                    if (open.startsWith("widget:")) { nav.go(Screen.Widgets); nav.go(Screen.WidgetDesign(open.removePrefix("widget:"))) } else nav.go(Screen.Adhkar(open))
                     onOpened()
                 }
             }
