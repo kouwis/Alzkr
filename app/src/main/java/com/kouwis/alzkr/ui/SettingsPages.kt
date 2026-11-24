@@ -51,7 +51,7 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SettingsPage(title: String, nav: Nav, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+internal fun SettingsPage(title: String, nav: Nav, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     val c = LocalColors.current
     Column(
         Modifier.fillMaxSize().background(c.bg)

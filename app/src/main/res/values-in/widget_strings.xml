@@ -30,4 +30,18 @@
     <string name="widget_occasions_desc">Sisa hari menuju Ramadan dan hari raya</string>
     <string name="widget_custom_label">Widget kustom</string>
     <string name="widget_custom_desc">Pilih apa yang ditampilkan</string>
+    <string name="widget_lock_day_label">Nama hari</string>
+    <string name="widget_lock_day_desc">Nama hari dengan huruf besar</string>
+    <string name="widget_lock_hijri_label">Tanggal Hijriah</string>
+    <string name="widget_lock_hijri_desc">Hari, bulan dan tahun Hijriah</string>
+    <string name="widget_lock_dates_label">Tanggal Hijriah dan Masehi</string>
+    <string name="widget_lock_dates_desc">Nama hari, tanggal Hijriah dan Masehi</string>
+    <string name="widget_lock_next_label">Salat berikutnya (kecil)</string>
+    <string name="widget_lock_next_desc">Salat berikutnya, waktunya dan sisa waktu</string>
+    <string name="widget_lock_bar_label">Progres salat (kecil)</string>
+    <string name="widget_lock_bar_desc">Salat berikutnya dan seberapa dekat</string>
+    <string name="widget_lock_times_label">Jadwal salat (kecil)</string>
+    <string name="widget_lock_times_desc">Lima salat dan waktunya</string>
+    <string name="widget_lock_dhikr_label">Zikir singkat</string>
+    <string name="widget_lock_dhikr_desc">Zikir singkat yang berganti tiap jam</string>
 </resources>

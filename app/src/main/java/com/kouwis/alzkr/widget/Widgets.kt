@@ -116,6 +116,13 @@ class ClockWidget : AlzkrWidget(WidgetKind.Clock)
 class AyahWidget : AlzkrWidget(WidgetKind.Ayah)
 class OccasionsWidget : AlzkrWidget(WidgetKind.Occasions)
 class CustomWidget : AlzkrWidget(WidgetKind.Custom)
+class LockDayWidget : AlzkrWidget(WidgetKind.LockDay)
+class LockHijriWidget : AlzkrWidget(WidgetKind.LockHijri)
+class LockDatesWidget : AlzkrWidget(WidgetKind.LockDates)
+class LockNextWidget : AlzkrWidget(WidgetKind.LockNext)
+class LockBarWidget : AlzkrWidget(WidgetKind.LockBar)
+class LockTimesWidget : AlzkrWidget(WidgetKind.LockTimes)
+class LockDhikrWidget : AlzkrWidget(WidgetKind.LockDhikr)
 
 /** The five cells: a tap ticks the prayer as prayed (kept with the day in «متابعتي»). */
 class TrackerWidget : AlzkrWidget(WidgetKind.Tracker) {
@@ -200,6 +207,13 @@ class TasbihResetAction : ActionCallback {
 /* ---------- the receivers the phone talks to ---------- */
 
 class PrayersWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = PrayersWidget() }
+class LockDayWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockDayWidget() }
+class LockHijriWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockHijriWidget() }
+class LockDatesWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockDatesWidget() }
+class LockNextWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockNextWidget() }
+class LockBarWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockBarWidget() }
+class LockTimesWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockTimesWidget() }
+class LockDhikrWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = LockDhikrWidget() }
 class NextWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = NextWidget() }
 class RowWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = RowWidget() }
 class DateTimesWidgetReceiver : GlanceAppWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = DateTimesWidget() }
@@ -231,6 +245,13 @@ fun WidgetKind.widget(): AlzkrWidget = when (this) {
     WidgetKind.Tasbih -> TasbihWidget()
     WidgetKind.Occasions -> OccasionsWidget()
     WidgetKind.Custom -> CustomWidget()
+    WidgetKind.LockDay -> LockDayWidget()
+    WidgetKind.LockHijri -> LockHijriWidget()
+    WidgetKind.LockDates -> LockDatesWidget()
+    WidgetKind.LockNext -> LockNextWidget()
+    WidgetKind.LockBar -> LockBarWidget()
+    WidgetKind.LockTimes -> LockTimesWidget()
+    WidgetKind.LockDhikr -> LockDhikrWidget()
 }
 
 fun WidgetKind.receiver(): Class<*> = when (this) {
@@ -249,6 +270,13 @@ fun WidgetKind.receiver(): Class<*> = when (this) {
     WidgetKind.Tasbih -> TasbihWidgetReceiver::class.java
     WidgetKind.Occasions -> OccasionsWidgetReceiver::class.java
     WidgetKind.Custom -> CustomWidgetReceiver::class.java
+    WidgetKind.LockDay -> LockDayWidgetReceiver::class.java
+    WidgetKind.LockHijri -> LockHijriWidgetReceiver::class.java
+    WidgetKind.LockDates -> LockDatesWidgetReceiver::class.java
+    WidgetKind.LockNext -> LockNextWidgetReceiver::class.java
+    WidgetKind.LockBar -> LockBarWidgetReceiver::class.java
+    WidgetKind.LockTimes -> LockTimesWidgetReceiver::class.java
+    WidgetKind.LockDhikr -> LockDhikrWidgetReceiver::class.java
 }
 
 fun kindOfReceiver(className: String?): WidgetKind = WidgetKind.entries.firstOrNull { it.receiver().name == className } ?: WidgetKind.Prayers
@@ -262,7 +290,8 @@ object WidgetUpdater {
 
     suspend fun updateAll(context: Context) {
         val app = context.applicationContext
-        if (!placed(app)) return
+        runCatching { LockNotice.update(app) }
+        if (!placed(app)) { scheduleNext(app); return }
         WidgetBus.bump()
         WidgetKind.entries.forEach { k -> runCatching { k.widget().updateAll(app) } }
         scheduleNext(app)
@@ -271,7 +300,7 @@ object WidgetUpdater {
     suspend fun updateOne(context: Context, kind: WidgetKind, id: GlanceId) = kind.widget().update(context, id)
 
     fun scheduleNext(context: Context) {
-        if (!placed(context)) return
+        if (!placed(context) && !LockNotice.enabled(context)) return
         val am = context.getSystemService(android.app.AlarmManager::class.java)
         val pi = android.app.PendingIntent.getBroadcast(
             context, 41, android.content.Intent(context, WidgetTickReceiver::class.java),
@@ -315,9 +344,9 @@ object WidgetUpdater {
         WidgetKind.entries.forEach { k ->
             val (w, h) = WidgetRenderer.defaultSize(k)
             // sharp: the picture goes as a file, so its size does not matter
-            val rv = previewViews(context, k, WidgetStyle(bg = "midnight"), data, w, h, density, "preview_${k.id}")
+            val rv = previewViews(context, k, if (k.lock) WidgetStyle(bg = "smoke") else WidgetStyle(bg = "midnight"), data, w, h, density, "preview_${k.id}")
             ok = ok && runCatching {
-                m.setWidgetPreview(ComponentName(context, k.receiver()), android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN, rv)
+                m.setWidgetPreview(ComponentName(context, k.receiver()), android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN or android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD, rv)
             }.getOrDefault(false)
         }
         if (ok) sp.edit().putString("previews", key).apply()

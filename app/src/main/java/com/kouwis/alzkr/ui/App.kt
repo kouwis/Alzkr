@@ -52,6 +52,7 @@ sealed interface Screen {
     data object Silent : Screen
     data object DateSettings : Screen
     data object Widgets : Screen
+    data object LockScreen : Screen
     data class WidgetDesign(val kind: String) : Screen
     data object MushafSettings : Screen
     data class PrayerAlert(val prayer: String) : Screen
@@ -178,6 +179,7 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
                     Screen.Silent -> SilentScreen(state, prefs, nav)
                     Screen.DateSettings -> DateSettingsScreen(state, prefs, nav)
                     Screen.Widgets -> WidgetsScreen(nav)
+                    Screen.LockScreen -> LockScreenScreen(nav)
                     is Screen.WidgetDesign -> WidgetDesignScreen(nav, screen.kind)
                     Screen.MushafSettings -> MushafSettingsScreen(state, prefs, nav)
                     is Screen.PrayerAlert -> PrayerAlertScreen(state, prefs, nav, screen.prayer)

@@ -313,7 +313,7 @@ fun WidgetsScreen(nav: Nav) = AdhkarTheme {
                 color = c.muted, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 6.dp),
             )
         }
-        items(WidgetKind.entries.toList(), key = { it.id }) { k ->
+        items(WidgetKind.entries.filter { !it.lock }, key = { it.id }) { k ->
             Column(
                 Modifier.fillMaxWidth().springClick(label = k.title, pressedScale = 0.98f) { nav.go(Screen.WidgetDesign(k.id)) },
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -360,7 +360,7 @@ fun WidgetDesignScreen(nav: Nav, kindId: String) = AdhkarTheme {
                 Text(
                     t("استعادة الشكل الأصلي"), color = c.goldText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(c.goldSoft)
-                        .clickable { style = WidgetStyle() }.padding(horizontal = 18.dp, vertical = 9.dp),
+                        .clickable { style = WidgetStyles.defaultFor(kind) }.padding(horizontal = 18.dp, vertical = 9.dp),
                 )
             }
         }

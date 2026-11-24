@@ -30,4 +30,18 @@
     <string name="widget_occasions_desc">Tage bis Ramadan und zu den Festen</string>
     <string name="widget_custom_label">Eigenes Widget</string>
     <string name="widget_custom_desc">Wählen Sie, was es zeigt</string>
+    <string name="widget_lock_day_label">Wochentag</string>
+    <string name="widget_lock_day_desc">Der Wochentag in großer Schrift</string>
+    <string name="widget_lock_hijri_label">Hidschri-Datum</string>
+    <string name="widget_lock_hijri_desc">Hidschri-Tag, Monat und Jahr</string>
+    <string name="widget_lock_dates_label">Hidschri- und gregorianisches Datum</string>
+    <string name="widget_lock_dates_desc">Wochentag, Hidschri- und gregorianisches Datum</string>
+    <string name="widget_lock_next_label">Nächstes Gebet (klein)</string>
+    <string name="widget_lock_next_desc">Nächstes Gebet, Uhrzeit und Restzeit</string>
+    <string name="widget_lock_bar_label">Gebetsfortschritt (klein)</string>
+    <string name="widget_lock_bar_desc">Nächstes Gebet und wie weit es noch ist</string>
+    <string name="widget_lock_times_label">Gebetszeiten (klein)</string>
+    <string name="widget_lock_times_desc">Die fünf Gebete und ihre Zeiten</string>
+    <string name="widget_lock_dhikr_label">Kurzer Dhikr</string>
+    <string name="widget_lock_dhikr_desc">Ein kurzer Dhikr, der stündlich wechselt</string>
 </resources>

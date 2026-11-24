@@ -36,7 +36,18 @@ enum class WidgetKind(val id: String, val arTitle: String, val arDesc: String, v
     Tasbih("tasbih", "السبحة", "عدّاد تسبيح: اضغط لتعدّ", 2, 2),
     Occasions("occasions", "رمضان والعيد", "كم يومًا بقي على رمضان والعيدين", 2, 2),
     Custom("custom", "الودجت الخاص", "اختر ما يظهر فيه: الصلاة القادمة، المواقيت، التاريخ، ذكر، آية", 4, 2),
+
+    // small ones for the lock screen (they also fit on the home screen): clear, with light text
+    LockDay("lock_day", "اسم اليوم", "اسم اليوم بخط كبير", 2, 1),
+    LockHijri("lock_hijri", "التاريخ الهجري", "اليوم والشهر والسنة الهجرية", 2, 1),
+    LockDates("lock_dates", "التاريخ الهجري والميلادي", "اسم اليوم والتاريخ الهجري والميلادي", 2, 1),
+    LockNext("lock_next", "الصلاة القادمة (مختصرة)", "الصلاة القادمة ووقتها والوقت الباقي", 2, 1),
+    LockBar("lock_bar", "شريط الصلاة (مختصر)", "الصلاة القادمة وكم مضى إليها", 2, 1),
+    LockTimes("lock_times", "المواقيت (مختصرة)", "الصلوات الخمس ومواقيتها", 3, 1),
+    LockDhikr("lock_dhikr", "ذكر قصير", "ذكر قصير يتغير كل ساعة", 2, 1),
     ;
+    /** made for the lock screen */
+    val lock: Boolean get() = id.startsWith("lock_")
     val title: String get() = t(arTitle)
     val desc: String get() = t(arDesc)
     /** shows the day's times, so sunrise and the last third can be added */
@@ -153,7 +164,10 @@ object WidgetStyles {
         return decode(s.getString("id:$appWidgetId", null)) ?: decode(s.getString("kind:${kind.id}", null)) ?: WidgetStyle()
     }
 
-    fun forKind(context: Context, kind: WidgetKind): WidgetStyle = decode(sp(context).getString("kind:${kind.id}", null)) ?: WidgetStyle()
+    fun forKind(context: Context, kind: WidgetKind): WidgetStyle = decode(sp(context).getString("kind:${kind.id}", null)) ?: defaultFor(kind)
+
+    /** A kind's own look: the lock-screen ones are clear with light text. */
+    fun defaultFor(kind: WidgetKind): WidgetStyle = if (kind.lock) WidgetStyle(bg = "clear", text = "light") else WidgetStyle()
 
     fun put(context: Context, appWidgetId: Int, style: WidgetStyle) =
         sp(context).edit().putString("id:$appWidgetId", json.encodeToString(WidgetStyle.serializer(), style)).apply()

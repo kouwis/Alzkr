@@ -30,4 +30,18 @@
     <string name="widget_occasions_desc">Days left to Ramadan and the Eids</string>
     <string name="widget_custom_label">Custom widget</string>
     <string name="widget_custom_desc">Choose what it shows</string>
+    <string name="widget_lock_day_label">Day name</string>
+    <string name="widget_lock_day_desc">The day’s name in large type</string>
+    <string name="widget_lock_hijri_label">Hijri date</string>
+    <string name="widget_lock_hijri_desc">Hijri day, month and year</string>
+    <string name="widget_lock_dates_label">Hijri and Gregorian date</string>
+    <string name="widget_lock_dates_desc">Day name, Hijri and Gregorian date</string>
+    <string name="widget_lock_next_label">Next prayer (small)</string>
+    <string name="widget_lock_next_desc">Next prayer, its time and time left</string>
+    <string name="widget_lock_bar_label">Prayer progress (small)</string>
+    <string name="widget_lock_bar_desc">Next prayer and how far until it</string>
+    <string name="widget_lock_times_label">Prayer times (small)</string>
+    <string name="widget_lock_times_desc">The five prayers and their times</string>
+    <string name="widget_lock_dhikr_label">Short dhikr</string>
+    <string name="widget_lock_dhikr_desc">A short dhikr that changes every hour</string>
 </resources>

@@ -205,7 +205,70 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
-            <!-- the widgets' pictures, read by the home screen -->
+            <receiver
+            android:name=".widget.LockDayWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_day_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_day" />
+        </receiver>
+        <receiver
+            android:name=".widget.LockHijriWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_hijri_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_hijri" />
+        </receiver>
+        <receiver
+            android:name=".widget.LockDatesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_dates_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_dates" />
+        </receiver>
+        <receiver
+            android:name=".widget.LockNextWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_next_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_next" />
+        </receiver>
+        <receiver
+            android:name=".widget.LockBarWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_bar_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_bar" />
+        </receiver>
+        <receiver
+            android:name=".widget.LockTimesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_times_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_times" />
+        </receiver>
+        <receiver
+            android:name=".widget.LockDhikrWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lock_dhikr_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_dhikr" />
+        </receiver>
+        <!-- the widgets' pictures, read by the home screen -->
         <provider
             android:name=".widget.WidgetImageProvider"
             android:authorities="${applicationId}.widgetimg"

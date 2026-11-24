@@ -30,4 +30,18 @@
     <string name="widget_occasions_desc">Ramazana ve bayramlara kalan gün</string>
     <string name="widget_custom_label">Özel widget</string>
     <string name="widget_custom_desc">Ne göstereceğini seçin</string>
+    <string name="widget_lock_day_label">Gün adı</string>
+    <string name="widget_lock_day_desc">Büyük yazıyla günün adı</string>
+    <string name="widget_lock_hijri_label">Hicri tarih</string>
+    <string name="widget_lock_hijri_desc">Hicri gün, ay ve yıl</string>
+    <string name="widget_lock_dates_label">Hicri ve miladi tarih</string>
+    <string name="widget_lock_dates_desc">Gün adı, hicri ve miladi tarih</string>
+    <string name="widget_lock_next_label">Sıradaki namaz (küçük)</string>
+    <string name="widget_lock_next_desc">Sıradaki namaz, vakti ve kalan süre</string>
+    <string name="widget_lock_bar_label">Namaz çubuğu (küçük)</string>
+    <string name="widget_lock_bar_desc">Sıradaki namaz ve ne kadar kaldığı</string>
+    <string name="widget_lock_times_label">Vakitler (küçük)</string>
+    <string name="widget_lock_times_desc">Beş vakit ve saatleri</string>
+    <string name="widget_lock_dhikr_label">Kısa zikir</string>
+    <string name="widget_lock_dhikr_desc">Her saat değişen kısa zikir</string>
 </resources>

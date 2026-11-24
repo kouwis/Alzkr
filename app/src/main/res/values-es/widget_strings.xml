@@ -30,4 +30,18 @@
     <string name="widget_occasions_desc">Días que faltan para Ramadán y los Eid</string>
     <string name="widget_custom_label">Widget personalizado</string>
     <string name="widget_custom_desc">Elige lo que muestra</string>
+    <string name="widget_lock_day_label">Día de la semana</string>
+    <string name="widget_lock_day_desc">El nombre del día en grande</string>
+    <string name="widget_lock_hijri_label">Fecha hégira</string>
+    <string name="widget_lock_hijri_desc">Día, mes y año de la Hégira</string>
+    <string name="widget_lock_dates_label">Fecha hégira y gregoriana</string>
+    <string name="widget_lock_dates_desc">Nombre del día, fecha hégira y gregoriana</string>
+    <string name="widget_lock_next_label">Próxima oración (pequeño)</string>
+    <string name="widget_lock_next_desc">Próxima oración, hora y tiempo restante</string>
+    <string name="widget_lock_bar_label">Progreso (pequeño)</string>
+    <string name="widget_lock_bar_desc">Próxima oración y cuánto falta</string>
+    <string name="widget_lock_times_label">Horarios (pequeño)</string>
+    <string name="widget_lock_times_desc">Las cinco oraciones y sus horas</string>
+    <string name="widget_lock_dhikr_label">Dhikr corto</string>
+    <string name="widget_lock_dhikr_desc">Un dhikr corto que cambia cada hora</string>
 </resources>

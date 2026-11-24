@@ -30,4 +30,18 @@
     <string name="widget_occasions_desc">Jours restants avant le Ramadan et les Aïds</string>
     <string name="widget_custom_label">Widget personnalisé</string>
     <string name="widget_custom_desc">Choisissez ce qu\'il affiche</string>
+    <string name="widget_lock_day_label">Nom du jour</string>
+    <string name="widget_lock_day_desc">Le nom du jour en grand</string>
+    <string name="widget_lock_hijri_label">Date hégirienne</string>
+    <string name="widget_lock_hijri_desc">Jour, mois et année de l’Hégire</string>
+    <string name="widget_lock_dates_label">Dates hégirienne et grégorienne</string>
+    <string name="widget_lock_dates_desc">Nom du jour, dates hégirienne et grégorienne</string>
+    <string name="widget_lock_next_label">Prochaine prière (petit)</string>
+    <string name="widget_lock_next_desc">Prochaine prière, heure et temps restant</string>
+    <string name="widget_lock_bar_label">Progression (petit)</string>
+    <string name="widget_lock_bar_desc">Prochaine prière et temps écoulé</string>
+    <string name="widget_lock_times_label">Horaires (petit)</string>
+    <string name="widget_lock_times_desc">Les cinq prières et leurs horaires</string>
+    <string name="widget_lock_dhikr_label">Dhikr court</string>
+    <string name="widget_lock_dhikr_desc">Un dhikr court qui change chaque heure</string>
 </resources>

@@ -51,6 +51,8 @@ class Ink(val c: Canvas, val w: Float, val h: Float, val dp: Float, val k: Float
             typeface = if (bold) this@Ink.bold else regular
             this.color = color
             textSize = px(sizeSp)
+            // on a clear widget (the lock screen, a wallpaper) a soft shadow keeps the text readable
+            if (this@Ink.s.bg == "clear" && !this@Ink.s.lightBg) setShadowLayer(px(4f), 0f, px(1f), 0x73000000)
         }
         if (lines == 1 && fit) while (p.measureText(s) > width && p.textSize > px(sizeSp) * 0.55f) p.textSize *= 0.94f
         val al = when (align) { Align.Start -> Layout.Alignment.ALIGN_NORMAL; Align.Center -> Layout.Alignment.ALIGN_CENTER; Align.End -> Layout.Alignment.ALIGN_OPPOSITE }
@@ -131,6 +133,13 @@ object WidgetRenderer {
             WidgetKind.Tasbih -> tasbih(ink, d)
             WidgetKind.Occasions -> occasions(ink, d)
             WidgetKind.Custom -> custom(ink, d, s)
+            WidgetKind.LockDay -> lockDay(ink, d)
+            WidgetKind.LockHijri -> lockHijri(ink, d)
+            WidgetKind.LockDates -> lockDates(ink, d)
+            WidgetKind.LockNext -> lockNext(ink, d)
+            WidgetKind.LockBar -> lockBar(ink, d)
+            WidgetKind.LockTimes -> lockTimes(ink, d)
+            WidgetKind.LockDhikr -> lockDhikr(ink, d)
         }
         return bmp
     }
@@ -436,5 +445,64 @@ object WidgetRenderer {
             }
             y += hOf(b) + gap
         }
+    }
+
+    // ---------------- the lock screen's small ones ----------------
+
+    private fun centred(i: Ink, vararg lines: Triple<String, Float, Int>, gap: Float = 2f) = with(i) {
+        val pad = px(10f)
+        val st = Stack(i, pad, w - pad * 2)
+        lines.forEachIndexed { n, (txt, size, color) -> textLine(st, if (n == 0) 0f else gap, txt, size, color, align = Align.Center) }
+        st.drawCentered(pad * 0.5f, h - pad * 0.5f)
+    }
+
+    private fun lockDay(i: Ink, d: WidgetSnapshot) = centred(i, Triple(d.weekday, 34f, i.ink))
+
+    private fun lockHijri(i: Ink, d: WidgetSnapshot) = centred(
+        i, Triple(i.dg("${d.hijriDay} ${d.hijriMonth}"), 22f, i.ink), Triple(i.dg(t("{0} هـ", d.hijriYear.toString())), 15f, i.soft),
+    )
+
+    private fun lockDates(i: Ink, d: WidgetSnapshot) = centred(
+        i, Triple(d.weekday, 14f, i.soft), Triple(i.dg("${d.hijriDay} ${d.hijriMonth} ${d.hijriYear}"), 18f, i.ink), Triple(i.dg(d.gregorian), 14f, i.soft), gap = 0f,
+    )
+
+    private fun lockNext(i: Ink, d: WidgetSnapshot) = centred(
+        i, Triple("${d.headline}  ${i.dg(d.targetTime)}", 21f, i.ink), Triple(i.dg(d.remaining), 15f, i.accent),
+    )
+
+    private fun lockBar(i: Ink, d: WidgetSnapshot) = with(i) {
+        val pad = px(14f)
+        val inner = w - pad * 2
+        val block = lineH(18f) + px(8f) + px(6f) + px(8f) + lineH(16f)
+        var y = (h - block) / 2f
+        text(d.headline, pad, y, inner, 18f, ink, align = Align.Center); y += lineH(18f) + px(8f)
+        round(pad, y, inner, px(6f), px(3f), faint)
+        val fw = inner * d.progress.coerceIn(0.03f, 1f)
+        round(xAt(pad, fw), y, fw, px(6f), px(3f), ink)
+        y += px(6f) + px(8f)
+        text(dg(d.targetTime), pad, y, inner, 16f, ink, align = Align.Center)
+    }
+
+    private fun lockTimes(i: Ink, d: WidgetSnapshot) = with(i) {
+        val pad = px(8f)
+        val block = lineH(11.5f) + lineH(15f)
+        columns(d, pad, w - pad * 2, (h - block) / 2f, 11.5f, 15f)
+    }
+
+    /** Short adhkar, one each hour. */
+    private val ShortAdhkar = listOf(
+        "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ", "لَا إِلَهَ إِلَّا اللَّهُ", "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
+        "الْحَمْدُ لِلَّهِ", "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ", "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+        "سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ", "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ",
+        "رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ", "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ",
+    )
+
+    private fun lockDhikr(i: Ink, d: WidgetSnapshot) = with(i) {
+        val pad = px(12f)
+        val inner = w - pad * 2
+        val txt = ShortAdhkar[(java.time.LocalDate.now().dayOfYear * 24 + java.time.LocalTime.now().hour) % ShortAdhkar.size]
+        val p = TextPaint().apply { typeface = AppFonts.naskhBoldTf; textSize = px(18f) }
+        val th = StaticLayout.Builder.obtain(txt, 0, txt.length, p, inner.toInt().coerceAtLeast(1)).setMaxLines(2).build().height.toFloat()
+        text(txt, pad, ((h - th) / 2f).coerceAtLeast(0f), inner, 18f, ink, align = Align.Center, lines = 2, fit = false)
     }
 }
