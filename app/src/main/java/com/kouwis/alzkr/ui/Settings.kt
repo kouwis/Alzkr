@@ -81,7 +81,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
                 (if (prefs.autoLocate) t("تلقائي") else t("يدوي")) + " · " + prefs.place.ifBlank { t("القاهرة") }) { nav.go(Screen.PrayerSettings) },
             Setting(t("اللغة"), Ic.globe, Color(0xFF1A9BD7), Lang.of(prefs.lang).native) { pickLang = true },
             Setting(t("الأذان والتنبيهات"), Ic.speaker, Color(0xFF1FA67A), t("صوت الأذان، المنبّهات، التذكيرات")) { nav.go(Screen.Alerts) },
-            Setting(t("الصمت أثناء الصلاة"), Ic.muted, Color(0xFF6E7F8D)) { soon(t("الصمت أثناء الصلاة")) },
+            Setting(t("الصمت أثناء الصلاة"), Ic.muted, Color(0xFF6E7F8D), if (prefs.alerts.silent.on) t("مفعّل") else t("غير مفعّل")) { nav.go(Screen.Silent) },
             Setting(t("التاريخ"), Ic.calendar, Color(0xFFFF453A), t("أم القرى · يبدأ اليوم الهجري من المغرب")) { soon(t("التاريخ")) },
             Setting(t("المصحف"), Ic.book, Color(0xFF0F8F72)) { soon(t("المصحف")) },
             Setting(t("الملفات الصوتية"), Ic.alarmClock, Color(0xFFF7A21B)) { soon(t("الملفات الصوتية")) },

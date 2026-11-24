@@ -47,6 +47,7 @@ object AlertScheduler {
         I18n.set(context, Lang.of(prefs.lang))
         Channels.ensure(context)
         val catalog = Sounds.catalog(context)
+        Silence.settle(context, prefs.alerts.silent.on)
         val events = AlertEvents.upcoming(prefs, catalog, System.currentTimeMillis() + 1_000)
         val am = context.getSystemService(AlarmManager::class.java)
         setNext(context, am, events.filter { it.kind != "alarm" }, RC_NOTIFY, clock = false)

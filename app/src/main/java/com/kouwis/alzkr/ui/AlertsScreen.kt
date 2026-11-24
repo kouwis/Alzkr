@@ -725,3 +725,107 @@ private fun OffsetDialog(title: String, initial: Int, range: IntRange, label: (I
         dismissButton = { TextButton(onClick = onDismiss) { Text(t("إلغاء"), color = c.muted) } },
     )
 }
+
+/**
+ * «الصمت أثناء الصلاة»: total silence from the end of the adhan until a few minutes after the iqama,
+ * with the day's windows in a table. Off by default; needs Do Not Disturb access.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun SilentScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
+    val c = LocalColors.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val cfg = prefs.alerts
+    val s = cfg.silent
+    val catalog = remember { Sounds.catalog(context) }
+    fun save(n: com.kouwis.alzkr.data.SilentConfig) = scope.launch { store.setAlerts(cfg.copy(silent = n)) }
+    var allowed by remember { mutableStateOf(com.kouwis.alzkr.alerts.Silence.allowed(context)) }
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) allowed = com.kouwis.alzkr.alerts.Silence.allowed(context) }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
+    fun askAccess() = runCatching { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) }
+    val times = remember(prefs.prayer, prefs.lat, prefs.lng) { PrayerTimes.forDay(LocalDate.now(), prefs.lat ?: 30.0444, prefs.lng ?: 31.2357, prefs.prayer) }
+
+    Column(
+        Modifier.fillMaxSize().background(c.bg)
+            .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+            .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility),
+    ) {
+        PageTop(t("الصمت أثناء الصلاة"), nav)
+        LazyColumn(
+            Modifier.weight(1f),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 30.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (s.on && !allowed) item {
+                Warning(t("إذن «عدم الإزعاج»"), t("اسمح للتطبيق بالتحكم في وضع «عدم الإزعاج» ليكتم الهاتف وقت الصلاة")) { askAccess() }
+            }
+            item {
+                Group {
+                    ToggleRow(t("تفعيل الصمت التام تلقائيًا"), if (s.on) t("مفعّل") else t("غير مفعّل"), s.on) { on ->
+                        save(s.copy(on = on))
+                        if (on && !com.kouwis.alzkr.alerts.Silence.allowed(context)) askAccess()
+                    }
+                    if (s.on) {
+                        Line()
+                        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(t("إعادة الصوت بعد الإقامة بـ"), color = c.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                            Step("−", s.after > 0) { save(s.copy(after = (s.after - 5).coerceAtLeast(0))) }
+                            Text(t("{0} دقائق", num(s.after)), color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.width(88.dp))
+                            Step("+", s.after < 60) { save(s.copy(after = (s.after + 5).coerceAtMost(60))) }
+                        }
+                    }
+                }
+            }
+            item {
+                Text(
+                    t("يُفعَّل الصمت التام بعد انتهاء الأذان حتى المدة المحددة بعد الإقامة، فيُكتم الرنين والإشعارات والوسائط والمنبّهات والاهتزاز، ثم يعود الهاتف إلى وضعه السابق. ولا يشمل صوت المكالمة الجارية."),
+                    color = c.muted, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 6.dp),
+                )
+            }
+            item {
+                Text(
+                    t("تعتمد هذه الميزة على نظام الهاتف ومواقيت الصلاة، وقد لا تعمل كما يُتوقَّع في بعض الحالات، فقد يبقى الهاتف صامتًا بعد الوقت المحدد، أو يصدر صوتًا رغم تفعيلها. استخدمها على مسؤوليتك."),
+                    color = c.heart, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(horizontal = 6.dp),
+                )
+            }
+            item { Header(t("مواقيت الصمت اليوم")) }
+            item {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(22.dp))) {
+                    Row(Modifier.fillMaxWidth().background(c.chip.copy(alpha = 0.4f)).padding(vertical = 14.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(t("الصلاة"), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1.1f))
+                        Text(t("الصمت من"), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                        Text(t("حتى"), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                        Text(t("المدة"), color = c.muted, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                        Box(Modifier.weight(0.9f))
+                    }
+                    AlertEvents.SilentPrayers.forEach { p ->
+                        Line()
+                        val inc = p.name !in s.off
+                        val w = AlertEvents.silenceWindow(p, times, prefs.copy(alerts = cfg.copy(silent = s.copy(off = emptySet()))), catalog)
+                        val dim = if (inc && s.on) c.text else c.muted
+                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(p.ar, color = dim, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.weight(1.1f))
+                            Text(w?.let { clock(it.first) } ?: "—", color = dim, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Text(w?.let { clock(it.second % 1440) } ?: "—", color = dim, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Text(w?.let { t("{0} دقيقة", num(it.second - it.first)) } ?: "—", color = dim, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Box(Modifier.weight(0.9f), contentAlignment = Alignment.Center) {
+                                AppSwitch(inc) { on -> save(s.copy(off = if (on) s.off - p.name else s.off + p.name)) }
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                Text(
+                    t("تُضبط مدة الإقامة لكل صلاة من «مواقيت الصلاة»."),
+                    color = c.muted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}

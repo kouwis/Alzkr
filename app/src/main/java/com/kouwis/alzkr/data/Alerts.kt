@@ -55,6 +55,14 @@ data class PrayerAlarm(
     val prayerEnum: Prayer get() = Prayer.entries.firstOrNull { it.name == prayer } ?: Prayer.Fajr
 }
 
+/**
+ * «الصمت أثناء الصلاة»: the phone goes fully silent (Do Not Disturb, total silence) from the end of
+ * the adhan until [after] minutes past the iqama, then back to how it was. Off by default.
+ * [off]: prayers left out.
+ */
+@Serializable
+data class SilentConfig(val on: Boolean = false, val after: Int = 10, val off: Set<String> = emptySet())
+
 /** A daily reminder: on/off and minutes from its anchor time. */
 @Serializable
 data class ReminderSetting(val on: Boolean, val offset: Int)
@@ -68,6 +76,8 @@ data class AlertsConfig(
     val playOnSilent: Boolean = false,
     /** nothing sounds until the user has opened «الأذان والتنبيهات» once (no surprise adhan after an update) */
     val setUp: Boolean = false,
+    /** «الصمت أثناء الصلاة» */
+    val silent: SilentConfig = SilentConfig(),
 ) {
     fun prayer(p: Prayer): PrayerAlert = prayers[p.name] ?: PrayerAlert(on = p != Prayer.Sunrise, sound = if (p == Prayer.Sunrise) "sys" else "")
     fun reminder(r: Reminder): ReminderSetting = reminders[r.id] ?: ReminderSetting(r.defaultOn, r.defaultOffset)
@@ -135,13 +145,21 @@ object AlertEvents {
         val lat = prefs.lat ?: CAIRO_LAT
         val lng = prefs.lng ?: CAIRO_LNG
         val cfg = prefs.alerts
-        if (!cfg.setUp) return emptyList()
+        val alerts = cfg.setUp
+        val silence = cfg.silent.on
+        if (!alerts && !silence) return emptyList()
         val start = java.time.Instant.ofEpochMilli(fromMs).atZone(zone).toLocalDate().minusDays(1)
         val out = mutableListOf<AlertEvent>()
         for (k in 0..days + 1) {
             val d = start.plusDays(k.toLong())
             val times = PrayerTimes.forDay(d, lat, lng, prefs.prayer)
             fun at(min: Int): Long = d.atStartOfDay(zone).plusMinutes(min.toLong()).toInstant().toEpochMilli()
+            if (silence) for (p in SilentPrayers) {
+                val w = silenceWindow(p, times, prefs, catalog) ?: continue
+                out += AlertEvent(at(w.first), "silent_on", "silent_on:${p.name}", "", t("الصمت أثناء الصلاة"), p.ar, prayer = p.name)
+                out += AlertEvent(at(w.second), "silent_off", "silent_off:${p.name}", "", t("الصمت أثناء الصلاة"), p.ar, prayer = p.name)
+            }
+            if (!alerts) continue
             for (p in AlertPrayers) {
                 val a = cfg.prayer(p)
                 val adhan = times.getValue(p)
@@ -198,6 +216,25 @@ object AlertEvents {
             }
         }
         return out.filter { it.at > fromMs }.sortedBy { it.at }
+    }
+
+    val SilentPrayers = listOf(Prayer.Fajr, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha)
+
+    /**
+     * The minutes of the day the phone is silent around a prayer: from when the adhan ends (the
+     * length of the adhan the app plays, if it plays one) to [SilentConfig.after] minutes past the iqama.
+     */
+    fun silenceWindow(p: Prayer, times: Map<Prayer, Int>, prefs: AppPrefs, catalog: List<SoundEntry>): Pair<Int, Int>? {
+        val cfg = prefs.alerts
+        if (p.name in cfg.silent.off) return null
+        val adhan = times[p] ?: return null
+        val a = cfg.prayer(p)
+        val sound = a.sound.ifBlank { Sounds.defaultFor(p, catalog) }
+        val playing = cfg.setUp && a.on && (sound.startsWith("full:") || sound.startsWith("short:"))
+        val secs = if (!playing) 0 else Sounds.entry(catalog, sound)?.let { if (sound.startsWith("short:")) 40 else it.seconds } ?: 0
+        val start = adhan + (secs + 59) / 60
+        val end = adhan + (prefs.prayer.iqama[p] ?: 0) + cfg.silent.after
+        return if (end > start) start to end else null
     }
 
     /** «قبل أذان الفجر بـ ١٥ دقيقة» and the like. */

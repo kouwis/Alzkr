@@ -34,9 +34,15 @@ class AlertReceiver : BroadcastReceiver() {
                     Channels.ensure(app)
                     val now = System.currentTimeMillis()
                     // a moment missed by more than 10 minutes (phone off) is not sounded late
-                    AlertScheduler.decode(intent.getStringExtra(AlertScheduler.EXTRA_EVENTS))
-                        .filter { now - it.at < 10 * 60_000L }
-                        .forEach { fire(app, it, prefs.alerts.playOnSilent) }
+                    val events = AlertScheduler.decode(intent.getStringExtra(AlertScheduler.EXTRA_EVENTS))
+                    // a silence starts even if late (it ends by itself); other alerts missed by 10+ minutes are not sounded late
+                    events.filter { now - it.at < 10 * 60_000L || it.kind.startsWith("silent") }.forEach { e ->
+                        val until = if (e.kind == "silent_on") com.kouwis.alzkr.data.AlertEvents
+                            .upcoming(prefs, com.kouwis.alzkr.data.Sounds.catalog(app), e.at)
+                            .firstOrNull { it.kind == "silent_off" && it.prayer == e.prayer }?.at else null
+                        if (e.kind == "silent_on" && until != null && now >= until) return@forEach
+                        fire(app, e, prefs.alerts.playOnSilent, until)
+                    }
                 }
                 AlertScheduler.rescheduleNow(app)
             } finally {
@@ -46,7 +52,9 @@ class AlertReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        fun fire(context: Context, e: AlertEvent, playOnSilent: Boolean) {
+        fun fire(context: Context, e: AlertEvent, playOnSilent: Boolean, silenceUntil: Long? = null) {
+            if (e.kind == "silent_on") { Silence.on(context, silenceUntil ?: (e.at + 60 * 60_000L)); return }
+            if (e.kind == "silent_off") { Silence.off(context); return }
             if (e.kind == "alarm") {
                 SoundService.start(context, SoundService.ACTION_ALARM, e)
                 return
