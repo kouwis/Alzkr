@@ -565,10 +565,9 @@ private fun DayCard(
                 Text(t("الثلث الأخير {0}", clock(Math.floorMod(fajrM - (fajrM + 1440 - maghribM) / 3, 1440))), color = soft, fontSize = 12.sp, maxLines = 1)
             }
             Text(longDay(weekday), color = Color.White, fontSize = 50.sp, fontFamily = AppFonts.naskhBold, lineHeight = 74.sp)
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(hijriLine, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Text(gregorian, color = soft, fontSize = 13.sp)
-            }
+            // the Gregorian date under the Hijri one (the sun or moon has the other side to itself)
+            Text(hijriLine, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(gregorian, color = soft, fontSize = 13.sp)
         }
 
         Spacer(Modifier.weight(1f))
