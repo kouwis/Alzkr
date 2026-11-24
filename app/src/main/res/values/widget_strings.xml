@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_prayers_label">مواقيت الصلاة</string>
-    <string name="widget_prayers_desc">الصلاة القادمة والعدّ التنازلي وكل المواقيت</string>
+    <string name="widget_prayers_label">الصلاة القادمة والمواقيت</string>
+    <string name="widget_prayers_desc">الصلاة القادمة، والوقت الباقي، وكل المواقيت</string>
     <string name="widget_next_label">الصلاة القادمة</string>
-    <string name="widget_next_desc">اسم الصلاة القادمة ووقتها والوقت الباقي</string>
+    <string name="widget_next_desc">الصلاة القادمة ووقتها والوقت الباقي</string>
     <string name="widget_row_label">شريط المواقيت</string>
-    <string name="widget_row_desc">مواقيت الصلوات الخمس في سطر واحد</string>
-    <string name="widget_date_label">التاريخ</string>
-    <string name="widget_date_desc">اليوم والتاريخ الهجري والميلادي</string>
-    <string name="widget_dhikr_label">ذكر</string>
-    <string name="widget_dhikr_desc">ذكر من الأذكار، وزر لذكر آخر</string>
+    <string name="widget_row_desc">الصلوات الخمس في سطر واحد</string>
+    <string name="widget_date_times_label">التاريخ والمواقيت</string>
+    <string name="widget_date_times_desc">التاريخ الهجري والمواقيت والإقامة القادمة</string>
+    <string name="widget_table_label">جدول الصلاة</string>
+    <string name="widget_table_desc">الأذان والإقامة لكل صلاة</string>
+    <string name="widget_progress_label">شريط الصلاة</string>
+    <string name="widget_progress_desc">كم مضى وكم بقي حتى الأذان أو الإقامة</string>
+    <string name="widget_banner_label">اللافتة</string>
+    <string name="widget_banner_desc">سطر كبير: الصلاة القادمة والوقت الباقي</string>
+    <string name="widget_date_label">التقويم</string>
+    <string name="widget_date_desc">اليوم الهجري بخط كبير والتاريخ الميلادي</string>
+    <string name="widget_clock_label">الساعة</string>
+    <string name="widget_clock_desc">الساعة والتاريخ والصلاة القادمة</string>
+    <string name="widget_tracker_label">متابعة الصلوات</string>
+    <string name="widget_tracker_desc">علّم على كل صلاة صلّيتها اليوم</string>
     <string name="widget_ayah_label">آية اليوم</string>
     <string name="widget_ayah_desc">آية جديدة كل يوم</string>
+    <string name="widget_dhikr_label">ذكر</string>
+    <string name="widget_dhikr_desc">ذكر من الأذكار، وزر لذكر آخر</string>
     <string name="widget_tasbih_label">السبحة</string>
-    <string name="widget_tasbih_desc">عدّاد تسبيح على الشاشة الرئيسية</string>
+    <string name="widget_tasbih_desc">عدّاد تسبيح: اضغط لتعدّ</string>
+    <string name="widget_occasions_label">رمضان والعيد</string>
+    <string name="widget_occasions_desc">كم يومًا بقي على رمضان والعيدين</string>
     <string name="widget_custom_label">الودجت الخاص</string>
     <string name="widget_custom_desc">اختر ما يظهر فيه</string>
 </resources>

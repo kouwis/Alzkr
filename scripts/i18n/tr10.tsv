@@ -1,0 +1,46 @@
+صورة أخرى	Another picture	Autre image	Başka resim	Anderes Bild	Otra imagen	Gambar lain	Gambar lain
+لون التمييز	Accent color	Couleur d'accent	Vurgu rengi	Akzentfarbe	Color de acento	Warna aksen	Warna aksen
+فاتح	Light	Clair	Açık	Hell	Claro	Terang	Cerah
+تلقائي	Automatic	Automatique	Otomatik	Automatisch	Automático	Otomatis	Automatik
+الآن	Now	Maintenant	Şimdi	Jetzt	Ahora	Sekarang	Sekarang
+بعد {0} د	in {0} min	dans {0} min	{0} dk sonra	in {0} Min.	en {0} min	{0} mnt lagi	{0} min lagi
+بعد {0} س {1} د	in {0} h {1} min	dans {0} h {1} min	{0} sa {1} dk sonra	in {0} Std. {1} Min.	en {0} h {1} min	{0} j {1} mnt lagi	{0} j {1} min lagi
+إقامة {0}	{0} iqama	Iqama du {0}	{0} kameti	{0}-Iqama	Iqama del {0}	Ikamah {0}	Iqamah {0}
+أذان {0} قبل قليل · {1}	{0} adhan just now · {1}	Adhan du {0} à l'instant · {1}	{0} ezanı az önce · {1}	{0}-Adhan gerade eben · {1}	Adhan del {0} hace un momento · {1}	Azan {0} baru saja · {1}	Azan {0} sebentar tadi · {1}
+سب	Sat	Sam	Cmt	Sa	Sáb	Sab	Sab
+أح	Sun	Dim	Paz	So	Dom	Min	Ahd
+إث	Mon	Lun	Pzt	Mo	Lun	Sen	Isn
+ثل	Tue	Mar	Sal	Di	Mar	Sel	Sel
+أر	Wed	Mer	Çar	Mi	Mié	Rab	Rab
+خم	Thu	Jeu	Per	Do	Jue	Kam	Kha
+جم	Fri	Ven	Cum	Fr	Vie	Jum	Jum
+الصلاة القادمة والمواقيت	Next prayer and times	Prochaine prière et horaires	Sonraki namaz ve vakitler	Nächstes Gebet und Zeiten	Próxima oración y horarios	Salat berikutnya dan jadwal	Solat seterusnya dan waktu
+الصلاة القادمة بخط كبير، والوقت الباقي، وكل المواقيت	The next prayer in large type, the time left and all times	La prochaine prière en grand, le temps restant et les horaires	Büyük yazıyla sonraki namaz, kalan süre ve tüm vakitler	Das nächste Gebet groß, die Restzeit und alle Zeiten	La próxima oración en grande, el tiempo restante y los horarios	Salat berikutnya berhuruf besar, sisa waktu, dan semua jadwal	Solat seterusnya bertulisan besar, baki masa dan semua waktu
+الصلاة القادمة ووقتها والوقت الباقي	Next prayer, its time and time left	Prochaine prière, son heure et le temps restant	Sonraki namaz, vakti ve kalan süre	Nächstes Gebet, Uhrzeit und Restzeit	Próxima oración, su hora y el tiempo restante	Salat berikutnya, waktunya, dan sisa waktu	Solat seterusnya, waktunya dan baki masa
+الصلوات الخمس في سطر واحد	The five prayers in one line	Les cinq prières sur une ligne	Beş vakit tek satırda	Die fünf Gebete in einer Zeile	Las cinco oraciones en una línea	Lima salat dalam satu baris	Lima solat dalam satu baris
+التاريخ والمواقيت	Date and times	Date et horaires	Tarih ve vakitler	Datum und Zeiten	Fecha y horarios	Tanggal dan jadwal	Tarikh dan waktu
+اليوم والتاريخ الهجري، والمواقيت، والإقامة القادمة	The day and Hijri date, the times and the next iqama	Le jour et la date hégirienne, les horaires et la prochaine iqama	Gün ve hicri tarih, vakitler ve sonraki kamet	Tag und Hidschri-Datum, Zeiten und nächste Iqama	El día y la fecha hégira, los horarios y la próxima iqama	Hari dan tanggal Hijriah, jadwal, dan ikamah berikutnya	Hari dan tarikh Hijrah, waktu dan iqamah seterusnya
+جدول الصلاة	Prayer table	Tableau des prières	Namaz tablosu	Gebetstabelle	Tabla de oraciones	Tabel salat	Jadual solat
+الأذان والإقامة لكل صلاة	Adhan and iqama for each prayer	Adhan et iqama de chaque prière	Her namazın ezan ve kameti	Adhan und Iqama jedes Gebets	Adhan e iqama de cada oración	Azan dan ikamah tiap salat	Azan dan iqamah setiap solat
+شريط الصلاة	Prayer progress	Progression de la prière	Namaz ilerlemesi	Gebetsfortschritt	Progreso de la oración	Progres salat	Kemajuan solat
+كم مضى وكم بقي حتى الأذان أو الإقامة	How far until the adhan or iqama	Temps écoulé et restant jusqu'à l'adhan ou l'iqama	Ezana veya kamete ne kadar kaldı	Wie lange bis zum Adhan oder zur Iqama	Cuánto falta para el adhan o la iqama	Berapa lama lagi menuju azan atau ikamah	Berapa lama lagi ke azan atau iqamah
+اللافتة	Banner	Bandeau	Afiş	Banner	Banner	Spanduk	Sepanduk
+سطر واحد كبير: الصلاة القادمة والوقت الباقي	One big line: next prayer and time left	Une grande ligne : prochaine prière et temps restant	Tek büyük satır: sonraki namaz ve kalan süre	Eine große Zeile: nächstes Gebet und Restzeit	Una línea grande: próxima oración y tiempo restante	Satu baris besar: salat berikutnya dan sisa waktu	Satu baris besar: solat seterusnya dan baki masa
+اليوم الهجري بخط كبير، واليوم، والتاريخ الميلادي	The Hijri day in large type, the weekday and the Gregorian date	Le jour hégirien en grand, le jour et la date grégorienne	Büyük hicri gün, haftanın günü ve miladi tarih	Der Hidschri-Tag groß, Wochentag und gregorianisches Datum	El día hégira en grande, el día y la fecha gregoriana	Hari Hijriah besar, hari, dan tanggal Masehi	Hari Hijrah besar, hari dan tarikh Masihi
+الساعة	Clock	Horloge	Saat	Uhr	Reloj	Jam	Jam
+الساعة، والتاريخ، والصلاة القادمة	Time, date and the next prayer	Heure, date et prochaine prière	Saat, tarih ve sonraki namaz	Uhrzeit, Datum und nächstes Gebet	Hora, fecha y próxima oración	Jam, tanggal, dan salat berikutnya	Jam, tarikh dan solat seterusnya
+متابعة الصلوات	Prayer tracker	Suivi des prières	Namaz takibi	Gebets-Tracker	Seguimiento de oraciones	Pantauan salat	Pemantauan solat
+علّم على كل صلاة صلّيتها اليوم	Tick each prayer you prayed today	Cochez chaque prière accomplie aujourd'hui	Bugün kıldığınız her namazı işaretleyin	Haken Sie jedes heutige Gebet ab	Marca cada oración rezada hoy	Centang tiap salat yang dikerjakan hari ini	Tandakan setiap solat yang ditunaikan hari ini
+عدّاد تسبيح: اضغط لتعدّ	A tasbih counter: tap to count	Un compteur : touchez pour compter	Tesbih sayacı: saymak için dokunun	Ein Tasbih-Zähler: zum Zählen tippen	Un contador: toca para contar	Penghitung tasbih: sentuh untuk menghitung	Pembilang tasbih: sentuh untuk mengira
+رمضان والعيد	Ramadan and Eid	Ramadan et Aïd	Ramazan ve Bayram	Ramadan und Eid	Ramadán y Eid	Ramadan dan Id	Ramadan dan Aidil
+كم يومًا بقي على رمضان والعيدين	Days left to Ramadan and the two Eids	Jours restants avant le Ramadan et les deux Aïds	Ramazana ve iki bayrama kalan gün	Tage bis Ramadan und zu den beiden Festen	Días que faltan para Ramadán y los dos Eid	Sisa hari menuju Ramadan dan dua hari raya	Baki hari ke Ramadan dan dua hari raya
+زجاج داكن	Dark glass	Verre sombre	Koyu cam	Dunkles Glas	Cristal oscuro	Kaca gelap	Kaca gelap
+ليل	Night	Nuit	Gece	Nacht	Noche	Malam	Malam
+كحلي	Navy	Marine	Lacivert	Marine	Marino	Biru tua	Biru tua
+زمرّدي	Emerald	Émeraude	Zümrüt	Smaragd	Esmeralda	Zamrud	Zamrud
+بحري	Ocean	Océan	Okyanus	Ozean	Océano	Samudra	Lautan
+غروب	Sunset	Crépuscule	Gün batımı	Abendrot	Atardecer	Senja	Senja
+بنفسجي	Violet	Violet	Mor	Violett	Violeta	Ungu	Ungu
+بُنّي	Coffee	Café	Kahve	Kaffee	Café	Kopi	Kopi
+رملي	Sand	Sable	Kum	Sand	Arena	Pasir	Pasir
+لؤلؤي	Pearl	Perle	İnci	Perle	Perla	Mutiara	Mutiara

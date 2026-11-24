@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_prayers_label">Jadwal salat</string>
-    <string name="widget_prayers_desc">Salat berikutnya, hitung mundur, dan semua waktu</string>
+    <string name="widget_prayers_label">Salat berikutnya dan jadwal</string>
+    <string name="widget_prayers_desc">Salat berikutnya, sisa waktu, dan semua jadwal</string>
     <string name="widget_next_label">Salat berikutnya</string>
     <string name="widget_next_desc">Salat berikutnya, waktunya, dan sisa waktu</string>
     <string name="widget_row_label">Baris jadwal</string>
-    <string name="widget_row_desc">Lima waktu salat dalam satu baris</string>
-    <string name="widget_date_label">Tanggal</string>
-    <string name="widget_date_desc">Hari, tanggal Hijriah dan Masehi</string>
-    <string name="widget_dhikr_label">Zikir</string>
-    <string name="widget_dhikr_desc">Satu zikir, dengan tombol untuk zikir lain</string>
+    <string name="widget_row_desc">Lima salat dalam satu baris</string>
+    <string name="widget_date_times_label">Tanggal dan jadwal</string>
+    <string name="widget_date_times_desc">Tanggal Hijriah, jadwal, dan ikamah berikutnya</string>
+    <string name="widget_table_label">Tabel salat</string>
+    <string name="widget_table_desc">Azan dan ikamah tiap salat</string>
+    <string name="widget_progress_label">Progres salat</string>
+    <string name="widget_progress_desc">Berapa lama lagi menuju azan atau ikamah</string>
+    <string name="widget_banner_label">Spanduk</string>
+    <string name="widget_banner_desc">Satu baris besar: salat berikutnya dan sisa waktu</string>
+    <string name="widget_date_label">Kalender</string>
+    <string name="widget_date_desc">Hari Hijriah besar dan tanggal</string>
+    <string name="widget_clock_label">Jam</string>
+    <string name="widget_clock_desc">Jam, tanggal, dan salat berikutnya</string>
+    <string name="widget_tracker_label">Pantauan salat</string>
+    <string name="widget_tracker_desc">Centang tiap salat yang sudah dikerjakan</string>
     <string name="widget_ayah_label">Ayat hari ini</string>
     <string name="widget_ayah_desc">Ayat baru setiap hari</string>
+    <string name="widget_dhikr_label">Zikir</string>
+    <string name="widget_dhikr_desc">Satu zikir, dengan tombol untuk zikir lain</string>
     <string name="widget_tasbih_label">Tasbih</string>
-    <string name="widget_tasbih_desc">Penghitung tasbih di layar utama</string>
+    <string name="widget_tasbih_desc">Penghitung: sentuh untuk menghitung</string>
+    <string name="widget_occasions_label">Ramadan dan Id</string>
+    <string name="widget_occasions_desc">Sisa hari menuju Ramadan dan hari raya</string>
     <string name="widget_custom_label">Widget kustom</string>
     <string name="widget_custom_desc">Pilih apa yang ditampilkan</string>
 </resources>

@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_prayers_label">Gebetszeiten</string>
-    <string name="widget_prayers_desc">Nächstes Gebet, Countdown und alle Zeiten</string>
+    <string name="widget_prayers_label">Nächstes Gebet und Zeiten</string>
+    <string name="widget_prayers_desc">Nächstes Gebet, Restzeit und alle Zeiten</string>
     <string name="widget_next_label">Nächstes Gebet</string>
     <string name="widget_next_desc">Nächstes Gebet, Uhrzeit und Restzeit</string>
     <string name="widget_row_label">Gebetsleiste</string>
-    <string name="widget_row_desc">Die fünf Gebetszeiten in einer Zeile</string>
-    <string name="widget_date_label">Datum</string>
-    <string name="widget_date_desc">Wochentag, Hidschri- und gregorianisches Datum</string>
-    <string name="widget_dhikr_label">Dhikr</string>
-    <string name="widget_dhikr_desc">Ein Dhikr, mit Taste für ein weiteres</string>
+    <string name="widget_row_desc">Die fünf Gebete in einer Zeile</string>
+    <string name="widget_date_times_label">Datum und Zeiten</string>
+    <string name="widget_date_times_desc">Hidschri-Datum, Zeiten und nächste Iqama</string>
+    <string name="widget_table_label">Gebetstabelle</string>
+    <string name="widget_table_desc">Adhan und Iqama jedes Gebets</string>
+    <string name="widget_progress_label">Gebetsfortschritt</string>
+    <string name="widget_progress_desc">Wie lange bis zum Adhan oder zur Iqama</string>
+    <string name="widget_banner_label">Banner</string>
+    <string name="widget_banner_desc">Eine große Zeile: nächstes Gebet und Restzeit</string>
+    <string name="widget_date_label">Kalender</string>
+    <string name="widget_date_desc">Der Hidschri-Tag groß und das Datum</string>
+    <string name="widget_clock_label">Uhr</string>
+    <string name="widget_clock_desc">Uhrzeit, Datum und nächstes Gebet</string>
+    <string name="widget_tracker_label">Gebets-Tracker</string>
+    <string name="widget_tracker_desc">Hake jedes heutige Gebet ab</string>
     <string name="widget_ayah_label">Vers des Tages</string>
     <string name="widget_ayah_desc">Jeden Tag ein neuer Vers</string>
+    <string name="widget_dhikr_label">Dhikr</string>
+    <string name="widget_dhikr_desc">Ein Dhikr, mit Taste für ein weiteres</string>
     <string name="widget_tasbih_label">Tasbih</string>
-    <string name="widget_tasbih_desc">Ein Tasbih-Zähler auf dem Startbildschirm</string>
+    <string name="widget_tasbih_desc">Ein Zähler: zum Zählen tippen</string>
+    <string name="widget_occasions_label">Ramadan und Eid</string>
+    <string name="widget_occasions_desc">Tage bis Ramadan und zu den Festen</string>
     <string name="widget_custom_label">Eigenes Widget</string>
     <string name="widget_custom_desc">Wählen Sie, was es zeigt</string>
 </resources>

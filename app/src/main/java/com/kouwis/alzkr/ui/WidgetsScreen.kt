@@ -3,25 +3,25 @@ package com.kouwis.alzkr.ui
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Build
+import android.widget.FrameLayout
+import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -52,136 +50,72 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.glance.appwidget.compose
 import com.kouwis.alzkr.data.AppFonts
-import com.kouwis.alzkr.data.ArabicText
 import com.kouwis.alzkr.data.t
 import com.kouwis.alzkr.widget.Block
+import com.kouwis.alzkr.widget.WidgetAccents
 import com.kouwis.alzkr.widget.WidgetColors
-import com.kouwis.alzkr.widget.WidgetData
 import com.kouwis.alzkr.widget.WidgetKind
-import com.kouwis.alzkr.widget.WidgetSnapshot
 import com.kouwis.alzkr.widget.WidgetStyle
 import com.kouwis.alzkr.widget.WidgetStyles
+import com.kouwis.alzkr.widget.WidgetThemes
 import com.kouwis.alzkr.widget.receiver
+import com.kouwis.alzkr.widget.widget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** The widgets' shape on the home screen, width : height. */
-private fun WidgetKind.aspect(): Float = when (this) {
-    WidgetKind.Next, WidgetKind.Tasbih -> 1f
-    WidgetKind.Row -> 3.6f
-    WidgetKind.Date -> 3.2f
-    else -> 2.1f
-}
+/** Previews are drawn one at a time (they share the preview style). */
+private val previewLock = Mutex()
 
-/** A home-screen wallpaper behind the preview, so a see-through style shows as it will. */
-private val Wallpaper = Brush.linearGradient(listOf(Color(0xFF9CC7E8), Color(0xFF3E6FB8), Color(0xFF1C3A73)))
-
-/** The widget drawn in the app, the way it will look on the home screen. */
+/**
+ * The widget exactly as the home screen will show it: the app draws the very same widget
+ * (Glance's own output) over a dark home-screen backdrop.
+ */
 @Composable
-fun WidgetPreview(kind: WidgetKind, s: WidgetStyle, d: WidgetSnapshot?, modifier: Modifier = Modifier) {
-    val bmp = remember(s.image) { if (s.bg == "image") WidgetStyles.loadImage(s.image)?.asImageBitmap() else null }
-    Box(modifier.clip(RoundedCornerShape(26.dp)).background(Wallpaper).padding(14.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.fillMaxWidth().aspectRatio(kind.aspect()).clip(RoundedCornerShape(s.radius.dp))) {
-            if (bmp != null) {
-                Image(bmp, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = s.dim)))
-            } else if (s.bg != "clear") Box(Modifier.fillMaxSize().background(s.panel))
-            Box(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
-                if (d == null) Text("…", color = s.ink) else PreviewBody(kind, s, d)
-            }
+fun WidgetPreview(kind: WidgetKind, s: WidgetStyle, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    BoxWithConstraints(
+        modifier.clip(RoundedCornerShape(30.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF2B3A55), Color(0xFF1B2335), Color(0xFF3B2F4A)))),
+        contentAlignment = Alignment.Center,
+    ) {
+        val w = maxWidth - 32.dp
+        val h = w / kind.aspect
+        var views by remember { mutableStateOf<RemoteViews?>(null) }
+        LaunchedEffect(kind, s, w) {
+            views = runCatching {
+                previewLock.withLock {
+                    WidgetStyles.preview = s
+                    try { withContext(Dispatchers.Default) { kind.widget().compose(context.applicationContext, size = DpSize(w, h)) } }
+                    finally { WidgetStyles.preview = null }
+                }
+            }.getOrNull()
+        }
+        Box(Modifier.padding(vertical = 18.dp).size(w, h), contentAlignment = Alignment.Center) {
+            val v = views
+            if (v != null) AndroidView(
+                factory = { FrameLayout(it) },
+                update = { frame ->
+                    frame.removeAllViews()
+                    runCatching { frame.addView(v.apply(frame.context, frame)) }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }
 
-@Composable
-private fun PreviewBody(kind: WidgetKind, s: WidgetStyle, d: WidgetSnapshot) {
-    @Composable fun next(big: Boolean) = Column {
-        Text(d.place, color = s.soft, fontSize = 11.sp, maxLines = 1)
-        Text(t("الصلاة القادمة"), color = s.soft, fontSize = 11.sp, maxLines = 1)
-        Text(d.next.name, color = s.ink, fontSize = if (big) 26.sp else 20.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(d.next.time, color = s.ink, fontSize = if (big) 28.sp else 20.sp, maxLines = 1)
-        Text(t("بعد {0}", "١:٢٤:٠٠"), color = s.soft, fontSize = 11.sp, maxLines = 1)
-    }
-    @Composable fun timesRow() = Row(Modifier.fillMaxWidth()) {
-        d.rows.filter { it.prayer.name != "Sunrise" }.forEach { r ->
-            val on = r.prayer == d.next.prayer
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(r.name, color = if (on) s.accent else s.soft, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, maxLines = 1)
-                Text(r.time, color = if (on) s.accent else s.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-            }
-        }
-    }
-    @Composable fun date(big: Boolean) = Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(d.weekday, color = s.accent, fontSize = if (big) 14.sp else 12.sp, fontWeight = FontWeight.Bold)
-        Text(d.hijri, color = s.ink, fontSize = if (big) 20.sp else 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(d.gregorian, color = s.soft, fontSize = 11.sp, maxLines = 1)
-    }
-    when (kind) {
-        WidgetKind.Prayers -> Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { next(true) }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                d.rows.forEach { r ->
-                    val on = r.prayer == d.next.prayer
-                    Row {
-                        Text(r.name, color = if (on) s.ink else s.soft, fontSize = 12.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f), maxLines = 1)
-                        Text(r.time, color = if (on) s.ink else s.soft, fontSize = 12.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal)
-                    }
-                }
-            }
-        }
-        WidgetKind.Next -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) { next(false) }
-        WidgetKind.Row -> timesRow()
-        WidgetKind.Date -> date(false)
-        WidgetKind.Dhikr -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(d.dhikr, color = s.ink, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 4, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(6.dp))
-            Text(t("ذكر آخر"), color = s.ink, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(s.ink.copy(alpha = 0.14f)).padding(horizontal = 10.dp, vertical = 3.dp))
-        }
-        WidgetKind.Ayah -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("﴿ ${d.ayah} ﴾", color = s.ink, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 4, overflow = TextOverflow.Ellipsis)
-            Text(d.ayahRef, color = s.accent, fontSize = 11.sp)
-        }
-        WidgetKind.Tasbih -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(d.tasbihText, color = s.soft, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Text(ArabicText.num(d.tasbihCount), color = s.ink, fontSize = 34.sp, fontWeight = FontWeight.Bold)
-            Text(t("من {0}", ArabicText.num(WidgetData.TASBIH_TARGET)), color = s.soft, fontSize = 11.sp)
-        }
-        WidgetKind.Custom -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            s.blocks.ifEmpty { listOf("next") }.forEach { b ->
-                when (b) {
-                    "next" -> Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(t("الصلاة القادمة"), color = s.soft, fontSize = 10.sp)
-                            Text(d.next.name + "  " + d.next.time, color = s.ink, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                        }
-                        Text(t("بعد {0}", "١:٢٤:٠٠"), color = s.accent, fontSize = 11.sp)
-                    }
-                    "times" -> timesRow()
-                    "date" -> Row {
-                        Text(d.weekday + " · " + d.hijri, color = s.ink, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1)
-                        Text(d.gregorian, color = s.soft, fontSize = 11.sp, maxLines = 1)
-                    }
-                    "dhikr" -> Text(d.dhikr, color = s.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
-                    "ayah" -> Text("﴿ ${d.ayah} ﴾", color = s.ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
-                }
-            }
-        }
-    }
-}
-
-/** The style controls: background (glass, clear, colour, picture), its strength, the text colour, and for the custom widget its pieces. */
+/** The style controls: background, accent, text, corners, and for the custom widget its pieces. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WidgetDesigner(kind: WidgetKind, style: WidgetStyle, onChange: (WidgetStyle) -> Unit) {
@@ -195,55 +129,73 @@ fun WidgetDesigner(kind: WidgetKind, style: WidgetStyle, onChange: (WidgetStyle)
             else Toast.makeText(context, t("تعذّر فتح الصورة"), Toast.LENGTH_SHORT).show()
         }
     }
+    fun pickImage() = pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Header(t("الخلفية"))
         Group {
-            Segmented(
-                listOf(t("زجاجي"), t("شفاف"), t("لون"), t("صورة")),
-                when (style.bg) { "clear" -> 1; "color" -> 2; "image" -> 3; else -> 0 },
-                { i ->
-                    when (i) {
-                        0 -> onChange(style.copy(bg = "glass"))
-                        1 -> onChange(style.copy(bg = "clear"))
-                        2 -> onChange(style.copy(bg = "color"))
-                        else -> if (style.image != null) onChange(style.copy(bg = "image"))
-                        else pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    }
-                },
-                Modifier.fillMaxWidth().padding(vertical = 10.dp),
-            )
-            Reveal(style.bg == "color") {
-                FlowRow(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    WidgetColors.forEach { col ->
-                        val on = style.color == col
-                        val edge by animateColorAsState(if (on) c.gold else c.border, label = "sw")
-                        Box(
-                            Modifier.size(38.dp).clip(CircleShape).background(Color(col)).border(if (on) 3.dp else 1.dp, edge, CircleShape)
-                                .clickable { onChange(style.copy(color = col)) },
-                        )
-                    }
+            FlowRow(
+                Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                WidgetThemes.forEach { th ->
+                    Swatch(th.name, style.bg == th.id, when (th.id) {
+                        "glass" -> Brush.linearGradient(listOf(Color(0x66FFFFFF), Color(0x22FFFFFF)))
+                        "smoke" -> Brush.linearGradient(listOf(Color(0x88000000), Color(0x55000000)))
+                        "clear" -> Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
+                        else -> Brush.linearGradient(th.colors.map { Color(it) })
+                    }) { onChange(style.copy(bg = th.id)) }
+                }
+                Swatch(t("لون"), style.bg == "color", Brush.linearGradient(listOf(Color(style.color), Color(style.color)))) { onChange(style.copy(bg = "color")) }
+                Swatch(t("صورة"), style.bg == "image", Brush.linearGradient(listOf(Color(0xFF8E9AAF), Color(0xFF4A5568))), icon = true) {
+                    if (style.image != null && style.bg != "image") onChange(style.copy(bg = "image")) else pickImage()
                 }
             }
-            Reveal(style.bg == "image") {
-                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(t("الصورة"), color = c.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    Text(
-                        t("اختر صورة"), color = c.goldText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.goldSoft)
-                            .clickable { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+            Reveal(style.bg == "color") {
+                Column(Modifier.padding(bottom = 10.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        WidgetColors.forEach { col ->
+                            val on = style.color == col
+                            val edge by animateColorAsState(if (on) c.gold else c.border, label = "sw")
+                            Box(
+                                Modifier.size(36.dp).clip(CircleShape).background(Color(col)).border(if (on) 3.dp else 1.dp, edge, CircleShape)
+                                    .clickable { onChange(style.copy(color = col)) },
+                            )
+                        }
+                    }
+                    Text(t("قوة الخلفية"), color = c.text, fontSize = 15.sp, modifier = Modifier.padding(top = 10.dp))
+                    Slider(
+                        value = style.opacity, onValueChange = { onChange(style.copy(opacity = it)) }, valueRange = 0.2f..1f,
+                        colors = SliderDefaults.colors(thumbColor = c.gold, activeTrackColor = c.gold, inactiveTrackColor = c.chip),
                     )
                 }
             }
-            Reveal(style.bg != "clear") {
-                Column(Modifier.padding(vertical = 6.dp)) {
-                    val isImage = style.bg == "image"
-                    Text(if (isImage) t("تعتيم الصورة") else t("قوة الخلفية"), color = c.text, fontSize = 15.sp)
+            Reveal(style.bg == "image") {
+                Column(Modifier.padding(bottom = 10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(t("تعتيم الصورة"), color = c.text, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        Text(
+                            t("صورة أخرى"), color = c.goldText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(c.goldSoft).clickable { pickImage() }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                    }
                     Slider(
-                        value = if (isImage) style.dim else style.opacity,
-                        onValueChange = { v -> onChange(if (isImage) style.copy(dim = v) else style.copy(opacity = v)) },
-                        valueRange = if (isImage) 0f..0.8f else 0.15f..1f,
+                        value = style.dim, onValueChange = { onChange(style.copy(dim = it)) }, valueRange = 0f..0.75f,
                         colors = SliderDefaults.colors(thumbColor = c.gold, activeTrackColor = c.gold, inactiveTrackColor = c.chip),
+                    )
+                }
+            }
+        }
+        Header(t("لون التمييز"))
+        Group {
+            Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                WidgetAccents.forEach { a ->
+                    val on = style.accent == a.id
+                    val edge by animateColorAsState(if (on) c.text else Color.Transparent, label = "acc")
+                    Box(
+                        Modifier.size(40.dp).clip(CircleShape).border(2.dp, edge, CircleShape).padding(5.dp).clip(CircleShape)
+                            .background(Color(a.onDark)).border(1.dp, c.border, CircleShape).clickable { onChange(style.copy(accent = a.id)) },
                     )
                 }
             }
@@ -251,9 +203,9 @@ fun WidgetDesigner(kind: WidgetKind, style: WidgetStyle, onChange: (WidgetStyle)
         Header(t("لون الكتابة"))
         Group {
             Segmented(
-                listOf(t("أبيض"), t("داكن"), t("ذهبي")),
-                when (style.text) { "dark" -> 1; "gold" -> 2; else -> 0 },
-                { i -> onChange(style.copy(text = listOf("light", "dark", "gold")[i])) },
+                listOf(t("تلقائي"), t("فاتح"), t("داكن")),
+                when (style.text) { "light" -> 1; "dark" -> 2; else -> 0 },
+                { i -> onChange(style.copy(text = listOf("auto", "light", "dark")[i])) },
                 Modifier.fillMaxWidth().padding(vertical = 10.dp),
             )
         }
@@ -261,8 +213,8 @@ fun WidgetDesigner(kind: WidgetKind, style: WidgetStyle, onChange: (WidgetStyle)
         Group {
             Segmented(
                 listOf(t("حادّة"), t("مستديرة"), t("مستديرة جدًا")),
-                when (style.radius) { 8 -> 0; 36 -> 2; else -> 1 },
-                { i -> onChange(style.copy(radius = listOf(8, 24, 36)[i])) },
+                when (style.radius) { 10 -> 0; 36 -> 2; else -> 1 },
+                { i -> onChange(style.copy(radius = listOf(10, 28, 36)[i])) },
                 Modifier.fillMaxWidth().padding(vertical = 10.dp),
             )
         }
@@ -282,13 +234,22 @@ fun WidgetDesigner(kind: WidgetKind, style: WidgetStyle, onChange: (WidgetStyle)
 }
 
 @Composable
-fun rememberWidgetSnapshot(): WidgetSnapshot? {
-    val context = LocalContext.current
-    val d by produceState<WidgetSnapshot?>(null) { value = runCatching { WidgetData.load(context.applicationContext) }.getOrNull() }
-    return d
+private fun Swatch(label: String, on: Boolean, fill: Brush, icon: Boolean = false, onClick: () -> Unit) {
+    val c = LocalColors.current
+    val edge by animateColorAsState(if (on) c.gold else c.border, label = "swatch")
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick)) {
+        Box(
+            Modifier.size(width = 58.dp, height = 40.dp).clip(RoundedCornerShape(12.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF2B3A55), Color(0xFF3B2F4A)))).background(fill)
+                .border(if (on) 3.dp else 1.dp, edge, RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center,
+        ) { if (icon) Icon(Ic.plus, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+        Text(label, color = if (on) c.text else c.muted, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+            modifier = Modifier.padding(top = 4.dp))
+    }
 }
 
-/** Puts a widget on the home screen (the phone asks the user where); its look is the one just designed. */
+/** Puts a widget on the home screen (the phone asks where); its look is the one just designed. */
 fun pinWidget(context: android.content.Context, kind: WidgetKind): Boolean {
     val am = context.getSystemService(AppWidgetManager::class.java)
     if (Build.VERSION.SDK_INT < 26 || !am.isRequestPinAppWidgetSupported) return false
@@ -297,7 +258,7 @@ fun pinWidget(context: android.content.Context, kind: WidgetKind): Boolean {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Page(title: String, nav: Nav, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+private fun Page(title: String, nav: Nav, bottom: @Composable () -> Unit = {}, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     val c = LocalColors.current
     Column(
         Modifier.fillMaxSize().background(c.bg)
@@ -309,18 +270,18 @@ private fun Page(title: String, nav: Nav, content: androidx.compose.foundation.l
             Text(title, color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
         }
         LazyColumn(
-            Modifier.weight(1f), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 30.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp), content = content,
+            Modifier.weight(1f), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp), content = content,
         )
+        bottom()
     }
 }
 
-/** «الودجت»: every widget, each with its preview; tap one to style it and put it on the home screen. */
+/** «الودجت»: every widget, drawn as it will look; tap one to style it and put it on the home screen. */
 @Composable
 fun WidgetsScreen(nav: Nav) = AdhkarTheme {
     val c = LocalColors.current
     val context = LocalContext.current
-    val d = rememberWidgetSnapshot()
     Page(t("الودجت"), nav) {
         item {
             Text(
@@ -330,43 +291,28 @@ fun WidgetsScreen(nav: Nav) = AdhkarTheme {
         }
         items(WidgetKind.entries.toList(), key = { it.id }) { k ->
             Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(24.dp))
-                    .springClick(label = k.title, pressedScale = 0.98f) { nav.go(Screen.WidgetDesign(k.id)) }.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                Modifier.fillMaxWidth().springClick(label = k.title, pressedScale = 0.98f) { nav.go(Screen.WidgetDesign(k.id)) },
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                WidgetPreview(k, remember(k) { WidgetStyles.forKind(context, k) }, d, Modifier.fillMaxWidth())
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(k.title, color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                        Text(k.desc, color = c.muted, fontSize = 12.sp)
-                    }
-                    Icon(Ic.forward, null, tint = c.muted, modifier = Modifier.size(18.dp))
-                }
+                WidgetPreview(k, remember(k) { WidgetStyles.forKind(context, k) }, Modifier.fillMaxWidth())
+                Text(k.title, color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+                Text(k.desc, color = c.muted, fontSize = 12.sp)
             }
         }
     }
 }
 
 /** One widget's design page: the live preview on top, the controls under it, and «أضف إلى الشاشة الرئيسية». */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WidgetDesignScreen(nav: Nav, kindId: String) = AdhkarTheme {
     val c = LocalColors.current
     val context = LocalContext.current
     val kind = WidgetKind.of(kindId)
-    val d = rememberWidgetSnapshot()
     var style by remember { mutableStateOf(WidgetStyles.forKind(context, kind)) }
     LaunchedEffect(style) { WidgetStyles.putKind(context, kind, style) }
-    val c2 = c
-    Column(Modifier.fillMaxSize().background(c2.bg)) {
-        Box(Modifier.weight(1f)) {
-            Page(kind.title, nav) {
-                item { WidgetPreview(kind, style, d, Modifier.fillMaxWidth()) }
-                item { WidgetDesigner(kind, style) { style = it } }
-            }
-        }
+    Page(kind.title, nav, bottom = {
         Box(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility).padding(horizontal = 20.dp, vertical = 12.dp)
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
                 .clip(RoundedCornerShape(20.dp)).background(c.gold)
                 .springClick(label = t("أضف إلى الشاشة الرئيسية")) {
                     WidgetStyles.putKind(context, kind, style)
@@ -376,5 +322,9 @@ fun WidgetDesignScreen(nav: Nav, kindId: String) = AdhkarTheme {
                 .padding(vertical = 16.dp),
             contentAlignment = Alignment.Center,
         ) { Text(t("أضف إلى الشاشة الرئيسية"), color = Color(0xFF1B1B1B), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
+    }) {
+        item { WidgetPreview(kind, style, Modifier.fillMaxWidth()) }
+        item { WidgetDesigner(kind, style) { style = it } }
+        item { Box(Modifier.height(8.dp)) }
     }
 }

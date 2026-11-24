@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the ticking clock of the «الساعة» widget -->
+<TextClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clock"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:format12Hour="h:mm"
+    android:format24Hour="H:mm"
+    android:textStyle="bold"
+    android:fontFamily="sans-serif-medium"
+    android:includeFontPadding="false"
+    android:textSize="52sp"
+    android:maxLines="1" />

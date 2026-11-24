@@ -45,7 +45,6 @@ import com.kouwis.alzkr.ui.AlzkrTheme
 import com.kouwis.alzkr.ui.LocalColors
 import com.kouwis.alzkr.ui.WidgetDesigner
 import com.kouwis.alzkr.ui.WidgetPreview
-import com.kouwis.alzkr.ui.rememberWidgetSnapshot
 import com.kouwis.alzkr.ui.springClick
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -70,7 +69,6 @@ class WidgetConfigActivity : ComponentActivity() {
                 val c = LocalColors.current
                 val scope = rememberCoroutineScope()
                 var style by remember { mutableStateOf(WidgetStyles.get(this, id, kind)) }
-                val d = rememberWidgetSnapshot()
                 Column(
                     Modifier.fillMaxSize().background(c.bg)
                         .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
@@ -82,7 +80,7 @@ class WidgetConfigActivity : ComponentActivity() {
                         Modifier.weight(1f), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        item { WidgetPreview(kind, style, d, Modifier.fillMaxWidth()) }
+                        item { WidgetPreview(kind, style, Modifier.fillMaxWidth()) }
                         item { WidgetDesigner(kind, style) { style = it } }
                     }
                     Box(

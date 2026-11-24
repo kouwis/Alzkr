@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_prayers_label">Horaires de prière</string>
-    <string name="widget_prayers_desc">Prochaine prière, compte à rebours et horaires</string>
+    <string name="widget_prayers_label">Prochaine prière et horaires</string>
+    <string name="widget_prayers_desc">Prochaine prière, temps restant et horaires</string>
     <string name="widget_next_label">Prochaine prière</string>
     <string name="widget_next_desc">Prochaine prière, son heure et le temps restant</string>
     <string name="widget_row_label">Barre des prières</string>
-    <string name="widget_row_desc">Les cinq horaires sur une ligne</string>
-    <string name="widget_date_label">Date</string>
-    <string name="widget_date_desc">Jour, date hégirienne et grégorienne</string>
-    <string name="widget_dhikr_label">Dhikr</string>
-    <string name="widget_dhikr_desc">Un dhikr, avec un bouton pour un autre</string>
+    <string name="widget_row_desc">Les cinq prières sur une ligne</string>
+    <string name="widget_date_times_label">Date et horaires</string>
+    <string name="widget_date_times_desc">Date hégirienne, horaires et prochaine iqama</string>
+    <string name="widget_table_label">Tableau des prières</string>
+    <string name="widget_table_desc">Adhan et iqama de chaque prière</string>
+    <string name="widget_progress_label">Progression</string>
+    <string name="widget_progress_desc">Temps écoulé et restant jusqu\'à l\'adhan ou l\'iqama</string>
+    <string name="widget_banner_label">Bandeau</string>
+    <string name="widget_banner_desc">Une grande ligne : prochaine prière et temps restant</string>
+    <string name="widget_date_label">Calendrier</string>
+    <string name="widget_date_desc">Le jour hégirien en grand et la date</string>
+    <string name="widget_clock_label">Horloge</string>
+    <string name="widget_clock_desc">Heure, date et prochaine prière</string>
+    <string name="widget_tracker_label">Suivi des prières</string>
+    <string name="widget_tracker_desc">Cochez chaque prière accomplie aujourd\'hui</string>
     <string name="widget_ayah_label">Verset du jour</string>
     <string name="widget_ayah_desc">Un nouveau verset chaque jour</string>
+    <string name="widget_dhikr_label">Dhikr</string>
+    <string name="widget_dhikr_desc">Un dhikr, avec un bouton pour un autre</string>
     <string name="widget_tasbih_label">Tasbih</string>
-    <string name="widget_tasbih_desc">Un compteur de tasbih sur l\'écran d\'accueil</string>
+    <string name="widget_tasbih_desc">Un compteur : touchez pour compter</string>
+    <string name="widget_occasions_label">Ramadan et Aïd</string>
+    <string name="widget_occasions_desc">Jours restants avant le Ramadan et les Aïds</string>
     <string name="widget_custom_label">Widget personnalisé</string>
     <string name="widget_custom_desc">Choisissez ce qu\'il affiche</string>
 </resources>

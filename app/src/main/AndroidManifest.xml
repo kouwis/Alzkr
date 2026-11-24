@@ -88,6 +88,42 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_row" />
         </receiver>
         <receiver
+            android:name=".widget.DateTimesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_date_times_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date_times" />
+        </receiver>
+        <receiver
+            android:name=".widget.TableWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_table_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_table" />
+        </receiver>
+        <receiver
+            android:name=".widget.ProgressWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_progress_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_progress" />
+        </receiver>
+        <receiver
+            android:name=".widget.BannerWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_banner_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_banner" />
+        </receiver>
+        <receiver
             android:name=".widget.DateWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_date_label">
@@ -97,13 +133,22 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date" />
         </receiver>
         <receiver
-            android:name=".widget.DhikrWidgetReceiver"
+            android:name=".widget.ClockWidgetReceiver"
             android:exported="true"
-            android:label="@string/widget_dhikr_label">
+            android:label="@string/widget_clock_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_dhikr" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_clock" />
+        </receiver>
+        <receiver
+            android:name=".widget.TrackerWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_tracker_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tracker" />
         </receiver>
         <receiver
             android:name=".widget.AyahWidgetReceiver"
@@ -115,6 +160,15 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_ayah" />
         </receiver>
         <receiver
+            android:name=".widget.DhikrWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_dhikr_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_dhikr" />
+        </receiver>
+        <receiver
             android:name=".widget.TasbihWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_tasbih_label">
@@ -122,6 +176,15 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tasbih" />
+        </receiver>
+        <receiver
+            android:name=".widget.OccasionsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_occasions_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_occasions" />
         </receiver>
         <receiver
             android:name=".widget.CustomWidgetReceiver"

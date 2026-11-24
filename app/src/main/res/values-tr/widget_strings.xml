@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_prayers_label">Namaz vakitleri</string>
-    <string name="widget_prayers_desc">Sonraki namaz, geri sayım ve tüm vakitler</string>
+    <string name="widget_prayers_label">Sonraki namaz ve vakitler</string>
+    <string name="widget_prayers_desc">Sonraki namaz, kalan süre ve tüm vakitler</string>
     <string name="widget_next_label">Sonraki namaz</string>
     <string name="widget_next_desc">Sonraki namaz, vakti ve kalan süre</string>
     <string name="widget_row_label">Vakit şeridi</string>
     <string name="widget_row_desc">Beş vakit tek satırda</string>
-    <string name="widget_date_label">Tarih</string>
-    <string name="widget_date_desc">Gün, hicri ve miladi tarih</string>
-    <string name="widget_dhikr_label">Zikir</string>
-    <string name="widget_dhikr_desc">Bir zikir ve başka zikir düğmesi</string>
+    <string name="widget_date_times_label">Tarih ve vakitler</string>
+    <string name="widget_date_times_desc">Hicri tarih, vakitler ve sonraki kamet</string>
+    <string name="widget_table_label">Namaz tablosu</string>
+    <string name="widget_table_desc">Her namazın ezan ve kameti</string>
+    <string name="widget_progress_label">Namaz ilerlemesi</string>
+    <string name="widget_progress_desc">Ezana veya kamete ne kadar kaldı</string>
+    <string name="widget_banner_label">Afiş</string>
+    <string name="widget_banner_desc">Tek büyük satır: sonraki namaz ve kalan süre</string>
+    <string name="widget_date_label">Takvim</string>
+    <string name="widget_date_desc">Büyük hicri gün ve tarih</string>
+    <string name="widget_clock_label">Saat</string>
+    <string name="widget_clock_desc">Saat, tarih ve sonraki namaz</string>
+    <string name="widget_tracker_label">Namaz takibi</string>
+    <string name="widget_tracker_desc">Bugün kıldığınız her namazı işaretleyin</string>
     <string name="widget_ayah_label">Günün ayeti</string>
     <string name="widget_ayah_desc">Her gün yeni bir ayet</string>
+    <string name="widget_dhikr_label">Zikir</string>
+    <string name="widget_dhikr_desc">Bir zikir ve başka zikir düğmesi</string>
     <string name="widget_tasbih_label">Tesbih</string>
-    <string name="widget_tasbih_desc">Ana ekranda tesbih sayacı</string>
+    <string name="widget_tasbih_desc">Tesbih sayacı: saymak için dokunun</string>
+    <string name="widget_occasions_label">Ramazan ve Bayram</string>
+    <string name="widget_occasions_desc">Ramazana ve bayramlara kalan gün</string>
     <string name="widget_custom_label">Özel widget</string>
     <string name="widget_custom_desc">Ne göstereceğini seçin</string>
 </resources>
