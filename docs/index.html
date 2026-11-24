@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الذِّكر — Alzkr</title>
+<meta name="description" content="تطبيق الذِّكر: القرآن الكريم، الأذكار، مواقيت الصلاة والأذان. مجاني بالكامل وبلا إعلانات.">
+<meta property="og:title" content="الذِّكر — Alzkr">
+<meta property="og:description" content="القرآن الكريم، الأذكار، مواقيت الصلاة والأذان. مجاني وبلا إعلانات.">
+<meta property="og:image" content="https://kouwis.github.io/Alzkr/logo.png">
+<link rel="icon" href="logo.png">
+<style>
+  :root { --gold:#F1D08A; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { min-height:100vh; display:flex; align-items:center; justify-content:center; text-align:center;
+         font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; color:#fff;
+         background: radial-gradient(circle at 50% 30%, #1d4a73 0%, #0f2e4c 45%, #091c30 100%); padding:24px; }
+  main { max-width:420px; width:100%; }
+  img { width:150px; height:150px; border-radius:36px; box-shadow:0 0 60px rgba(241,208,138,.35); }
+  h1 { font-size:46px; color:var(--gold); margin:18px 0 4px; }
+  .verse { font-size:20px; opacity:.9; margin-bottom:22px; }
+  p { opacity:.8; line-height:1.8; font-size:16px; }
+  a.btn { display:block; margin:26px 0 14px; padding:18px; border-radius:20px; background:var(--gold); color:#14202c;
+          font-size:22px; font-weight:800; text-decoration:none; box-shadow:0 10px 30px rgba(241,208,138,.3); }
+  .steps { text-align:right; background:rgba(255,255,255,.07); border-radius:18px; padding:16px 20px; font-size:15px; line-height:2; }
+  small { display:block; margin-top:18px; opacity:.55; }
+</style>
+</head>
+<body>
+<main>
+  <img src="logo.png" alt="">
+  <h1>الذِّكر</h1>
+  <div class="verse">﴿ إِنَّ لِلْمُتَّقِينَ مَفَازًا ﴾</div>
+  <p>القرآن الكريم، والأذكار، ومواقيت الصلاة والأذان، ومتابعة العبادات.<br>مجاني بالكامل وبلا إعلانات.</p>
+  <a class="btn" id="dl" href="https://github.com/kouwis/Alzkr/releases/latest/download/Alzkr.apk">تحميل التطبيق</a>
+  <div class="steps">
+    ١. اضغط «تحميل التطبيق» وانتظر حتى ينتهي التحميل.<br>
+    ٢. افتح الملف من الإشعار أو من «التنزيلات».<br>
+    ٣. إن طلب الهاتف الإذن، اختر «الإعدادات» ثم «السماح من هذا المصدر»، ثم «تثبيت».
+  </div>
+  <small>لأجهزة أندرويد</small>
+</main>
+<script>
+  // the download starts by itself a moment after the page opens (the button stays for another try)
+  setTimeout(function () { location.href = document.getElementById('dl').href; }, 1200);
+</script>
+</body>
+</html>
