@@ -287,7 +287,7 @@ object WidgetUpdater {
         runCatching { LockWidgets.updateAll(app) }
         if (!placed(app)) { scheduleNext(app); return }
         WidgetBus.bump()
-        WidgetKind.entries.forEach { k -> runCatching { k.widget().updateAll(app) } }
+        WidgetKind.entries.filter { !it.lock }.forEach { k -> runCatching { k.widget().updateAll(app) } }
         scheduleNext(app)
     }
 
