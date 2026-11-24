@@ -540,7 +540,7 @@ private fun DayCard(
             },
     ) {
         Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 18.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(AdhkarIc.pin, null, tint = soft, modifier = Modifier.size(14.dp))
                 Text(
                     if (locating && !placeIsDefault) t("جارٍ تحديث الموقع…") else place,
@@ -559,6 +559,10 @@ private fun DayCard(
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
+                Spacer(Modifier.weight(1f))
+                // the last third of the night: only to know when it starts
+                val fajrM = times.getValue(Prayer.Fajr); val maghribM = times.getValue(Prayer.Maghrib)
+                Text(t("الثلث الأخير {0}", clock(Math.floorMod(fajrM - (fajrM + 1440 - maghribM) / 3, 1440))), color = soft, fontSize = 12.sp, maxLines = 1)
             }
             Text(longDay(weekday), color = Color.White, fontSize = 50.sp, fontFamily = AppFonts.naskhBold, lineHeight = 74.sp)
             Row(verticalAlignment = Alignment.Bottom) {

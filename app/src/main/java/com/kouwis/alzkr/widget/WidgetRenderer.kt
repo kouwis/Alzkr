@@ -151,6 +151,14 @@ object WidgetRenderer {
         st.add(px(gap), lh) { top -> text(s, st.left, top, st.width, size, color, bold, align) }
     }
 
+    /** One line of times: a name, a time, and whether it is the one coming. */
+    private class Slot(val name: String, val time: String, val on: Boolean, val iqama: String? = null)
+
+    /** All the day's times to show: the five prayers, sunrise, and the last third of the night. */
+    private fun slots(d: WidgetSnapshot): List<Slot> =
+        d.rows.map { Slot(it.name, it.time, it.prayer == d.next.prayer, if (it.prayer.name == "Sunrise") null else it.iqama ?: "—") } +
+            listOfNotNull(d.lastThird.takeIf { it.isNotBlank() }?.let { Slot(t("الثلث الأخير"), it, false) })
+
     // ---------------- prayer widgets ----------------
 
     private fun prayers(i: Ink, d: WidgetSnapshot) = with(i) {
@@ -165,14 +173,15 @@ object WidgetRenderer {
         st.drawCentered(pad * 0.7f, h - pad * 0.7f)
         // all the times on the other side
         val lx = xAt(pad + colW + px(14f), colW)
-        val rows = d.rows
+        val rows = slots(d)
         val rh = (h - pad * 1.4f) / rows.size
+        var sz = 14f
+        while (lineH(sz) > rh * 0.98f && sz > 9f) sz -= 0.5f
         rows.forEachIndexed { n, r ->
-            val on = r.prayer == d.next.prayer
-            val top = pad * 0.7f + rh * n + (rh - lineH(14f)) / 2f
+            val on = r.on
+            val top = pad * 0.7f + rh * n + (rh - lineH(sz)) / 2f
             if (on) round(lx - px(8f), pad * 0.7f + rh * n + px(1f), colW + px(16f), rh - px(2f), px(10f), faint)
-            text(r.name, lx, top, colW, 14f, if (on) ink else soft, bold = on)
-            text(dg(r.time), lx, top, colW, 14f, if (on) ink else soft, bold = on, align = Align.End)
+            pair(r.name, dg(r.time), lx, top, colW, sz, sz, startColor = if (on) ink else soft, endColor = if (on) ink else soft, ratio = 0.62f)
         }
     }
 
@@ -186,12 +195,12 @@ object WidgetRenderer {
         st.drawCentered(pad * 0.6f, h - pad * 0.6f)
     }
 
-    /** The five times as columns, Fajr at the reading start. */
+    /** The day's times as columns, Fajr at the reading start. */
     private fun Ink.columns(d: WidgetSnapshot, left: Float, width: Float, top: Float, nameSize: Float, timeSize: Float): Float {
-        val five = d.rows.filter { it.prayer.name != "Sunrise" }
-        val cw = width / five.size
-        five.forEachIndexed { n, r ->
-            val on = r.prayer == d.next.prayer
+        val all = slots(d)
+        val cw = width / all.size
+        all.forEachIndexed { n, r ->
+            val on = r.on
             val x = if (rtl) left + width - (n + 1) * cw else left + n * cw
             if (on) round(x + px(2f), top - px(4f), cw - px(4f), lineH(nameSize) + lineH(timeSize) + px(10f), px(12f), faint)
             text(r.name, x, top, cw, nameSize, if (on) accent else soft, bold = on, align = Align.Center)
@@ -224,7 +233,7 @@ object WidgetRenderer {
     private fun table(i: Ink, d: WidgetSnapshot) = with(i) {
         val pad = px(14f)
         val inner = w - pad * 2
-        val five = d.rows.filter { it.prayer.name != "Sunrise" }
+        val five = slots(d)
         val barH = lineH(15f) + px(14f)
         round(pad, pad, inner, barH, px(14f), faint)
         pair(d.headline, dg(d.remaining), pad + px(12f), pad + px(7f), inner - px(24f), 15f, 15f, startColor = accent)
@@ -234,14 +243,16 @@ object WidgetRenderer {
         listOf(t("الصلاة"), t("الأذان"), t("الإقامة")).forEachIndexed { n, s -> text(s, col(n), y, cw, 12f, soft, align = Align.Center) }
         y += lineH(12f) + px(4f)
         val rh = (h - pad - y) / five.size
+        var sz = 15f
+        while (lineH(sz) > rh * 0.98f && sz > 9f) sz -= 0.5f
         five.forEach { r ->
-            val on = r.prayer == d.next.prayer
+            val on = r.on
             val color = if (on) accent else ink
             if (on) round(pad, y, inner, rh - px(2f), px(10f), faint)
-            val ty = y + (rh - lineH(15f)) / 2f
-            text(r.name, col(0), ty, cw, 15f, color, align = Align.Center)
-            text(dg(r.time), col(1), ty, cw, 15f, color, align = Align.Center)
-            text(dg(r.iqama ?: "—"), col(2), ty, cw, 15f, color, align = Align.Center)
+            val ty = y + (rh - lineH(sz)) / 2f
+            text(r.name, col(0), ty, cw, sz, color, align = Align.Center)
+            text(dg(r.time), col(1), ty, cw, sz, color, align = Align.Center)
+            text(dg(r.iqama ?: ""), col(2), ty, cw, sz, color, align = Align.Center)
             y += rh
         }
     }

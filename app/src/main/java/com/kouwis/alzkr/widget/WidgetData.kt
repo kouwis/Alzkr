@@ -62,6 +62,8 @@ data class WidgetSnapshot(
     val occasions: List<Pair<String, Long>>,
     val prayed: Set<String>,
     val rtl: Boolean,
+    /** when the last third of the night begins (only to know it; no adhan, no tracking) */
+    val lastThird: String = "",
 ) {
     val hijri: String get() = "$hijriDay $hijriMonth $hijriYear"
 }
@@ -201,6 +203,12 @@ object WidgetData {
             occasions = occ,
             prayed = prefs.track[today.toString()].orEmpty().filter { it.startsWith("prayer_") }.map { it.removePrefix("prayer_") }.toSet(),
             rtl = I18n.lang.rtl,
+            lastThird = run {
+                // the night from Maghrib to Fajr: before Fajr it is the night now ending
+                val fajrEnd = if (nowMin < times.getValue(Prayer.Fajr)) times.getValue(Prayer.Fajr) else tomorrowFajr + 1440
+                val maghrib = times.getValue(Prayer.Maghrib) - if (nowMin < times.getValue(Prayer.Fajr)) 1440 else 0
+                clock(maghrib + (fajrEnd - maghrib) * 2 / 3)
+            },
         )
     }
 
