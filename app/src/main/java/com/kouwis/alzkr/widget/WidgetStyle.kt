@@ -156,6 +156,16 @@ object WidgetStyles {
     fun putKind(context: Context, kind: WidgetKind, style: WidgetStyle) =
         sp(context).edit().putString("kind:${kind.id}", json.encodeToString(WidgetStyle.serializer(), style)).apply()
 
+    /** The widgets of this kind already on the home screen take this style too. */
+    fun applyToPlaced(context: Context, kind: WidgetKind, style: WidgetStyle) {
+        val ids = runCatching {
+            android.appwidget.AppWidgetManager.getInstance(context).getAppWidgetIds(android.content.ComponentName(context, kind.receiver()))
+        }.getOrDefault(IntArray(0))
+        val e = sp(context).edit()
+        ids.forEach { e.putString("id:$it", json.encodeToString(WidgetStyle.serializer(), style)) }
+        e.apply()
+    }
+
     /**
      * Copies a picture from the gallery into the app, upright (the camera's rotation applied) and
      * scaled down: a widget can carry only so many pixels.

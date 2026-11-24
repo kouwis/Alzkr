@@ -292,6 +292,13 @@ object WidgetUpdater {
         }
     }
 
+    /** A widget as a still picture (passed as a file, so it can be sharp). */
+    fun previewViews(context: Context, k: WidgetKind, style: WidgetStyle, data: WidgetSnapshot, w: Float, h: Float, density: Float, tag: String): RemoteViews {
+        val bmp = WidgetRenderer.render(context, k, style, data, w, h, density)
+        val uri = WidgetImageProvider.save(context, tag, bmp)
+        return RemoteViews(context.packageName, R.layout.widget_image).apply { setImageViewUri(R.id.image, uri) }
+    }
+
     /**
      * The pictures the phone's widget list shows (Android 15 and later): each widget drawn as it
      * looks. The phone limits how often they may be sent, so only when the language or app changes.
@@ -307,11 +314,8 @@ object WidgetUpdater {
         var ok = true
         WidgetKind.entries.forEach { k ->
             val (w, h) = WidgetRenderer.defaultSize(k)
-            // small enough for the phone to carry (about half a megabyte at most)
-            val bmp = WidgetRenderer.render(context, k, WidgetStyle(bg = "midnight"), data, w, h, minOf(density, 440f / maxOf(w, h)))
-            val rv = android.widget.RemoteViews(context.packageName, com.kouwis.alzkr.R.layout.widget_preview).apply {
-                setImageViewBitmap(com.kouwis.alzkr.R.id.preview, bmp)
-            }
+            // sharp: the picture goes as a file, so its size does not matter
+            val rv = previewViews(context, k, WidgetStyle(bg = "midnight"), data, w, h, density, "preview_${k.id}")
             ok = ok && runCatching {
                 m.setWidgetPreview(ComponentName(context, k.receiver()), android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN, rv)
             }.getOrDefault(false)

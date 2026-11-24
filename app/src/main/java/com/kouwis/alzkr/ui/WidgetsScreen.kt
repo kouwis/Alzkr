@@ -256,10 +256,20 @@ private fun Swatch(label: String, on: Boolean, fill: Brush, icon: Boolean = fals
 }
 
 /** Puts a widget on the home screen (the phone asks where); its look is the one just designed. */
-fun pinWidget(context: android.content.Context, kind: WidgetKind): Boolean {
+suspend fun pinWidget(context: android.content.Context, kind: WidgetKind, style: WidgetStyle): Boolean {
     val am = context.getSystemService(AppWidgetManager::class.java)
     if (Build.VERSION.SDK_INT < 26 || !am.isRequestPinAppWidgetSupported) return false
-    return runCatching { am.requestPinAppWidget(ComponentName(context, kind.receiver()), null, null) }.getOrDefault(false)
+    // the phone's «add to home screen» box shows this picture of the widget
+    val extras = runCatching {
+        withContext(Dispatchers.Default) {
+            val (w, h) = WidgetRenderer.defaultSize(kind)
+            val rv = com.kouwis.alzkr.widget.WidgetUpdater.previewViews(
+                context, kind, style, WidgetData.load(context), w, h, context.resources.displayMetrics.density, "pin_${kind.id}",
+            )
+            android.os.Bundle().apply { putParcelable(AppWidgetManager.EXTRA_APPWIDGET_PREVIEW, rv) }
+        }
+    }.getOrNull()
+    return runCatching { am.requestPinAppWidget(ComponentName(context, kind.receiver()), extras, null) }.getOrDefault(false)
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -314,8 +324,15 @@ fun WidgetDesignScreen(nav: Nav, kindId: String) = AdhkarTheme {
     val c = LocalColors.current
     val context = LocalContext.current
     val kind = WidgetKind.of(kindId)
+    val scope = rememberCoroutineScope()
     var style by remember { mutableStateOf(WidgetStyles.forKind(context, kind)) }
-    LaunchedEffect(style) { WidgetStyles.putKind(context, kind, style) }
+    LaunchedEffect(style) {
+        WidgetStyles.putKind(context, kind, style)
+        // the widgets already on the home screen change with it (once the change settles)
+        kotlinx.coroutines.delay(400)
+        WidgetStyles.applyToPlaced(context, kind, style)
+        com.kouwis.alzkr.widget.WidgetUpdater.refresh(context)
+    }
     Page(kind.title, nav, bottom = {
         Box(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
@@ -323,13 +340,22 @@ fun WidgetDesignScreen(nav: Nav, kindId: String) = AdhkarTheme {
                 .springClick(label = t("أضف إلى الشاشة الرئيسية")) {
                     WidgetStyles.putKind(context, kind, style)
                     com.kouwis.alzkr.widget.WidgetUpdater.refresh(context)
-                    if (!pinWidget(context, kind)) Toast.makeText(context, t("أضفه من قائمة الودجت في الشاشة الرئيسية: اضغط مطوّلًا على مكان فارغ ثم «الودجت»"), Toast.LENGTH_LONG).show()
+                    scope.launch { if (!pinWidget(context, kind, style)) Toast.makeText(context, t("أضفه من قائمة الودجت في الشاشة الرئيسية: اضغط مطوّلًا على مكان فارغ ثم «الودجت»"), Toast.LENGTH_LONG).show() }
                 }
                 .padding(vertical = 16.dp),
             contentAlignment = Alignment.Center,
         ) { Text(t("أضف إلى الشاشة الرئيسية"), color = Color(0xFF1B1B1B), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
     }) {
         item { WidgetPreview(kind, style, Modifier.fillMaxWidth()) }
+        item {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(
+                    t("استعادة الشكل الأصلي"), color = c.goldText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(c.goldSoft)
+                        .clickable { style = WidgetStyle() }.padding(horizontal = 18.dp, vertical = 9.dp),
+                )
+            }
+        }
         item { WidgetDesigner(kind, style) { style = it } }
         item { Box(Modifier.height(8.dp)) }
     }
