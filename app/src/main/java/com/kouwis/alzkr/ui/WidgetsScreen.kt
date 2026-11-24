@@ -3,8 +3,6 @@ package com.kouwis.alzkr.ui
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Build
-import android.widget.FrameLayout
-import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -50,67 +48,75 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.glance.appwidget.compose
 import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.t
 import com.kouwis.alzkr.widget.Block
 import com.kouwis.alzkr.widget.WidgetAccents
 import com.kouwis.alzkr.widget.WidgetColors
 import com.kouwis.alzkr.widget.WidgetKind
+import com.kouwis.alzkr.widget.WidgetData
+import com.kouwis.alzkr.widget.WidgetRenderer
+import com.kouwis.alzkr.widget.WidgetSnapshot
 import com.kouwis.alzkr.widget.WidgetStyle
 import com.kouwis.alzkr.widget.WidgetStyles
 import com.kouwis.alzkr.widget.WidgetThemes
 import com.kouwis.alzkr.widget.receiver
-import com.kouwis.alzkr.widget.widget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** Previews are drawn one at a time (they share the preview style). */
-private val previewLock = Mutex()
+/** What the widgets show right now, read once for all the previews on a page. */
+private val snapshotLock = Mutex()
+private var cachedSnapshot: Pair<Long, WidgetSnapshot>? = null
+
+private suspend fun snapshot(context: android.content.Context): WidgetSnapshot = snapshotLock.withLock {
+    val now = System.currentTimeMillis() / 60_000L
+    cachedSnapshot?.takeIf { it.first == now && it.second.rtl == com.kouwis.alzkr.data.I18n.lang.rtl }?.second
+        ?: WidgetData.load(context).also { cachedSnapshot = now to it }
+}
 
 /**
- * The widget exactly as the home screen will show it: the app draws the very same widget
- * (Glance's own output) over a dark home-screen backdrop.
+ * The widget exactly as the home screen will show it: the very picture the widget draws. A see-through
+ * style is shown over a sample wallpaper, so it can be seen at all.
  */
 @Composable
 fun WidgetPreview(kind: WidgetKind, s: WidgetStyle, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
+    val seeThrough = s.bg == "glass" || s.bg == "smoke" || s.bg == "clear"
     BoxWithConstraints(
-        modifier.clip(RoundedCornerShape(30.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF2B3A55), Color(0xFF1B2335), Color(0xFF3B2F4A)))),
+        modifier.then(
+            if (seeThrough) Modifier.clip(RoundedCornerShape(30.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF3A6073), Color(0xFF16222A), Color(0xFF5B3F6B))))
+            else Modifier,
+        ),
         contentAlignment = Alignment.Center,
     ) {
-        val w = maxWidth - 32.dp
-        val h = w / kind.aspect
-        var views by remember { mutableStateOf<RemoteViews?>(null) }
+        val (bw, bh) = WidgetRenderer.defaultSize(kind)
+        val w = if (seeThrough) maxWidth - 32.dp else maxWidth
+        val h = w * (bh / bw)
+        var bmp by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
         LaunchedEffect(kind, s, w) {
-            views = runCatching {
-                previewLock.withLock {
-                    WidgetStyles.preview = s
-                    try { withContext(Dispatchers.Default) { kind.widget().compose(context.applicationContext, size = DpSize(w, h)) } }
-                    finally { WidgetStyles.preview = null }
+            bmp = runCatching {
+                withContext(Dispatchers.Default) {
+                    WidgetRenderer.render(context.applicationContext, kind, s, snapshot(context.applicationContext), w.value, h.value, density)
                 }
             }.getOrNull()
         }
-        Box(Modifier.padding(vertical = 18.dp).size(w, h), contentAlignment = Alignment.Center) {
-            val v = views
-            if (v != null) AndroidView(
-                factory = { FrameLayout(it) },
-                update = { frame ->
-                    frame.removeAllViews()
-                    runCatching { frame.addView(v.apply(frame.context, frame)) }
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
+        Box(Modifier.padding(vertical = if (seeThrough) 18.dp else 0.dp).size(w, h), contentAlignment = Alignment.Center) {
+            bmp?.let {
+                androidx.compose.foundation.Image(
+                    it.asImageBitmap(), contentDescription = kind.title,
+                    contentScale = androidx.compose.ui.layout.ContentScale.FillBounds, modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }

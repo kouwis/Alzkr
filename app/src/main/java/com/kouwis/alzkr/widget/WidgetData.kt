@@ -22,8 +22,8 @@ import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 
 /*
- * The widgets write numbers in Western digits, as the phone's own clock does, so a widget never
- * mixes two kinds of digits.
+ * Times are kept here in Western digits; the renderer writes every number in the app's language
+ * (Arabic-Indic digits in Arabic), so a widget never mixes two kinds.
  */
 
 /** One prayer's line: its name, adhan and iqama times (minutes of the day, and written). */
