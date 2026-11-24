@@ -95,9 +95,22 @@ fun AlzkrTheme(content: @Composable () -> Unit) {
     } else {
         lightColorScheme(primary = c.primary, background = c.bg, surface = c.card, onSurface = c.text, onBackground = c.text)
     }
-    MaterialTheme(colorScheme = scheme) {
+    // Arabic in a solid sans (IBM Plex Sans Arabic); the other languages keep the phone's own font
+    val arabic = com.kouwis.alzkr.data.I18n.lang.rtl
+    val type = if (!arabic) androidx.compose.material3.Typography() else androidx.compose.material3.Typography().let { t0 ->
+        val f = com.kouwis.alzkr.data.AppFonts.uiArabic
+        androidx.compose.material3.Typography(
+            displayLarge = t0.displayLarge.copy(fontFamily = f), displayMedium = t0.displayMedium.copy(fontFamily = f), displaySmall = t0.displaySmall.copy(fontFamily = f),
+            headlineLarge = t0.headlineLarge.copy(fontFamily = f), headlineMedium = t0.headlineMedium.copy(fontFamily = f), headlineSmall = t0.headlineSmall.copy(fontFamily = f),
+            titleLarge = t0.titleLarge.copy(fontFamily = f), titleMedium = t0.titleMedium.copy(fontFamily = f), titleSmall = t0.titleSmall.copy(fontFamily = f),
+            bodyLarge = t0.bodyLarge.copy(fontFamily = f), bodyMedium = t0.bodyMedium.copy(fontFamily = f), bodySmall = t0.bodySmall.copy(fontFamily = f),
+            labelLarge = t0.labelLarge.copy(fontFamily = f), labelMedium = t0.labelMedium.copy(fontFamily = f), labelSmall = t0.labelSmall.copy(fontFamily = f),
+        )
+    }
+    MaterialTheme(colorScheme = scheme, typography = type) {
         CompositionLocalProvider(
             LocalColors provides c,
+            androidx.compose.material3.LocalTextStyle provides if (arabic) androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = com.kouwis.alzkr.data.AppFonts.uiArabic) else androidx.compose.material3.LocalTextStyle.current,
             LocalLayoutDirection provides if (com.kouwis.alzkr.data.I18n.lang.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
             content = content,
         )
