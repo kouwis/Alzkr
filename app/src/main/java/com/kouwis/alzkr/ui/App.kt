@@ -51,6 +51,8 @@ sealed interface Screen {
     data object Alerts : Screen
     data object Silent : Screen
     data object DateSettings : Screen
+    data object Widgets : Screen
+    data class WidgetDesign(val kind: String) : Screen
     data object MushafSettings : Screen
     data class PrayerAlert(val prayer: String) : Screen
 }
@@ -79,6 +81,11 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
     LaunchedEffect(state.alerts, state.prayer, state.lat, state.lng, state.lang) {
         kotlinx.coroutines.delay(600)
         com.kouwis.alzkr.alerts.AlertScheduler.reschedule(context)
+    }
+    // the home-screen widgets follow the same settings
+    LaunchedEffect(state.prayer, state.lat, state.lng, state.lang, state.place, state.hijriOffset, state.hijriFormat, state.gregFormat) {
+        kotlinx.coroutines.delay(800)
+        com.kouwis.alzkr.widget.WidgetUpdater.refresh(context)
     }
     // the interface language: everything below is rebuilt when it changes (text, and right-to-left or left-to-right)
     val lang = com.kouwis.alzkr.data.Lang.of(state.lang)
@@ -164,6 +171,8 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
                     Screen.Alerts -> AlertsScreen(state, prefs, nav)
                     Screen.Silent -> SilentScreen(state, prefs, nav)
                     Screen.DateSettings -> DateSettingsScreen(state, prefs, nav)
+                    Screen.Widgets -> WidgetsScreen(nav)
+                    is Screen.WidgetDesign -> WidgetDesignScreen(nav, screen.kind)
                     Screen.MushafSettings -> MushafSettingsScreen(state, prefs, nav)
                     is Screen.PrayerAlert -> PrayerAlertScreen(state, prefs, nav, screen.prayer)
                 } }

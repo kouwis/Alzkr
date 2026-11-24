@@ -59,5 +59,88 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- home-screen widgets («الودجت») -->
+        <receiver
+            android:name=".widget.PrayersWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_prayers_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayers" />
+        </receiver>
+        <receiver
+            android:name=".widget.NextWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_next_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_next" />
+        </receiver>
+        <receiver
+            android:name=".widget.RowWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_row_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_row" />
+        </receiver>
+        <receiver
+            android:name=".widget.DateWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_date_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date" />
+        </receiver>
+        <receiver
+            android:name=".widget.DhikrWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_dhikr_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_dhikr" />
+        </receiver>
+        <receiver
+            android:name=".widget.AyahWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_ayah_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_ayah" />
+        </receiver>
+        <receiver
+            android:name=".widget.TasbihWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_tasbih_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tasbih" />
+        </receiver>
+        <receiver
+            android:name=".widget.CustomWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_custom_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_custom" />
+        </receiver>
+        <receiver android:name=".widget.WidgetTickReceiver" android:exported="false" />
+        <activity
+            android:name=".widget.WidgetConfigActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.Alzkr">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

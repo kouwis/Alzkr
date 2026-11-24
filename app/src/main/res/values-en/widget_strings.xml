@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">Prayer times</string>
+    <string name="widget_prayers_desc">Next prayer, countdown and all times</string>
+    <string name="widget_next_label">Next prayer</string>
+    <string name="widget_next_desc">Next prayer, its time and time left</string>
+    <string name="widget_row_label">Prayer bar</string>
+    <string name="widget_row_desc">The five prayer times in one line</string>
+    <string name="widget_date_label">Date</string>
+    <string name="widget_date_desc">Weekday, Hijri and Gregorian date</string>
+    <string name="widget_dhikr_label">Dhikr</string>
+    <string name="widget_dhikr_desc">A dhikr, with a button for another</string>
+    <string name="widget_ayah_label">Verse of the day</string>
+    <string name="widget_ayah_desc">A new verse every day</string>
+    <string name="widget_tasbih_label">Tasbih</string>
+    <string name="widget_tasbih_desc">A tasbih counter on the home screen</string>
+    <string name="widget_custom_label">Custom widget</string>
+    <string name="widget_custom_desc">Choose what it shows</string>
+</resources>

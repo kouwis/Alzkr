@@ -174,8 +174,9 @@ fun AlertsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                     if (Build.VERSION.SDK_INT >= 31) context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:" + context.packageName)))
                 }
             }
-            if (!fullOk && cfg.alarms.any { it.on }) item {
+            if (!fullOk && !cfg.fullScreenAsked && cfg.alarms.any { it.on }) item {
                 Warning(t("المنبّه على الشاشة"), t("اسمح بعرض المنبّه بملء الشاشة ليظهر فوق شاشة القفل")) {
+                    save(cfg.copy(fullScreenAsked = true))
                     if (Build.VERSION.SDK_INT >= 34) context.startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + context.packageName)))
                 }
             }

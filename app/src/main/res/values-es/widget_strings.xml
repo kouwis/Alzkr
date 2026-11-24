@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">Horarios de oración</string>
+    <string name="widget_prayers_desc">Próxima oración, cuenta atrás y horarios</string>
+    <string name="widget_next_label">Próxima oración</string>
+    <string name="widget_next_desc">Próxima oración, su hora y el tiempo restante</string>
+    <string name="widget_row_label">Barra de oraciones</string>
+    <string name="widget_row_desc">Los cinco horarios en una línea</string>
+    <string name="widget_date_label">Fecha</string>
+    <string name="widget_date_desc">Día, fecha hégira y gregoriana</string>
+    <string name="widget_dhikr_label">Dhikr</string>
+    <string name="widget_dhikr_desc">Un dhikr, con un botón para otro</string>
+    <string name="widget_ayah_label">Aleya del día</string>
+    <string name="widget_ayah_desc">Una aleya nueva cada día</string>
+    <string name="widget_tasbih_label">Tasbih</string>
+    <string name="widget_tasbih_desc">Un contador de tasbih en la pantalla de inicio</string>
+    <string name="widget_custom_label">Widget personalizado</string>
+    <string name="widget_custom_desc">Elige lo que muestra</string>
+</resources>

@@ -698,6 +698,17 @@ def strip_basmala(texts, clean_texts):
                 arr[i][0] = " ".join(words[4:])
 
 
+WIDGET_AYAT = [
+    (2, 152), (2, 153), (2, 186), (2, 201), (2, 286), (3, 8), (3, 139), (3, 173), (3, 200), (7, 23), (7, 56), (8, 46),
+    (9, 40), (9, 51), (9, 129), (11, 88), (12, 86), (12, 87), (13, 11), (13, 28), (14, 7), (14, 41), (15, 49), (16, 97),
+    (16, 128), (17, 24), (17, 80), (18, 10), (18, 46), (20, 25), (20, 114), (21, 83), (21, 87), (21, 89), (23, 118),
+    (25, 74), (27, 19), (28, 24), (29, 69), (33, 41), (33, 56), (39, 10), (39, 53), (40, 44), (40, 60), (41, 30),
+    (42, 19), (47, 7), (49, 10), (50, 16), (51, 56), (55, 13), (57, 4), (59, 10), (64, 11), (65, 2), (65, 3), (66, 8),
+    (67, 2), (87, 14), (93, 5), (94, 5), (94, 6), (2, 45), (2, 155), (3, 159), (4, 28), (6, 162), (10, 62), (11, 6),
+    (16, 18), (20, 46), (22, 38), (24, 35), (26, 80), (31, 17), (35, 2), (39, 36), (42, 25), (43, 32), (57, 20), (63, 9),
+]
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     fetch_fonts()
@@ -858,6 +869,9 @@ def main():
     dump("verses.json", {"page": vpage, "simple": uthmani, "clean": clean_norm})
     dump("glyphs.json", verse_glyphs)
     dump("tafsir_muyassar.json", tafsir)
+    # «آية اليوم» for the home-screen widget: short, well-known verses in the plain-script edition,
+    # which the phone's own font draws well (widgets cannot use the app's Quran font)
+    dump("widget_ayat.json", [{"s": s_, "a": a, "t": simple[s_ - 1][a - 1], "n": surahs[s_ - 1]["name"]} for s_, a in WIDGET_AYAT])
     dump("translation_en.json", trans)
     for f in sorted(os.listdir(OUT)):
         print(f, os.path.getsize(os.path.join(OUT, f)), file=sys.stderr)

@@ -86,9 +86,9 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
             Setting(t("المصحف"), Ic.book, Color(0xFF0F8F72), t("لون خلفية الصفحة")) { nav.go(Screen.MushafSettings) },
         ),
         t("الودجت") to listOf(
-            Setting(t("الودجت"), Ic.widgets, Color(0xFF14937E)) { soon(t("الودجت")) },
+            Setting(t("الودجت"), Ic.widgets, Color(0xFF14937E), t("مواقيت الصلاة، التاريخ، ذكر، آية اليوم، السبحة")) { nav.go(Screen.Widgets) },
             Setting(t("شاشة القفل"), Ic.lockClock, Color(0xFF4F5BD5)) { soon(t("شاشة القفل")) },
-            Setting(t("الودجت الخاص"), Ic.brush, Color(0xFF1677FF), t("صمّم ودجت لشاشتك الرئيسية")) { soon(t("الودجت الخاص")) },
+            Setting(t("الودجت الخاص"), Ic.brush, Color(0xFF1677FF), t("صمّم ودجت لشاشتك الرئيسية")) { nav.go(Screen.WidgetDesign("custom")) },
         ),
         t("التطبيق") to listOf(
             Setting(t("انشر التطبيق"), Ic.share, Color(0xFFE5337A)) {

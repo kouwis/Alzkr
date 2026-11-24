@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">Gebetszeiten</string>
+    <string name="widget_prayers_desc">Nächstes Gebet, Countdown und alle Zeiten</string>
+    <string name="widget_next_label">Nächstes Gebet</string>
+    <string name="widget_next_desc">Nächstes Gebet, Uhrzeit und Restzeit</string>
+    <string name="widget_row_label">Gebetsleiste</string>
+    <string name="widget_row_desc">Die fünf Gebetszeiten in einer Zeile</string>
+    <string name="widget_date_label">Datum</string>
+    <string name="widget_date_desc">Wochentag, Hidschri- und gregorianisches Datum</string>
+    <string name="widget_dhikr_label">Dhikr</string>
+    <string name="widget_dhikr_desc">Ein Dhikr, mit Taste für ein weiteres</string>
+    <string name="widget_ayah_label">Vers des Tages</string>
+    <string name="widget_ayah_desc">Jeden Tag ein neuer Vers</string>
+    <string name="widget_tasbih_label">Tasbih</string>
+    <string name="widget_tasbih_desc">Ein Tasbih-Zähler auf dem Startbildschirm</string>
+    <string name="widget_custom_label">Eigenes Widget</string>
+    <string name="widget_custom_desc">Wählen Sie, was es zeigt</string>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">Horaires de prière</string>
+    <string name="widget_prayers_desc">Prochaine prière, compte à rebours et horaires</string>
+    <string name="widget_next_label">Prochaine prière</string>
+    <string name="widget_next_desc">Prochaine prière, son heure et le temps restant</string>
+    <string name="widget_row_label">Barre des prières</string>
+    <string name="widget_row_desc">Les cinq horaires sur une ligne</string>
+    <string name="widget_date_label">Date</string>
+    <string name="widget_date_desc">Jour, date hégirienne et grégorienne</string>
+    <string name="widget_dhikr_label">Dhikr</string>
+    <string name="widget_dhikr_desc">Un dhikr, avec un bouton pour un autre</string>
+    <string name="widget_ayah_label">Verset du jour</string>
+    <string name="widget_ayah_desc">Un nouveau verset chaque jour</string>
+    <string name="widget_tasbih_label">Tasbih</string>
+    <string name="widget_tasbih_desc">Un compteur de tasbih sur l\'écran d\'accueil</string>
+    <string name="widget_custom_label">Widget personnalisé</string>
+    <string name="widget_custom_desc">Choisissez ce qu\'il affiche</string>
+</resources>

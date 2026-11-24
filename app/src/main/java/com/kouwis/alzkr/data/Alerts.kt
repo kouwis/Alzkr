@@ -76,6 +76,8 @@ data class AlertsConfig(
     val playOnSilent: Boolean = false,
     /** nothing sounds until the user has opened «الأذان والتنبيهات» once (no surprise adhan after an update) */
     val setUp: Boolean = false,
+    /** the full-screen-alarm permission was asked for once: never ask again (some phones always report it off) */
+    val fullScreenAsked: Boolean = false,
     /** «الصمت أثناء الصلاة» */
     val silent: SilentConfig = SilentConfig(),
 ) {

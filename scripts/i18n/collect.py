@@ -15,6 +15,8 @@ for f in sorted(glob.glob(root + "/**/*.kt", recursive=True)):
     for name in re.findall(r"(?:Fajr|Sunrise|Dhuhr|Asr|Maghrib|Isha|Egypt|Makkah|MWL|Karachi|ISNA|Dubai|Kuwait|Qatar|Turkey|Middle|Seventh|Angle|None)\(\"([^\"]+)\"", s): add(name)
     for lst in re.findall(r"private val (?:monthsAr|weekdaysAr|gMonthsAr) = listOf\(([^)]*)\)", s, re.S): [add(x) for x in re.findall(r'"([^"]+)"', lst)]
     for a, b in re.findall(r'^\s+[A-Z]\w*\("[a-z_]+", "([^"]+)", "([^"]+)"', s, re.M): add(a); add(b)
+    for a, b in re.findall(r'^\s+[A-Z]\w*\("[a-z_]+", "([^"]+)", "([^"]+)"\)', s, re.M): add(a); add(b)
+    for a in re.findall(r'^\s+[A-Z]\w*\("[a-z_]+", "([^"]+)"\),', s, re.M): add(a)
     m = re.search(r"private val Cities = listOf\((.*?)\n\)", s, re.S)
     if m: [add(x) for x in re.findall(r'"([^"]+)" to', m.group(1))]
 keys = [k for k in keys if re.search(r"[؀-ۿ]", k)]

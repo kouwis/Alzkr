@@ -94,7 +94,10 @@ class RescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
-            try { AlertScheduler.rescheduleNow(context.applicationContext) } finally { pending.finish() }
+            try {
+                AlertScheduler.rescheduleNow(context.applicationContext)
+                runCatching { com.kouwis.alzkr.widget.WidgetUpdater.updateAll(context.applicationContext) }
+            } finally { pending.finish() }
         }
     }
 }

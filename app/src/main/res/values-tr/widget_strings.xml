@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">Namaz vakitleri</string>
+    <string name="widget_prayers_desc">Sonraki namaz, geri sayım ve tüm vakitler</string>
+    <string name="widget_next_label">Sonraki namaz</string>
+    <string name="widget_next_desc">Sonraki namaz, vakti ve kalan süre</string>
+    <string name="widget_row_label">Vakit şeridi</string>
+    <string name="widget_row_desc">Beş vakit tek satırda</string>
+    <string name="widget_date_label">Tarih</string>
+    <string name="widget_date_desc">Gün, hicri ve miladi tarih</string>
+    <string name="widget_dhikr_label">Zikir</string>
+    <string name="widget_dhikr_desc">Bir zikir ve başka zikir düğmesi</string>
+    <string name="widget_ayah_label">Günün ayeti</string>
+    <string name="widget_ayah_desc">Her gün yeni bir ayet</string>
+    <string name="widget_tasbih_label">Tesbih</string>
+    <string name="widget_tasbih_desc">Ana ekranda tesbih sayacı</string>
+    <string name="widget_custom_label">Özel widget</string>
+    <string name="widget_custom_desc">Ne göstereceğini seçin</string>
+</resources>

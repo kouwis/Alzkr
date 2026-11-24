@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">مواقيت الصلاة</string>
+    <string name="widget_prayers_desc">الصلاة القادمة والعدّ التنازلي وكل المواقيت</string>
+    <string name="widget_next_label">الصلاة القادمة</string>
+    <string name="widget_next_desc">اسم الصلاة القادمة ووقتها والوقت الباقي</string>
+    <string name="widget_row_label">شريط المواقيت</string>
+    <string name="widget_row_desc">مواقيت الصلوات الخمس في سطر واحد</string>
+    <string name="widget_date_label">التاريخ</string>
+    <string name="widget_date_desc">اليوم والتاريخ الهجري والميلادي</string>
+    <string name="widget_dhikr_label">ذكر</string>
+    <string name="widget_dhikr_desc">ذكر من الأذكار، وزر لذكر آخر</string>
+    <string name="widget_ayah_label">آية اليوم</string>
+    <string name="widget_ayah_desc">آية جديدة كل يوم</string>
+    <string name="widget_tasbih_label">السبحة</string>
+    <string name="widget_tasbih_desc">عدّاد تسبيح على الشاشة الرئيسية</string>
+    <string name="widget_custom_label">الودجت الخاص</string>
+    <string name="widget_custom_desc">اختر ما يظهر فيه</string>
+</resources>

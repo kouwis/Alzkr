@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_prayers_label">Jadwal salat</string>
+    <string name="widget_prayers_desc">Salat berikutnya, hitung mundur, dan semua waktu</string>
+    <string name="widget_next_label">Salat berikutnya</string>
+    <string name="widget_next_desc">Salat berikutnya, waktunya, dan sisa waktu</string>
+    <string name="widget_row_label">Baris jadwal</string>
+    <string name="widget_row_desc">Lima waktu salat dalam satu baris</string>
+    <string name="widget_date_label">Tanggal</string>
+    <string name="widget_date_desc">Hari, tanggal Hijriah dan Masehi</string>
+    <string name="widget_dhikr_label">Zikir</string>
+    <string name="widget_dhikr_desc">Satu zikir, dengan tombol untuk zikir lain</string>
+    <string name="widget_ayah_label">Ayat hari ini</string>
+    <string name="widget_ayah_desc">Ayat baru setiap hari</string>
+    <string name="widget_tasbih_label">Tasbih</string>
+    <string name="widget_tasbih_desc">Penghitung tasbih di layar utama</string>
+    <string name="widget_custom_label">Widget kustom</string>
+    <string name="widget_custom_desc">Pilih apa yang ditampilkan</string>
+</resources>
