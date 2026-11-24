@@ -118,7 +118,13 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
             }
             BackHandler(enabled = nav.stack.size > 1) { nav.back() }
             // opened from a reminder: straight to its adhkar
-            LaunchedEffect(open) { if (open != null) { nav.go(Screen.Adhkar(open)); onOpened() } }
+            LaunchedEffect(open) {
+                if (open != null) {
+                    // from a widget: its page in «الودجت»
+                    if (open.startsWith("widget:")) nav.go(Screen.WidgetDesign(open.removePrefix("widget:"))) else nav.go(Screen.Adhkar(open))
+                    onOpened()
+                }
+            }
             // each screen keeps its scroll position (and other saved state) while it is in the stack,
             // so going back lands where you were; a screen taken off the stack forgets it
             val holder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()

@@ -205,5 +205,10 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
+            <!-- the widgets' pictures, read by the home screen -->
+        <provider
+            android:name=".widget.WidgetImageProvider"
+            android:authorities="${applicationId}.widgetimg"
+            android:exported="true" />
     </application>
 </manifest>

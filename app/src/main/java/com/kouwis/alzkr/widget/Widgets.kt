@@ -3,12 +3,19 @@ package com.kouwis.alzkr.widget
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.glance.appwidget.AndroidRemoteViews
+import com.kouwis.alzkr.R
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.Image
-import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
@@ -48,24 +55,47 @@ import kotlinx.coroutines.launch
  * preview, with the app's fonts and nothing cut off. Over it lie invisible tap areas.
  */
 
+/** Bumped after a tap or a minute's tick: placed widgets read their data again and redraw. */
+object WidgetBus {
+    val version = kotlinx.coroutines.flow.MutableStateFlow(0)
+    fun bump() { version.value = version.value + 1 }
+}
+
 abstract class AlzkrWidget(val kind: WidgetKind) : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val data = WidgetData.load(context)
+        val first = WidgetData.load(context)
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrDefault(-1)
-        val s = WidgetStyles.get(context, appWidgetId, kind)
-        provideContent { Body(data, s) }
+        provideContent {
+            // the session lives on between updates, so the data is read again on every bump
+            val v by WidgetBus.version.collectAsState()
+            val data by produceState(first, v) { value = runCatching { WidgetData.load(context) }.getOrDefault(value) }
+            val style = remember(v) { WidgetStyles.get(context, appWidgetId, kind) }
+            Body(context, appWidgetId, data, style)
+        }
     }
 
     @Composable
-    fun Body(d: WidgetSnapshot, s: WidgetStyle) {
-        val context = LocalContext.current
+    private fun Body(context: Context, appWidgetId: Int, d: WidgetSnapshot, s: WidgetStyle) {
         val size = LocalSize.current
-        val bmp = WidgetRenderer.render(context, kind, s, d, size.width.value, size.height.value, context.resources.displayMetrics.density)
-        val k = WidgetRenderer.scaleOf(kind, size.width.value, size.height.value)
-        Box(GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>())) {
-            Image(ImageProvider(bmp), contentDescription = kind.title, contentScale = ContentScale.FillBounds, modifier = GlanceModifier.fillMaxSize())
+        val wDp = size.width.value; val hDp = size.height.value
+        val uri = remember(d, s, wDp, hDp) {
+            runCatching {
+                val bmp = WidgetRenderer.render(context, kind, s, d, wDp, hDp, context.resources.displayMetrics.density)
+                WidgetImageProvider.save(context, "w${appWidgetId}_${wDp.toInt()}x${hDp.toInt()}", bmp)
+            }.getOrNull()
+        }
+        val k = WidgetRenderer.scaleOf(kind, wDp, hDp)
+        val open = Intent(context, MainActivity::class.java)
+            .setData(Uri.parse("alzkr://widget/${kind.id}"))
+            .putExtra(MainActivity.EXTRA_OPEN, "widget:${kind.id}")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        Box(GlanceModifier.fillMaxSize().clickable(actionStartActivity(open))) {
+            if (uri != null) AndroidRemoteViews(
+                RemoteViews(context.packageName, R.layout.widget_image).apply { setImageViewUri(R.id.image, uri) },
+                GlanceModifier.fillMaxSize(),
+            )
             Taps(d, k)
         }
     }
@@ -138,6 +168,7 @@ class TogglePrayedAction : ActionCallback {
         val today = java.time.LocalDate.now().toString()
         val done = "prayer_$p" in store.flow.first().track[today].orEmpty()
         store.setTracked(today, "prayer_$p", !done)
+        WidgetBus.bump()
         TrackerWidget().update(context, glanceId)
     }
 }
@@ -145,6 +176,7 @@ class TogglePrayedAction : ActionCallback {
 class NextDhikrAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         WidgetStore.nextDhikr(context)
+        WidgetBus.bump()
         DhikrWidget().update(context, glanceId)
     }
 }
@@ -152,6 +184,7 @@ class NextDhikrAction : ActionCallback {
 class TasbihTapAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         WidgetStore.tasbihTap(context)
+        WidgetBus.bump()
         TasbihWidget().update(context, glanceId)
     }
 }
@@ -159,6 +192,7 @@ class TasbihTapAction : ActionCallback {
 class TasbihResetAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         WidgetStore.tasbihReset(context)
+        WidgetBus.bump()
         TasbihWidget().update(context, glanceId)
     }
 }
@@ -229,6 +263,7 @@ object WidgetUpdater {
     suspend fun updateAll(context: Context) {
         val app = context.applicationContext
         if (!placed(app)) return
+        WidgetBus.bump()
         WidgetKind.entries.forEach { k -> runCatching { k.widget().updateAll(app) } }
         scheduleNext(app)
     }
@@ -272,7 +307,8 @@ object WidgetUpdater {
         var ok = true
         WidgetKind.entries.forEach { k ->
             val (w, h) = WidgetRenderer.defaultSize(k)
-            val bmp = WidgetRenderer.render(context, k, WidgetStyle(bg = "midnight"), data, w, h, minOf(density, 2f))
+            // small enough for the phone to carry (about half a megabyte at most)
+            val bmp = WidgetRenderer.render(context, k, WidgetStyle(bg = "midnight"), data, w, h, minOf(density, 440f / maxOf(w, h)))
             val rv = android.widget.RemoteViews(context.packageName, com.kouwis.alzkr.R.layout.widget_preview).apply {
                 setImageViewBitmap(com.kouwis.alzkr.R.id.preview, bmp)
             }

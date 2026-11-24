@@ -179,10 +179,10 @@ object WidgetRenderer {
     private fun next(i: Ink, d: WidgetSnapshot) = with(i) {
         val pad = px(16f)
         val st = Stack(i, pad, w - pad * 2)
-        textLine(st, 0f, d.place, 11.5f, soft, bold = false)
-        textLine(st, 2f, d.headline, 22f, ink)
-        textLine(st, 0f, dg(d.targetTime), 34f, ink)
-        textLine(st, 2f, dg(d.remaining), 14f, accent)
+        textLine(st, 0f, d.place, 11.5f, soft, bold = false, align = Align.Center)
+        textLine(st, 2f, d.headline, 22f, ink, align = Align.Center)
+        textLine(st, 0f, dg(d.targetTime), 34f, ink, align = Align.Center)
+        textLine(st, 2f, dg(d.remaining), 14f, accent, align = Align.Center)
         st.drawCentered(pad * 0.6f, h - pad * 0.6f)
     }
 
