@@ -170,22 +170,22 @@ object AlertEvents {
                     val sound = a.sound.ifBlank { Sounds.defaultFor(p, catalog) }
                     out += AlertEvent(
                         at(adhan), "adhan", "adhan:${p.name}", sound,
-                        if (p == Prayer.Sunrise) t("الشروق") else t("حان الآن موعد أذان {0}", p.ar),
-                        if (p == Prayer.Sunrise) t("انتهى وقت صلاة الفجر") else "",
+                        if (p == Prayer.Sunrise) t("موعد الشروق") else t("أذان صلاة {0}", p.ar),
+                        "",
                         prayer = p.name,
                     )
                 }
                 if (a.pre > 0) out += AlertEvent(
                     at(adhan - a.pre), "pre", "pre:${p.name}", a.preSound,
                     if (p == Prayer.Sunrise) t("بقي {0} دقيقة على الشروق", num(a.pre)) else t("بقي {0} دقيقة على أذان {1}", num(a.pre), p.ar),
-                    t("استعد للصلاة"), prayer = p.name,
+                    "", prayer = p.name,
                 )
                 if (a.iqama && p != Prayer.Sunrise && iq > 0) {
                     val before = a.iqamaBefore.coerceIn(0, iq)
                     out += AlertEvent(
                         at(adhan + iq - before), "iqama", "iqama:${p.name}", a.iqamaSound,
-                        if (before == 0) t("حان وقت إقامة صلاة {0}", p.ar) else t("بقي {0} دقيقة على إقامة صلاة {1}", num(before), p.ar),
-                        t("قوموا إلى صلاتكم"), prayer = p.name,
+                        if (before == 0) t("إقامة صلاة {0}", p.ar) else t("بقي {0} دقيقة على إقامة صلاة {1}", num(before), p.ar),
+                        "", prayer = p.name,
                     )
                 }
             }
@@ -214,7 +214,9 @@ object AlertEvents {
                         m + (f - m) * 2 / 3
                     }
                 }
-                out += AlertEvent(at(base + s.offset), "reminder", "reminder:${r.id}", "sys", r.title, r.text, open = r.open)
+                out += if (r.anchor == Anchor.LastThird)
+                    AlertEvent(at(base + s.offset), "reminder", "reminder:${r.id}", "sys", t("موعد الثلث الأخير"), "", open = r.open)
+                else AlertEvent(at(base + s.offset), "reminder", "reminder:${r.id}", "sys", r.title, r.text, open = r.open)
             }
         }
         return out.filter { it.at > fromMs }.sortedBy { it.at }
