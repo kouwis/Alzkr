@@ -102,6 +102,9 @@ fun AdhkarReaderScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, id
     }
 }
 
+/** The ornate brackets swapped, so on screen they face the verse they hold (as the naskh font draws them). */
+private fun facingBrackets(s: String) = s.map { when (it) { '\uFD3F' -> '\uFD3E'; '\uFD3E' -> '\uFD3F'; else -> it } }.joinToString("")
+
 /** The dhikr as plain text, for copying and sharing. */
 private fun plainText(q: QuranData, d: Dhikr, sec: AdhkarSection): String = buildString {
     d.parts.forEach { p ->
@@ -348,11 +351,17 @@ private fun DhikrPage(
                     when {
                         p.q != null -> QuranPassage(q, p.q[0], p.q[1], p.q[2], fontSize = quranSize, color = if (done) c.muted else c.ink)
                         p.u != null -> Text(
-                            "﴿${p.u}﴾", color = if (done) c.muted else c.ink, fontSize = textSize * 1.05f, lineHeight = textSize * 2f,
+                            // the Quran font has no ornate brackets: they come from the naskh font, facing the verse
+                            androidx.compose.ui.text.buildAnnotatedString {
+                                val br = androidx.compose.ui.text.SpanStyle(fontFamily = AppFonts.naskh)
+                                pushStyle(br); append("\uFD3E"); pop()
+                                append(p.u)
+                                pushStyle(br); append("\uFD3F"); pop()
+                            }, color = if (done) c.muted else c.ink, fontSize = textSize * 1.05f, lineHeight = textSize * 2f,
                             fontFamily = AppFonts.hafs, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
                         )
                         p.t != null -> Text(
-                            p.t, color = textColor, fontSize = textSize, lineHeight = textSize * 1.85f, fontFamily = AppFonts.naskh,
+                            facingBrackets(p.t), color = textColor, fontSize = textSize, lineHeight = textSize * 1.85f, fontFamily = AppFonts.naskh,
                             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
                         )
                     }
