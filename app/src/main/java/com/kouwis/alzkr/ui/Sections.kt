@@ -41,7 +41,7 @@ import kotlin.math.abs
 /** Height the section bar takes over the bottom of each section's home. */
 val SectionBarSpace = 84.dp
 
-private val ITEM_W = 92.dp
+private val ITEM_W = 100.dp
 
 /** The two homes line up: same header height and same top-card height, so switching
  *  section leaves the card exactly where it was. */
@@ -126,9 +126,9 @@ private fun SectionBar(position: Float, modifier: Modifier, onPick: (Int) -> Uni
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        if (i == 2) t("{0} · قريبًا", label) else label,
+                        label, maxLines = 1, softWrap = false,
                         color = lerp(c.muted, c.onPrimary, near),
-                        fontSize = if (i == 2) 12.sp else 15.sp,
+                        fontSize = if (label.length > 10) 13.sp else 15.sp,
                         fontWeight = if (near > 0.5f) FontWeight.Bold else FontWeight.Medium,
                     )
                 }

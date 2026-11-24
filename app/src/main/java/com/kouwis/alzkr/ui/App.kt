@@ -78,6 +78,10 @@ fun AlzkrApp(open: String? = null, onOpened: () -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context.applicationContext) }
     val state by prefs.flow.collectAsState(initial = AppPrefs())
+    // the language for the system too, once the saved one is read (never from the defaults before that)
+    LaunchedEffect(Unit) {
+        prefs.flow.collect { p -> com.kouwis.alzkr.data.I18n.appLocale(context, com.kouwis.alzkr.data.Lang.of(p.lang)) }
+    }
     // the adhan and alerts follow every change of their settings, the prayer times and the place
     LaunchedEffect(state.alerts, state.prayer, state.lat, state.lng, state.lang) {
         kotlinx.coroutines.delay(600)

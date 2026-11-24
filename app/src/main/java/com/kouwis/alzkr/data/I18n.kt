@@ -33,7 +33,6 @@ object I18n {
     private var table: Map<String, String> = emptyMap()
 
     fun set(context: Context, l: Lang) {
-        appLocale(context, l)
         if (l == lang && (l == Lang.AR || table.isNotEmpty())) return
         table = if (l == Lang.AR) emptyMap() else runCatching {
             val text = context.applicationContext.assets.open("i18n/${l.code}.json").bufferedReader(Charsets.UTF_8).use { it.readText() }
@@ -46,7 +45,7 @@ object I18n {
      * The app's own language for the system too (Android 13 and later), so what the phone draws from
      * the app's resources follows it: the widgets' names and samples in the phone's widget lists.
      */
-    private fun appLocale(context: Context, l: Lang) {
+    fun appLocale(context: Context, l: Lang) {
         if (android.os.Build.VERSION.SDK_INT < 33) return
         runCatching {
             val lm = context.getSystemService(android.app.LocaleManager::class.java)
