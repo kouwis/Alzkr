@@ -49,6 +49,7 @@ import com.kouwis.alzkr.data.t
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingsPage(title: String, nav: Nav, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     val c = LocalColors.current
