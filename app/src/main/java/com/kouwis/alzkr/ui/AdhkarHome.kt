@@ -178,7 +178,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
         if (granted()) locateNow() else permission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
-    // swipe the top part to change section: right -> left goes back to القرآن, left -> right to علوم الدين
+    // swipe the top part to change section: right -> left goes back to القرآن, left -> right to إسلاميات
     var sectionDrag by remember { mutableFloatStateOf(0f) }
 
     val swipeSection = Modifier.pointerInput(Unit) {
