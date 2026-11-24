@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Samsung's own description of the lock-screen widget (read through «samsung.appwidget.monotone.info»). -->
+<samsung-appwidget-info xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:allowMultipleSizes="false"
+    app:initialLayoutSmall="@layout/lock_lines"
+    app:previewLayoutSmall="@layout/lock_lines"
+    app:monotonePreviewLayoutSmall="@layout/lock_lines"
+    app:targetHost="lockAndAod"
+    app:widgetSize="small" />

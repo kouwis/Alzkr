@@ -213,6 +213,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_day" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_day" />
         </receiver>
         <receiver
             android:name=".widget.LockHijriWidgetReceiver"
@@ -222,6 +223,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_hijri" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_hijri" />
         </receiver>
         <receiver
             android:name=".widget.LockDatesWidgetReceiver"
@@ -231,6 +233,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_dates" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_dates" />
         </receiver>
         <receiver
             android:name=".widget.LockNextWidgetReceiver"
@@ -240,6 +243,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_next" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_next" />
         </receiver>
         <receiver
             android:name=".widget.LockBarWidgetReceiver"
@@ -249,6 +253,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_bar" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_bar" />
         </receiver>
         <receiver
             android:name=".widget.LockTimesWidgetReceiver"
@@ -258,6 +263,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_times" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_times" />
         </receiver>
         <receiver
             android:name=".widget.LockDhikrWidgetReceiver"
@@ -267,6 +273,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lock_dhikr" />
+            <meta-data android:name="samsung.appwidget.monotone.info" android:resource="@xml/samsung_lock_dhikr" />
         </receiver>
         <!-- Samsung's lock-screen widgets -->
         <meta-data android:name="SamsungBasicInteraction" android:value="SEP10" />

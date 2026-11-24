@@ -48,7 +48,7 @@ object LockWidgets {
                 v.setTextViewText(names[i], r.name)
                 v.setTextViewText(times[i], dg(r.time))
             }
-            v.setOnClickPendingIntent(R.id.widget_root, open)
+            v.setOnClickPendingIntent(android.R.id.background, open)
             return v
         }
         val v = RemoteViews(context.packageName, R.layout.lock_lines)
@@ -75,7 +75,7 @@ object LockWidgets {
                 line(R.id.line1, txt, 14f); line(R.id.line2, null); line(R.id.line3, null)
             }
         }
-        v.setOnClickPendingIntent(R.id.widget_root, open)
+        v.setOnClickPendingIntent(android.R.id.background, open)
         return v
     }
 }
