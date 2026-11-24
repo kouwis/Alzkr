@@ -327,7 +327,10 @@ private fun ContinueCard(
             }
         }
         // today's ward, inside the card
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            Modifier.springClick(role = Role.Button, label = t("وردك اليوم"), pressedScale = 0.98f, ripple = false) { nav.go(Screen.MushafSettings) },
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             val done = prefs.wardDone.coerceAtMost(prefs.wardTarget)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(t("وردك اليوم"), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
@@ -341,8 +344,8 @@ private fun ContinueCard(
                 Box(Modifier.fillMaxWidth(frac).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFE2C48F)))
             }
         }
-        // the khatma: how far the reading place is through the mushaf, and when the ward would finish it
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // the khatma: how far the reading place is through the mushaf, and when the ward would finish it (if chosen)
+        if (prefs.showKhatma) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             val left = 604 - page
             val pct = (page * 100) / 604
             val days = if (prefs.wardTarget > 0) (left + prefs.wardTarget - 1) / prefs.wardTarget else 0

@@ -129,6 +129,33 @@ fun MushafSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
     val scope = rememberCoroutineScope()
     fun choose(id: String) = scope.launch { store.setMushafBg(id) }
     SettingsPage(t("المصحف"), nav) {
+        item { Header(t("الورد اليومي")) }
+        item {
+            Group {
+                Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(t("عدد صفحات الورد"), color = c.text, fontSize = 17.sp)
+                        Text(t("قرأت اليوم {0} من {1}", num(prefs.wardDone.coerceAtMost(prefs.wardTarget)), num(prefs.wardTarget)), color = c.muted, fontSize = 12.sp)
+                    }
+                    Step("−", prefs.wardTarget > 1) { scope.launch { store.setWardTarget(prefs.wardTarget - 1) } }
+                    Text(num(prefs.wardTarget), color = c.text, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.width(52.dp))
+                    Step("+", prefs.wardTarget < 60) { scope.launch { store.setWardTarget(prefs.wardTarget + 1) } }
+                }
+                Line()
+                Row(
+                    Modifier.fillMaxWidth().springClick(label = t("إعادة ورد اليوم"), pressedScale = 0.98f) {
+                        scope.launch { store.resetWard() }
+                    }.padding(vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(t("إعادة ورد اليوم"), color = c.goldText, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Icon(Ic.refresh, null, tint = c.goldText, modifier = Modifier.size(20.dp))
+                }
+                Line()
+                ToggleRow(t("إظهار الختمة"), t("نسبة ما قرأت من المصحف ومتى تختمه بوردك"), prefs.showKhatma) { on -> scope.launch { store.setShowKhatma(on) } }
+            }
+        }
         item { Header(t("لون خلفية الصفحة")) }
         item {
             Group {

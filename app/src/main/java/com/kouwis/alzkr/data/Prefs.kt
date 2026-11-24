@@ -64,6 +64,8 @@ data class AppPrefs(
     val gregFormat: Int = 0,
     /** «المصحف»: the page background ("" = follow the phone's light or dark mode) */
     val mushafBg: String = "",
+    /** the khatma's progress shown on the Quran card (off unless chosen) */
+    val showKhatma: Boolean = false,
 )
 
 class Prefs(private val context: Context) {
@@ -97,6 +99,7 @@ class Prefs(private val context: Context) {
         val hijriFormat = intPreferencesKey("hijri_format")
         val gregFormat = intPreferencesKey("greg_format")
         val mushafBg = stringPreferencesKey("mushaf_bg")
+        val showKhatma = androidx.datastore.preferences.core.booleanPreferencesKey("show_khatma")
         val tasbih = stringPreferencesKey("tasbih") // "text\u001F33\u001Etext\u001F100"
     }
 
@@ -149,6 +152,7 @@ class Prefs(private val context: Context) {
             hijriFormat = p[K.hijriFormat] ?: 0,
             gregFormat = p[K.gregFormat] ?: 0,
             mushafBg = p[K.mushafBg] ?: "",
+            showKhatma = p[K.showKhatma] ?: false,
             tasbih = p[K.tasbih]?.split('\u001E')?.mapNotNull { e ->
                 val f = e.split('\u001F')
                 val t = f[0].trim()
@@ -160,6 +164,10 @@ class Prefs(private val context: Context) {
     suspend fun setHijriOffset(n: Int) = context.store.edit { it[K.hijriOffset] = n.coerceIn(-2, 2) }
     suspend fun setDateFormats(hijri: Int, greg: Int) = context.store.edit { it[K.hijriFormat] = hijri; it[K.gregFormat] = greg }
     suspend fun setMushafBg(id: String) = context.store.edit { it[K.mushafBg] = id }
+    suspend fun setShowKhatma(on: Boolean) = context.store.edit { it[K.showKhatma] = on }
+    suspend fun setWardTarget(pages: Int) = context.store.edit { it[K.wardTarget] = pages.coerceIn(1, 60) }
+    /** Starts today's ward again from nothing. */
+    suspend fun resetWard() = context.store.edit { it[K.wardDay] = today(); it[K.wardPages] = emptySet() }
     suspend fun setAlerts(a: AlertsConfig) = context.store.edit { it[K.alerts] = a.encode() }
     suspend fun setLang(code: String) = context.store.edit { it[K.lang] = code }
     suspend fun setCustomDeeds(list: List<String>) = context.store.edit { it[K.customDeeds] = list.joinToString("\n") }
