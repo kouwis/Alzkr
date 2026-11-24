@@ -40,23 +40,6 @@ object AppFonts {
     val naskhTf: Typeface by lazy { asset("naskh.otf") }
     val naskhBoldTf: Typeface by lazy { asset("naskh_bold.otf") }
 
-    /**
-     * The interface's Arabic letters: IBM Plex Sans Arabic, a step heavier than asked for, so Arabic
-     * reads as solid as the Latin interface (regular text in Medium, medium in SemiBold, bold in Bold).
-     */
-    val uiArabic: FontFamily by lazy {
-        FontFamily(
-            androidx.compose.ui.text.font.Font(com.kouwis.alzkr.R.font.plex_arabic_medium, androidx.compose.ui.text.font.FontWeight.Light),
-            androidx.compose.ui.text.font.Font(com.kouwis.alzkr.R.font.plex_arabic_medium, androidx.compose.ui.text.font.FontWeight.Normal),
-            androidx.compose.ui.text.font.Font(com.kouwis.alzkr.R.font.plex_arabic_semibold, androidx.compose.ui.text.font.FontWeight.Medium),
-            androidx.compose.ui.text.font.Font(com.kouwis.alzkr.R.font.plex_arabic_bold, androidx.compose.ui.text.font.FontWeight.SemiBold),
-            androidx.compose.ui.text.font.Font(com.kouwis.alzkr.R.font.plex_arabic_bold, androidx.compose.ui.text.font.FontWeight.Bold),
-            androidx.compose.ui.text.font.Font(com.kouwis.alzkr.R.font.plex_arabic_bold, androidx.compose.ui.text.font.FontWeight.ExtraBold),
-        )
-    }
-    val uiArabicBoldTf: Typeface by lazy { androidx.core.content.res.ResourcesCompat.getFont(ctx, com.kouwis.alzkr.R.font.plex_arabic_bold) ?: Typeface.DEFAULT_BOLD }
-    val uiArabicTf: Typeface by lazy { androidx.core.content.res.ResourcesCompat.getFont(ctx, com.kouwis.alzkr.R.font.plex_arabic_semibold) ?: Typeface.DEFAULT }
-
     val hafsTf: Typeface by lazy { asset("hafs.otf") }
     val hafs: FontFamily by lazy { FontFamily(ComposeTypeface(hafsTf)) }
     val naskh: FontFamily by lazy { FontFamily(ComposeTypeface(naskhTf)) }

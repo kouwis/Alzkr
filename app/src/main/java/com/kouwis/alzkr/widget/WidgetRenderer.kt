@@ -27,9 +27,8 @@ enum class Align { Start, Center, End }
 
 /** Drawing helpers in dp, laid out in the reading direction (start = right in Arabic). */
 class Ink(val c: Canvas, val w: Float, val h: Float, val dp: Float, val k: Float, val rtl: Boolean, val s: WidgetStyle) {
-    // the interface's Arabic font (solid, like the Latin one); verses and adhkar keep the naskh (see [text]'s face)
-    private val bold: Typeface = if (rtl) AppFonts.uiArabicBoldTf else Typeface.create("sans-serif", Typeface.BOLD)
-    private val regular: Typeface = if (rtl) AppFonts.uiArabicTf else Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    private val bold: Typeface = if (rtl) AppFonts.naskhBoldTf else Typeface.create("sans-serif", Typeface.BOLD)
+    private val regular: Typeface = if (rtl) AppFonts.naskhTf else Typeface.create("sans-serif-medium", Typeface.NORMAL)
     val ink = s.ink.toArgb()
     val soft = s.soft.toArgb()
     val faint = s.faint.toArgb()
@@ -45,11 +44,11 @@ class Ink(val c: Canvas, val w: Float, val h: Float, val dp: Float, val k: Float
      */
     fun text(
         s: String, left: Float, top: Float, width: Float, sizeSp: Float, color: Int,
-        bold: Boolean = true, align: Align = Align.Start, lines: Int = 1, fit: Boolean = true, face: Typeface? = null,
+        bold: Boolean = true, align: Align = Align.Start, lines: Int = 1, fit: Boolean = true,
     ): Float {
         if (s.isBlank() || width <= 0f) return 0f
         val p = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            typeface = face ?: if (bold) this@Ink.bold else regular
+            typeface = if (bold) this@Ink.bold else regular
             this.color = color
             textSize = px(sizeSp)
             // on a clear widget (the lock screen, a wallpaper) a soft shadow keeps the text readable
@@ -368,7 +367,7 @@ object WidgetRenderer {
         }
         var y = ((h - head - tmpH - foot) / 2f).coerceAtLeast(pad * 0.5f)
         text(t("آية اليوم"), pad, y, inner, 12f, accent, align = Align.Center); y += head
-        y += text(ArabicText.brackets("﴿ ${d.ayah} ﴾"), pad, y, inner, 19f, ink, align = Align.Center, lines = lines, fit = false, face = AppFonts.naskhBoldTf) + px(6f)
+        y += text(ArabicText.brackets("﴿ ${d.ayah} ﴾"), pad, y, inner, 19f, ink, align = Align.Center, lines = lines, fit = false) + px(6f)
         text(dg(d.ayahRef), pad, y, inner, 12f, soft, bold = false, align = Align.Center)
     }
 
@@ -382,7 +381,7 @@ object WidgetRenderer {
         val lines = if (h > px(170f)) 6 else 3
         val p = TextPaint().apply { typeface = AppFonts.naskhBoldTf; textSize = px(18f) }
         val th = StaticLayout.Builder.obtain(d.dhikr, 0, d.dhikr.length, p, inner.toInt().coerceAtLeast(1)).setMaxLines(lines).build().height.toFloat()
-        text(d.dhikr, pad, ((h - foot - th) / 2f).coerceAtLeast(pad * 0.5f), inner, 18f, ink, align = Align.Center, lines = lines, fit = false, face = AppFonts.naskhBoldTf)
+        text(d.dhikr, pad, ((h - foot - th) / 2f).coerceAtLeast(pad * 0.5f), inner, 18f, ink, align = Align.Center, lines = lines, fit = false)
         val label = t("ذكر آخر")
         val bw = px(96f); val bh = lineH(12f) + px(12f)
         round((w - bw) / 2f, h - foot + (foot - bh) / 2f - px(4f), bw, bh, bh / 2f, faint)
@@ -441,8 +440,8 @@ object WidgetRenderer {
                 "date" -> {
                     pair("${d.weekday} · ${dg(d.hijriDay.toString())} ${d.hijriMonth}", dg(d.gregorianShort), pad, y, inner, 15f, 13f, endColor = soft)
                 }
-                "dhikr" -> text(d.dhikr, pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false, face = AppFonts.naskhBoldTf)
-                "ayah" -> text(ArabicText.brackets("﴿ ${d.ayah} ﴾"), pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false, face = AppFonts.naskhBoldTf)
+                "dhikr" -> text(d.dhikr, pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false)
+                "ayah" -> text(ArabicText.brackets("﴿ ${d.ayah} ﴾"), pad, y, inner, 15f, ink, align = Align.Center, lines = 2, fit = false)
             }
             y += hOf(b) + gap
         }
@@ -504,6 +503,6 @@ object WidgetRenderer {
         val txt = shortAdhkar[(java.time.LocalDate.now().dayOfYear * 24 + java.time.LocalTime.now().hour) % shortAdhkar.size]
         val p = TextPaint().apply { typeface = AppFonts.naskhBoldTf; textSize = px(18f) }
         val th = StaticLayout.Builder.obtain(txt, 0, txt.length, p, inner.toInt().coerceAtLeast(1)).setMaxLines(2).build().height.toFloat()
-        text(txt, pad, ((h - th) / 2f).coerceAtLeast(0f), inner, 18f, ink, align = Align.Center, lines = 2, fit = false, face = AppFonts.naskhBoldTf)
+        text(txt, pad, ((h - th) / 2f).coerceAtLeast(0f), inner, 18f, ink, align = Align.Center, lines = 2, fit = false)
     }
 }

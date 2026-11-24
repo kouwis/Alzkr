@@ -86,6 +86,17 @@ fun mushafColors(base: AlzkrColors, id: String): AlzkrColors {
     )
 }
 
+/**
+ * The phone's own sans-serif with no regular weight in it: plain text is drawn medium, the rest at
+ * their own weight or heavier (the closest weight up is taken).
+ */
+private val HeavierArabic = androidx.compose.ui.text.font.FontFamily(
+    androidx.compose.ui.text.font.Font(androidx.compose.ui.text.font.DeviceFontFamilyName("sans-serif"), androidx.compose.ui.text.font.FontWeight.Medium),
+    androidx.compose.ui.text.font.Font(androidx.compose.ui.text.font.DeviceFontFamilyName("sans-serif"), androidx.compose.ui.text.font.FontWeight.SemiBold),
+    androidx.compose.ui.text.font.Font(androidx.compose.ui.text.font.DeviceFontFamilyName("sans-serif"), androidx.compose.ui.text.font.FontWeight.Bold),
+    androidx.compose.ui.text.font.Font(androidx.compose.ui.text.font.DeviceFontFamilyName("sans-serif"), androidx.compose.ui.text.font.FontWeight.ExtraBold),
+)
+
 @Composable
 fun AlzkrTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
@@ -95,22 +106,14 @@ fun AlzkrTheme(content: @Composable () -> Unit) {
     } else {
         lightColorScheme(primary = c.primary, background = c.bg, surface = c.card, onSurface = c.text, onBackground = c.text)
     }
-    // Arabic in a solid sans (IBM Plex Sans Arabic); the other languages keep the phone's own font
+    // Arabic in the phone's own font, but a step heavier and a little larger, so it reads as solid as Latin
     val arabic = com.kouwis.alzkr.data.I18n.lang.rtl
-    val type = if (!arabic) androidx.compose.material3.Typography() else androidx.compose.material3.Typography().let { t0 ->
-        val f = com.kouwis.alzkr.data.AppFonts.uiArabic
-        androidx.compose.material3.Typography(
-            displayLarge = t0.displayLarge.copy(fontFamily = f), displayMedium = t0.displayMedium.copy(fontFamily = f), displaySmall = t0.displaySmall.copy(fontFamily = f),
-            headlineLarge = t0.headlineLarge.copy(fontFamily = f), headlineMedium = t0.headlineMedium.copy(fontFamily = f), headlineSmall = t0.headlineSmall.copy(fontFamily = f),
-            titleLarge = t0.titleLarge.copy(fontFamily = f), titleMedium = t0.titleMedium.copy(fontFamily = f), titleSmall = t0.titleSmall.copy(fontFamily = f),
-            bodyLarge = t0.bodyLarge.copy(fontFamily = f), bodyMedium = t0.bodyMedium.copy(fontFamily = f), bodySmall = t0.bodySmall.copy(fontFamily = f),
-            labelLarge = t0.labelLarge.copy(fontFamily = f), labelMedium = t0.labelMedium.copy(fontFamily = f), labelSmall = t0.labelSmall.copy(fontFamily = f),
-        )
-    }
-    MaterialTheme(colorScheme = scheme, typography = type) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    MaterialTheme(colorScheme = scheme) {
         CompositionLocalProvider(
             LocalColors provides c,
-            androidx.compose.material3.LocalTextStyle provides if (arabic) androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = com.kouwis.alzkr.data.AppFonts.uiArabic) else androidx.compose.material3.LocalTextStyle.current,
+            androidx.compose.ui.platform.LocalDensity provides if (arabic) androidx.compose.ui.unit.Density(density.density, density.fontScale * 1.08f) else density,
+            androidx.compose.material3.LocalTextStyle provides if (arabic) androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = HeavierArabic) else androidx.compose.material3.LocalTextStyle.current,
             LocalLayoutDirection provides if (com.kouwis.alzkr.data.I18n.lang.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
             content = content,
         )
