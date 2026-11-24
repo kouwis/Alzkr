@@ -24,12 +24,27 @@
   "short_end": 23.8
  },
  {
+  "id": "tobar",
+  "name": "نصر الدين طوبار",
+  "place": "مصر",
+  "url": "https://raw.githubusercontent.com/rn0x/altaqwaa-android/62dec5ac9722a6510b2fd6f78ae402f06fd83538/src/resources/audio/%D8%A7%D9%84%D8%A3%D8%B0%D8%A7%D9%86/%D9%86%D8%B5%D8%B1_%D8%A7%D9%84%D8%AF%D9%8A%D9%86_%D8%B7%D9%88%D8%A8%D8%A7%D8%B1.mp3",
+  "short_end": 29.0,
+  "cut": [
+   [
+    228.5,
+    259.2
+   ]
+  ],
+  "src": "tobar_src"
+ },
+ {
   "id": "tobar_fajr",
   "name": "نصر الدين طوبار",
   "place": "مصر",
   "url": "https://raw.githubusercontent.com/rn0x/altaqwaa-android/62dec5ac9722a6510b2fd6f78ae402f06fd83538/src/resources/audio/%D8%A7%D9%84%D8%A3%D8%B0%D8%A7%D9%86/%D9%86%D8%B5%D8%B1_%D8%A7%D9%84%D8%AF%D9%8A%D9%86_%D8%B7%D9%88%D8%A8%D8%A7%D8%B1.mp3",
   "fajr": true,
-  "short_end": 32.5
+  "short_end": 32.5,
+  "src": "tobar_src"
  },
  {
   "id": "raml",

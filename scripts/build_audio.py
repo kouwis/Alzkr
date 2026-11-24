@@ -34,7 +34,7 @@ def duration(p):
                                 capture_output=True, text=True).stdout.strip())
 
 
-def encode(src, dst, start=0.0, end=None):
+def encode(src, dst, start=0.0, end=None, cut=None):
     chain = []
     if end is not None:  # cut first (on the source's own clock), then fade the cut's last moment
         chain += [f"atrim=start={start:.2f}:end={end:.2f}", "asetpts=PTS-STARTPTS", f"afade=t=out:st={max(0.0, end - start - 1.2):.2f}:d=1.2"]
@@ -42,17 +42,30 @@ def encode(src, dst, start=0.0, end=None):
               "aresample=44100", "aformat=channel_layouts=mono"]
     # two steps (filters to WAV, then AAC): newer ffmpeg rejects loudnorm's frames straight into the AAC encoder
     wav = dst + ".wav"
-    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-af", ",".join(chain), "-c:a", "pcm_s16le", wav], check=True)
+    if cut:  # leave out these stretches (a Fajr adhan's «الصلاة خير من النوم», to make a regular one)
+        keep, t = [], 0.0
+        for a, b in cut:
+            keep.append((t, a)); t = b
+        keep.append((t, None))
+        parts = []
+        for n, (a, b) in enumerate(keep):
+            trim = f"atrim=start={a:.2f}" + (f":end={b:.2f}" if b is not None else "")
+            fades = (f",afade=t=out:st={max(0.0, b - a - 0.8):.2f}:d=0.8" if b is not None else "") + (",afade=t=in:d=0.3" if n else "")
+            parts.append(f"[0:a]{trim},asetpts=PTS-STARTPTS{fades}[p{n}]")
+        graph = ";".join(parts) + ";" + "".join(f"[p{n}]" for n in range(len(keep))) + f"concat=n={len(keep)}:v=0:a=1," + ",".join(chain)
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-filter_complex", graph, "-c:a", "pcm_s16le", wav], check=True)
+    else:
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-af", ",".join(chain), "-c:a", "pcm_s16le", wav], check=True)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", wav, "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", dst], check=True)
     os.remove(wav)
 
 
 catalog = []
 for e in SPEC:
-    src = download(e.get("assabile") or e["id"], e.get("url"))
+    src = download(e.get("assabile") or e.get("src") or e["id"], e.get("url"))
     prefix = "b-" if e.get("bundled") else ""
     full = f"{prefix}{e['id']}.m4a"
-    encode(src, f"{OUT}/{full}")
+    encode(src, f"{OUT}/{full}", cut=e.get("cut"))
     item = {"id": e["id"], "name": e["name"], "place": e.get("place", ""), "fajr": e.get("fajr", False),
             "full": full, "fullSize": os.path.getsize(f"{OUT}/{full}"), "bundled": bool(e.get("bundled")),
             "seconds": round(duration(f"{OUT}/{full}"))}
