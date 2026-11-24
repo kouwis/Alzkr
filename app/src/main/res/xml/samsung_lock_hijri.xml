@@ -3,7 +3,7 @@
 <samsung-appwidget-info xmlns:app="http://schemas.android.com/apk/res-auto"
     app:allowMultipleSizes="false"
     app:initialLayoutSmall="@layout/lock_lines"
-    app:previewLayoutSmall="@layout/lock_lines"
-    app:monotonePreviewLayoutSmall="@layout/lock_lines"
+    app:previewLayoutSmall="@layout/lock_hijri_preview"
+    app:monotonePreviewLayoutSmall="@layout/lock_hijri_preview"
     app:targetHost="lockAndAod"
     app:widgetSize="small" />

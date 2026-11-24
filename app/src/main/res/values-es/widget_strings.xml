@@ -44,4 +44,24 @@
     <string name="widget_lock_times_desc">Las cinco oraciones y sus horas</string>
     <string name="widget_lock_dhikr_label">Dhikr corto</string>
     <string name="widget_lock_dhikr_desc">Un dhikr corto que cambia cada hora</string>
+    <string name="lp_day">Tuesday</string>
+    <string name="lp_hijri">14 Jumada al-Akhirah</string>
+    <string name="lp_year">1448 AH</string>
+    <string name="lp_hijri_full">14 Jumada al-Akhirah 1448</string>
+    <string name="lp_greg">24 November 2026</string>
+    <string name="lp_next">Fajr 4:58</string>
+    <string name="lp_left">in 7h 30m</string>
+    <string name="lp_fajr">Fajr</string>
+    <string name="lp_time">4:58</string>
+    <string name="lp_dhikr">SubhanAllahi wa bihamdihi</string>
+    <string name="lp_n0">Fajr</string>
+    <string name="lp_n1">Dhuhr</string>
+    <string name="lp_n2">Asr</string>
+    <string name="lp_n3">Maghrib</string>
+    <string name="lp_n4">Isha</string>
+    <string name="lp_t0">4:58</string>
+    <string name="lp_t1">11:43</string>
+    <string name="lp_t2">2:37</string>
+    <string name="lp_t3">4:57</string>
+    <string name="lp_t4">6:18</string>
 </resources>

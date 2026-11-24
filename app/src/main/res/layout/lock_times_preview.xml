@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The lock-screen times: the five prayers in columns. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp">
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+        <TextView android:id="@+id/n0" android:text="@string/lp_n0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:textColor="#E6FFFFFF" android:textSize="11sp" />
+        <TextView android:id="@+id/t0" android:text="@string/lp_t0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:includeFontPadding="false" android:singleLine="true" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+        <TextView android:id="@+id/n1" android:text="@string/lp_n1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:textColor="#E6FFFFFF" android:textSize="11sp" />
+        <TextView android:id="@+id/t1" android:text="@string/lp_t1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:includeFontPadding="false" android:singleLine="true" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+        <TextView android:id="@+id/n2" android:text="@string/lp_n2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:textColor="#E6FFFFFF" android:textSize="11sp" />
+        <TextView android:id="@+id/t2" android:text="@string/lp_t2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:includeFontPadding="false" android:singleLine="true" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+        <TextView android:id="@+id/n3" android:text="@string/lp_n3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:textColor="#E6FFFFFF" android:textSize="11sp" />
+        <TextView android:id="@+id/t3" android:text="@string/lp_t3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:includeFontPadding="false" android:singleLine="true" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+        <TextView android:id="@+id/n4" android:text="@string/lp_n4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:textColor="#E6FFFFFF" android:textSize="11sp" />
+        <TextView android:id="@+id/t4" android:text="@string/lp_t4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:includeFontPadding="false" android:singleLine="true" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>
