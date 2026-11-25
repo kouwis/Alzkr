@@ -216,5 +216,15 @@
   "url": "https://archive.org/download/20201209_20201209_0854/%D9%8A%D8%A7%20%D9%85%D9%86%D9%82%D8%B0%D9%8A%20%D9%81%D9%8A%20%D8%B4%D8%AF%D8%AA%D9%8A-%D9%86%D8%B5%D8%B1%20%D8%A7%D9%84%D8%AF%D9%8A%D9%86%20%D8%B7%D9%88%D8%A8%D8%A7%D8%B1.mp3",
   "start": 0,
   "end": 158
+ },
+ {
+  "id": "tob_dalla",
+  "name": "نصر الدين طوبار",
+  "title": "إن ضل قلبي",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/tubar/tubar.mp3",
+  "start": 925,
+  "end": 1115.5
  }
 ]
