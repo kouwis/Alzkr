@@ -118,36 +118,6 @@
   "short_end": 13.98
  },
  {
-  "id": "naq_mawlay",
-  "name": "سيد النقشبندي",
-  "title": "مولاي إني ببابك",
-  "place": "مصر",
-  "tawshih": true,
-  "url": "https://archive.org/download/naqshabandi_mawlay/mix_42m34s%20%28audio-joiner.com%29.mp3",
-  "start": 27,
-  "end": 184
- },
- {
-  "id": "naq_omati",
-  "name": "سيد النقشبندي",
-  "title": "أقول أمتي",
-  "place": "مصر",
-  "tawshih": true,
-  "url": "https://archive.org/download/naqshabandi_aqoul_omati/mix_32m39s%20%28audio-joiner.com%29.mp3",
-  "start": 86,
-  "end": 238.5
- },
- {
-  "id": "naq_hobak",
-  "name": "سيد النقشبندي",
-  "title": "في حبك ربي",
-  "place": "مصر",
-  "tawshih": true,
-  "url": "https://archive.org/download/naqshabandi_fi_hobak_rabbi/mix_40m34s%20%28audio-joiner.com%29.mp3",
-  "start": 0,
-  "end": 186.5
- },
- {
   "id": "naq_aghib",
   "name": "سيد النقشبندي",
   "title": "أغيب وذو اللطائف لا يغيب",
@@ -186,5 +156,65 @@
   "url": "https://archive.org/download/nasr_el_din_tobar_sobhanak_ya_ghafer_alzunub/mix_55m14s%20%28audio-joiner.com%29.mp3",
   "start": 0,
   "end": 194.5
+ },
+ {
+  "id": "naq_sayyidi",
+  "name": "سيد النقشبندي",
+  "title": "سيدي يا رسول الله",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/nsr20100_yahoo_201401/%D8%B3%D9%8A%D8%AF%20%D9%86%D9%82%D8%B4%D8%A8%D9%86%D8%AF%D9%8A%20.%20%D8%B3%D9%8A%D8%AF%D9%8A%20%D9%8A%D8%A7%20%D8%B1%D8%B3%D9%88%D9%84%20%D8%A7%D9%84%D9%84%D9%87.mp3",
+  "start": 0,
+  "end": 137
+ },
+ {
+  "id": "tob_tuyur",
+  "name": "نصر الدين طوبار",
+  "title": "سبحت لله في العش الطيور",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/nasr-el-din-tobar_202209/%D8%B3%D8%A8%D8%AD%D8%AA%20%D9%84%D9%84%D9%87%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%B9%D8%B4%20%D8%A7%D9%84%D8%B7%D9%8A%D9%88%D8%B1%20%D9%84%D9%84%D8%B4%D9%8A%D8%AE%20%D9%86%D8%B5%D8%B1%20%D8%A7%D9%84%D8%AF%D9%8A%D9%86%20%D8%B7%D9%88%D8%A8%D8%A7%D8%B1%20%D8%AC%D9%88%D8%AF%D8%A9%20%D8%B9%D8%A7%D9%84%D9%8A%D8%A9%20%28192%20kbps%29.mp3",
+  "start": 0,
+  "end": 207.5
+ },
+ {
+  "id": "tob_monadi",
+  "name": "نصر الدين طوبار",
+  "title": "جل المنادي",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/20211026_20211026_1058/%D9%86%D8%B5%D8%B1%20%D8%A7%D9%84%D8%AF%D9%8A%D9%86%20%D8%B7%D9%88%D8%A8%D8%A7%D8%B1%20-%20%D8%AC%D9%84%20%D8%A7%D9%84%D9%85%D9%86%D8%A7%D8%AF%D9%8A.mp3",
+  "start": 0,
+  "end": 193
+ },
+ {
+  "id": "tob_malik",
+  "name": "نصر الدين طوبار",
+  "title": "يا مالك الملك",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/20211026_20211026_1058/%D9%86%D8%B5%D8%B1%20%D8%A7%D9%84%D8%AF%D9%8A%D9%86%20%D8%B7%D9%88%D8%A8%D8%A7%D8%B1%20-%20%D9%8A%D8%A7%20%D9%85%D8%A7%D9%84%D9%83%20%D8%A7%D9%84%D9%85%D9%84%D9%83.mp3",
+  "start": 0,
+  "end": 193
+ },
+ {
+  "id": "tob_wujud",
+  "name": "نصر الدين طوبار",
+  "title": "هو الله رب الوجود",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/20211026_20211026_1058/%D9%86%D8%B5%D8%B1%20%D8%A7%D9%84%D8%AF%D9%8A%D9%86%20%D8%B7%D9%88%D8%A8%D8%A7%D8%B1%20%20-%20%D9%87%D9%88%D9%87%20%D8%A7%D9%84%D9%84%D9%87%20%D8%B1%D8%A8%20%D8%A7%D9%84%D9%88%D8%AC%D9%88%D8%AF.mp3",
+  "start": 0,
+  "end": 181
+ },
+ {
+  "id": "tob_munis",
+  "name": "نصر الدين طوبار",
+  "title": "يا مؤنسي في وحدتي",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/20201209_20201209_0854/%D9%8A%D8%A7%20%D9%85%D9%86%D9%82%D8%B0%D9%8A%20%D9%81%D9%8A%20%D8%B4%D8%AF%D8%AA%D9%8A-%D9%86%D8%B5%D8%B1%20%D8%A7%D9%84%D8%AF%D9%8A%D9%86%20%D8%B7%D9%88%D8%A8%D8%A7%D8%B1.mp3",
+  "start": 0,
+  "end": 158
  }
 ]
