@@ -53,6 +53,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.kouwis.alzkr.alerts.AlertScheduler
+import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.Locator
 import com.kouwis.alzkr.data.Prefs

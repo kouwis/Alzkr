@@ -139,10 +139,10 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val secondNow = minuteNow * 60 + now.second
     // after Isha the card shows tomorrow's times, and counts down to tomorrow's Fajr (not today's, a minute off)
     val tomorrowTimes = remember(today, lat, lng, prefs.prayer) { PrayerTimes.forDay(today.plusDays(1), lat, lng, prefs.prayer) }
-    val afterIsha = Prayer.entries.none { times.getValue(it) > minuteNow } &&
+    val showTomorrow = Prayer.entries.none { times.getValue(it) > minuteNow } &&
         minuteNow >= times.getValue(Prayer.Isha) + (prefs.prayer.iqama[Prayer.Isha]?.takeIf { it > 0 } ?: 0)
-    val shownTimes = if (afterIsha) tomorrowTimes else times
-    val untilNext = if (afterIsha) tomorrowTimes.getValue(Prayer.Fajr) * 60 + 86_400 - secondNow else times.getValue(next) * 60 - secondNow
+    val shownTimes = if (showTomorrow) tomorrowTimes else times
+    val untilNext = if (showTomorrow) tomorrowTimes.getValue(Prayer.Fajr) * 60 + 86_400 - secondNow else times.getValue(next) * 60 - secondNow
     // the Hijri date turns at midnight with the Gregorian one (as the user asked), not at Maghrib
     val afterMaghrib = false
     val hijri = remember(today, afterMaghrib, prefs.hijriOffset) { Hijri.of(today, afterMaghrib) }
@@ -351,7 +351,7 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         current = current,
                         next = next,
                         times = shownTimes,
-                        tomorrow = afterIsha,
+                        tomorrow = showTomorrow,
                         untilNext = untilNext,
                         iqama = if (untilIqama != null && iqamaAt != null) Triple(current, iqamaAt, untilIqama) else null,
                         scene = scene,
