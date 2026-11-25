@@ -122,17 +122,22 @@ object WidgetData {
         fun ms(day: LocalDate, min: Int) = day.atStartOfDay(zone).plusMinutes(min.toLong()).toInstant().toEpochMilli()
 
         val times = PrayerTimes.forDay(today, lat, lng, prefs.prayer)
-        val rows = listOf(Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha).map { p ->
-            val m = times.getValue(p)
+        val tomorrowTimes = PrayerTimes.forDay(today.plusDays(1), lat, lng, prefs.prayer)
+        fun rowsOf(tt: Map<Prayer, Int>) = listOf(Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha).map { p ->
+            val m = tt.getValue(p)
             val iq = prefs.prayer.iqama[p]?.takeIf { it > 0 && p != Prayer.Sunrise }
             TimeRow(p, p.ar, clock(m), m, iq?.let { clock(m + it) }, iq?.let { m + it })
         }
+        val rows = rowsOf(times)
         val five = rows.filter { it.prayer != Prayer.Sunrise }
 
         // between an adhan and its iqama, the widgets count down to the iqama
         val inIqama = five.lastOrNull { it.iqamaMinute != null && nowMin >= it.minute && nowMin < it.iqamaMinute }
         val upcoming = five.firstOrNull { it.minute > nowMin }
-        val tomorrowFajr = PrayerTimes.forDay(today.plusDays(1), lat, lng, prefs.prayer).getValue(Prayer.Fajr)
+        val tomorrowFajr = tomorrowTimes.getValue(Prayer.Fajr)
+        // after Isha (and its iqama) everything shown is tomorrow's: the row of times and the Fajr counted down
+        // to are the same day's, never today's Fajr in the row beside tomorrow's below it
+        val afterIsha = inIqama == null && upcoming == null
         val next: TimeRow; val headline: String; val targetMin: Int; val targetDay: LocalDate; val sub: String
         val fromMin: Int; val fromLabel: String
         if (inIqama != null) {
@@ -146,7 +151,7 @@ object WidgetData {
             fromMin = prev?.minute ?: (times.getValue(Prayer.Isha) - 1440); fromLabel = prev?.name ?: Prayer.Isha.ar
         } else {
             next = TimeRow(Prayer.Fajr, Prayer.Fajr.ar, clock(tomorrowFajr), tomorrowFajr, null, null)
-            headline = Prayer.Fajr.ar; targetMin = tomorrowFajr; targetDay = today.plusDays(1)
+            headline = t("{0} غدًا", Prayer.Fajr.ar); targetMin = tomorrowFajr; targetDay = today.plusDays(1)
             sub = t("{0} · {1}", Prayer.Isha.ar, clock(times.getValue(Prayer.Isha)))
             fromMin = times.getValue(Prayer.Isha); fromLabel = Prayer.Isha.ar
         }
@@ -176,7 +181,7 @@ object WidgetData {
         }
         return WidgetSnapshot(
             place = prefs.place.ifBlank { t("القاهرة") },
-            rows = rows,
+            rows = if (afterIsha) rowsOf(tomorrowTimes) else rows,
             next = next,
             headline = headline,
             targetTime = clock(targetMin),

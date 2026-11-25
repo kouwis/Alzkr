@@ -23,10 +23,13 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) open.value = intent?.getStringExtra(EXTRA_OPEN)
         // the opening animation, on a fresh start only (not when a widget or a notification opens the app)
         val splash = mutableStateOf(savedInstanceState == null && open.value == null)
+        // the phone's permissions, asked for at the start (and again on opening while one the adhan needs is missing)
+        val perms = mutableStateOf(savedInstanceState == null && (!com.kouwis.alzkr.ui.Setup.done(this) || com.kouwis.alzkr.ui.Setup.missingRequired(this)))
         setContent {
             com.kouwis.alzkr.ui.Responsive {
                 androidx.compose.foundation.layout.Box {
                     AlzkrApp(open.value) { open.value = null }
+                    if (perms.value && !splash.value) com.kouwis.alzkr.ui.PermissionsPage { perms.value = false }
                     if (splash.value) com.kouwis.alzkr.ui.Splash { splash.value = false }
                     // whatever is sounding can always be stopped from inside the app
                     com.kouwis.alzkr.alerts.SoundingOverlay()

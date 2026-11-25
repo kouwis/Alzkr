@@ -137,7 +137,12 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
     val (current, next) = PrayerTimes.current(times, now)
     val minuteNow = now.hour * 60 + now.minute
     val secondNow = minuteNow * 60 + now.second
-    val untilNext = (times.getValue(next) * 60 - secondNow).let { if (it < 0) it + 86_400 else it }
+    // after Isha the card shows tomorrow's times, and counts down to tomorrow's Fajr (not today's, a minute off)
+    val tomorrowTimes = remember(today, lat, lng, prefs.prayer) { PrayerTimes.forDay(today.plusDays(1), lat, lng, prefs.prayer) }
+    val afterIsha = Prayer.entries.none { times.getValue(it) > minuteNow } &&
+        minuteNow >= times.getValue(Prayer.Isha) + (prefs.prayer.iqama[Prayer.Isha]?.takeIf { it > 0 } ?: 0)
+    val shownTimes = if (afterIsha) tomorrowTimes else times
+    val untilNext = if (afterIsha) tomorrowTimes.getValue(Prayer.Fajr) * 60 + 86_400 - secondNow else times.getValue(next) * 60 - secondNow
     // the Hijri date turns at midnight with the Gregorian one (as the user asked), not at Maghrib
     val afterMaghrib = false
     val hijri = remember(today, afterMaghrib, prefs.hijriOffset) { Hijri.of(today, afterMaghrib) }
@@ -345,7 +350,8 @@ fun AdhkarHomeScreen(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, onSe
                         onLocate = askLocation,
                         current = current,
                         next = next,
-                        times = times,
+                        times = shownTimes,
+                        tomorrow = afterIsha,
                         untilNext = untilNext,
                         iqama = if (untilIqama != null && iqamaAt != null) Triple(current, iqamaAt, untilIqama) else null,
                         scene = scene,
@@ -499,7 +505,7 @@ private val starSpots = listOf(
 private fun DayCard(
     weekday: String, hijriLine: String, gregorian: String,
     place: String, placeIsDefault: Boolean, locating: Boolean, onLocate: () -> Unit,
-    current: Prayer, next: Prayer, times: Map<Prayer, Int>, untilNext: Int,
+    current: Prayer, next: Prayer, times: Map<Prayer, Int>, untilNext: Int, tomorrow: Boolean = false,
     iqama: Triple<Prayer, Int, Int>? = null, // (prayer, iqama minute, seconds left)
     scene: Prayer, hijriDay: Int, onPick: (Prayer) -> Unit,
 ) {
@@ -582,7 +588,7 @@ private fun DayCard(
         ) {
             // the prayer that has come is done with: the strip is about the next one, live
             Column(Modifier.weight(1f)) {
-                Text(if (iqama != null) t("الإقامة") else if (next == Prayer.Sunrise) t("الشروق") else t("الصلاة القادمة"), color = soft, fontSize = 12.sp)
+                Text(if (iqama != null) t("الإقامة") else if (next == Prayer.Sunrise) t("الشروق") else if (tomorrow && iqama == null) t("الصلاة القادمة · غدًا") else t("الصلاة القادمة"), color = soft, fontSize = 12.sp)
                 Text(
                     if (iqama != null) t("إقامة {0} · {1}", iqama.first.ar, clock(iqama.second)) else "${next.ar} · ${clock(times.getValue(next))}",
                     color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold,

@@ -113,9 +113,52 @@ class SoundService : Service() {
             .addAction(0, t("إيقاف الأذان"), serviceIntent(ACTION_STOP, 2))
             .build()
         foreground(ID_PLAY, n)
+        // the phone is busy with sound (a call, a video, music, a recording): no adhan over it, just its notification
+        if (busy(alreadyPlaying = false)) { finish(keepNote = true); return }
         playing.value = e
         if (!startPlayer(e.sound, loop = false, prayer = e.prayer)) finish(keepNote = true)
-        else listenForKeys(power = true)
+        else { listenForKeys(power = true); yieldToOthers() }
+    }
+
+    private val audio get() = getSystemService(android.media.AudioManager::class.java)
+
+    /** A call (or a call ringing), another app's sound, or a recording. */
+    private fun busy(alreadyPlaying: Boolean): Boolean {
+        val am = audio ?: return false
+        val m = am.mode
+        if (m == android.media.AudioManager.MODE_IN_CALL || m == android.media.AudioManager.MODE_IN_COMMUNICATION ||
+            m == android.media.AudioManager.MODE_RINGTONE || m == 4 /* MODE_CALL_SCREENING */) return true
+        if (!alreadyPlaying && am.isMusicActive) return true
+        return runCatching { am.activeRecordingConfigurations.isNotEmpty() }.getOrDefault(false)
+    }
+
+    /*
+     * While the adhan plays, it gives way to anything else: another app taking the sound (a video,
+     * music, a voice note) takes the audio focus from it, and a call or a recording is checked for
+     * every second. Either stops the adhan; its notification stays.
+     */
+    private var focus: android.media.AudioFocusRequest? = null
+    private val watch = object : Runnable {
+        override fun run() {
+            if (mode != ACTION_PLAY) return
+            if (busy(alreadyPlaying = true)) { finish(keepNote = true); return }
+            handler.postDelayed(this, 1000)
+        }
+    }
+
+    private fun yieldToOthers() {
+        if (Build.VERSION.SDK_INT >= 26) runCatching {
+            val req = android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                .setOnAudioFocusChangeListener({ change ->
+                    if (change == android.media.AudioManager.AUDIOFOCUS_LOSS || change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                        if (mode == ACTION_PLAY) finish(keepNote = true)
+                    }
+                }, handler).build()
+            focus = req
+            audio?.requestAudioFocus(req)
+        }
+        handler.postDelayed(watch, 1500)
     }
 
     private fun ring(e: AlertEvent) {
@@ -257,6 +300,8 @@ class SoundService : Service() {
 
     private fun release() {
         stopListening()
+        if (Build.VERSION.SDK_INT >= 26) focus?.let { f -> runCatching { audio?.abandonAudioFocusRequest(f) } }
+        focus = null
         handler.removeCallbacksAndMessages(null)
         player?.runCatching { stop(); release() }
         player = null

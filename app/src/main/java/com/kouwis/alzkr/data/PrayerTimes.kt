@@ -174,16 +174,28 @@ object PrayerTimes {
         return floor(365.25 * (y + 4716)) + floor(30.6001 * (m + 1)) + d + b - 1524.5
     }
 
+    /**
+     * The sun's declination (degrees) and the equation of time (hours), from Meeus's «Astronomical
+     * Algorithms» (as NOAA's solar calculator): apparent longitude with nutation and the true
+     * obliquity. Closer than the almanac's short formulas: checked against Dar al-Ifta's Cairo table.
+     */
     private fun sunPosition(jd: Double): Pair<Double, Double> {
-        val dd = jd - 2451545.0
-        val g = fixAngle(357.529 + 0.98560028 * dd)
-        val q = fixAngle(280.459 + 0.98564736 * dd)
-        val l = fixAngle(q + 1.915 * dsin(g) + 0.020 * dsin(2 * g))
-        val e = 23.439 - 0.00000036 * dd
-        val ra = darctan2(dcos(e) * dsin(l), dcos(l)) / 15.0
-        val eqt = q / 15.0 - fixHour(ra)
-        val decl = darcsin(dsin(e) * dsin(l))
-        return decl to eqt
+        val tc = (jd - 2451545.0) / 36525.0
+        val l0 = fixAngle(280.46646 + tc * (36000.76983 + tc * 0.0003032))
+        val m = 357.52911 + tc * (35999.05029 - 0.0001537 * tc)
+        val e = 0.016708634 - tc * (0.000042037 + 0.0000001267 * tc)
+        val c = dsin(m) * (1.914602 - tc * (0.004817 + 0.000014 * tc)) + dsin(2 * m) * (0.019993 - 0.000101 * tc) + dsin(3 * m) * 0.000289
+        val omega = 125.04 - 1934.136 * tc
+        val lambda = l0 + c - 0.00569 - 0.00478 * dsin(omega)
+        val eps0 = 23.0 + (26.0 + (21.448 - tc * (46.815 + tc * (0.00059 - tc * 0.001813))) / 60.0) / 60.0
+        val eps = eps0 + 0.00256 * dcos(omega)
+        val decl = darcsin(dsin(eps) * dsin(lambda))
+        val y = tan(Math.toRadians(eps / 2)).let { it * it }
+        val l0r = Math.toRadians(l0); val mr = Math.toRadians(m)
+        val eqtMin = 4 * Math.toDegrees(
+            y * sin(2 * l0r) - 2 * e * sin(mr) + 4 * e * y * sin(mr) * cos(2 * l0r) - 0.5 * y * y * sin(4 * l0r) - 1.25 * e * e * sin(2 * mr),
+        )
+        return decl to eqtMin / 60.0
     }
 
     private fun midDay(jd: Double, t: Double): Double = fixHour(12 - sunPosition(jd + t).second)
