@@ -37,7 +37,7 @@ TAHLIL = "لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ ل�
 
 def _skel(t):
     import re
-    return re.sub("[ً-ٰٟـ]", "", t).replace(" ", "")
+    return re.sub("[\u064B-\u065F\u0670\u0640\u060C:. ]", "", t)
 
 
 def _n(t):
