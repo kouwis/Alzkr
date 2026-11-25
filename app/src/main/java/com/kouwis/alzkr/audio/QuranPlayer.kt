@@ -319,6 +319,7 @@ class QuranPlayerService : Service() {
         job?.cancel(); job = null
         release()
         focus?.let { getSystemService(AudioManager::class.java).abandonAudioFocusRequest(it) }
+        focus = null
         QuranAudio.state.value = null
         session?.run { isActive = false; release() }; session = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -334,7 +335,9 @@ class QuranPlayerService : Service() {
     private fun requestFocus() {
         if (Build.VERSION.SDK_INT < 26) return
         val am = getSystemService(AudioManager::class.java)
-        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        // one request, kept and asked again: a new one each time took the focus from the last, and that
+        // loss paused the recitation just started (playing again after changing a setting stuck)
+        val req = focus ?: AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
             .setOnAudioFocusChangeListener { change ->
                 if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) scope.launch { if (!paused) pause() }
