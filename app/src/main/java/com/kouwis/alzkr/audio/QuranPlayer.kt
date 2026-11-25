@@ -179,6 +179,7 @@ class QuranPlayerService : Service() {
 
     private fun publish(loading: Boolean = false) {
         QuranAudio.state.value = Recitation(reciter.id, s, a, playing = !paused, loading = loading, ayahTurn = ayahTurn, rangeTurn = rangeTurn, range = rangeOn)
+        runCatching { updateSession(loading) }
         notifyNow()
     }
 
@@ -306,6 +307,7 @@ class QuranPlayerService : Service() {
         release()
         focus?.let { getSystemService(AudioManager::class.java).abandonAudioFocusRequest(it) }
         QuranAudio.state.value = null
+        session?.run { isActive = false; release() }; session = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -332,24 +334,91 @@ class QuranPlayerService : Service() {
         this, code, Intent(this, QuranPlayerService::class.java).setAction(action), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+    /*
+     * The phone's media controls (the player in the notifications and on the lock screen, like music):
+     * a media session with the verse, the reciter and the buttons previous / play-pause / next / close.
+     */
+    private var session: android.media.session.MediaSession? = null
+    private val art by lazy {
+        runCatching {
+            val d = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_fg)!!
+            val bg = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_bg)!!
+            val bmp = android.graphics.Bitmap.createBitmap(512, 512, android.graphics.Bitmap.Config.ARGB_8888)
+            val cv = android.graphics.Canvas(bmp)
+            bg.setBounds(0, 0, 512, 512); bg.draw(cv)
+            d.setBounds(0, 0, 512, 512); d.draw(cv)
+            bmp
+        }.getOrNull()
+    }
+
+    private fun session(): android.media.session.MediaSession = session ?: android.media.session.MediaSession(this, "quran").apply {
+        setCallback(object : android.media.session.MediaSession.Callback() {
+            override fun onPlay() { if (paused) resume() }
+            override fun onPause() { if (!paused) pause() }
+            override fun onSkipToNext() = skip(+1)
+            override fun onSkipToPrevious() = skip(-1)
+            override fun onStop() = finish()
+            override fun onCustomAction(action: String, extras: android.os.Bundle?) { if (action == "close") finish() }
+        })
+        setSessionActivity(PendingIntent.getActivity(this@QuranPlayerService, 74, Intent(this@QuranPlayerService, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_IMMUTABLE))
+        isActive = true
+        session = this
+    }
+
+    private fun updateSession(loading: Boolean) {
+        val ss = session()
+        val surah = com.kouwis.alzkr.data.Quran.peek()?.surahName(s) ?: ""
+        val title = ArabicText.digitsOf(t("{0} · الآية {1}", surah, a.toString()))
+        ss.setMetadata(
+            android.media.MediaMetadata.Builder()
+                .putString(android.media.MediaMetadata.METADATA_KEY_TITLE, title)
+                .putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, "${reciter.name} · ${reciter.style}")
+                .putString(android.media.MediaMetadata.METADATA_KEY_ALBUM, t("القرآن الكريم"))
+                .apply { art?.let { putBitmap(android.media.MediaMetadata.METADATA_KEY_ART, it); putBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART, it) } }
+                .build(),
+        )
+        val st = when {
+            loading && !paused -> android.media.session.PlaybackState.STATE_BUFFERING
+            paused -> android.media.session.PlaybackState.STATE_PAUSED
+            else -> android.media.session.PlaybackState.STATE_PLAYING
+        }
+        ss.setPlaybackState(
+            android.media.session.PlaybackState.Builder()
+                .setActions(
+                    android.media.session.PlaybackState.ACTION_PLAY or android.media.session.PlaybackState.ACTION_PAUSE or
+                        android.media.session.PlaybackState.ACTION_PLAY_PAUSE or android.media.session.PlaybackState.ACTION_SKIP_TO_NEXT or
+                        android.media.session.PlaybackState.ACTION_SKIP_TO_PREVIOUS or android.media.session.PlaybackState.ACTION_STOP,
+                )
+                .addCustomAction(android.media.session.PlaybackState.CustomAction.Builder("close", t("إغلاق"), R.drawable.ic_media_close).build())
+                .setState(st, android.media.session.PlaybackState.PLAYBACK_POSITION_UNKNOWN, opts.speed)
+                .build(),
+        )
+    }
+
+    private fun action(icon: Int, label: String, act: String, code: Int) =
+        android.app.Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, icon), label, pending(act, code)).build()
+
     private fun build(): android.app.Notification {
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(CHANNEL) == null) {
             nm.createNotificationChannel(NotificationChannel(CHANNEL, t("تلاوة القرآن"), NotificationManager.IMPORTANCE_LOW).apply { setShowBadge(false) })
         }
-        val open = PendingIntent.getActivity(this, 74, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_IMMUTABLE)
+        val ss = session()
         val surah = com.kouwis.alzkr.data.Quran.peek()?.surahName(s) ?: ""
-        return NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat)
+        val b = if (Build.VERSION.SDK_INT >= 26) android.app.Notification.Builder(this, CHANNEL) else @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        return b.setSmallIcon(R.drawable.ic_stat)
             .setContentTitle(ArabicText.digitsOf(t("{0} · الآية {1}", surah, a.toString())))
             .setContentText("${reciter.name} · ${reciter.style}")
-            .setOngoing(!paused).setOnlyAlertOnce(true).setSilent(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(open)
-            .addAction(0, t("السابقة"), pending(PREV, 1))
-            .addAction(0, if (paused) t("تشغيل") else t("إيقاف مؤقت"), pending(TOGGLE, 2))
-            .addAction(0, t("التالية"), pending(NEXT, 3))
-            .addAction(0, t("إغلاق"), pending(STOP, 4))
+            .apply { art?.let { setLargeIcon(it) } }
+            .setOngoing(!paused).setOnlyAlertOnce(true)
+            .setVisibility(android.app.Notification.VISIBILITY_PUBLIC)
+            .setContentIntent(ss.controller.sessionActivity)
+            .setDeleteIntent(pending(STOP, 5))
+            .addAction(action(R.drawable.ic_media_prev, t("السابقة"), PREV, 1))
+            .addAction(action(if (paused) R.drawable.ic_media_play else R.drawable.ic_media_pause, if (paused) t("تشغيل") else t("إيقاف مؤقت"), TOGGLE, 2))
+            .addAction(action(R.drawable.ic_media_next, t("التالية"), NEXT, 3))
+            .addAction(action(R.drawable.ic_media_close, t("إغلاق"), STOP, 4))
+            .setStyle(android.app.Notification.MediaStyle().setMediaSession(ss.sessionToken).setShowActionsInCompactView(0, 1, 2))
             .build()
     }
 
@@ -366,6 +435,7 @@ class QuranPlayerService : Service() {
         job?.cancel()
         release()
         QuranAudio.state.value = null
+        session?.run { isActive = false; release() }; session = null
         scope.cancel()
         super.onDestroy()
     }
