@@ -116,5 +116,75 @@
   "place": "مصر",
   "assabile": 142,
   "short_end": 13.98
+ },
+ {
+  "id": "naq_mawlay",
+  "name": "سيد النقشبندي",
+  "title": "مولاي إني ببابك",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/naqshabandi_mawlay/mix_42m34s%20%28audio-joiner.com%29.mp3",
+  "start": 27,
+  "end": 184
+ },
+ {
+  "id": "naq_omati",
+  "name": "سيد النقشبندي",
+  "title": "أقول أمتي",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/naqshabandi_aqoul_omati/mix_32m39s%20%28audio-joiner.com%29.mp3",
+  "start": 86,
+  "end": 238.5
+ },
+ {
+  "id": "naq_hobak",
+  "name": "سيد النقشبندي",
+  "title": "في حبك ربي",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/naqshabandi_fi_hobak_rabbi/mix_40m34s%20%28audio-joiner.com%29.mp3",
+  "start": 0,
+  "end": 186.5
+ },
+ {
+  "id": "naq_aghib",
+  "name": "سيد النقشبندي",
+  "title": "أغيب وذو اللطائف لا يغيب",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/20230816_20230816_1516/%D8%B3%D9%8A%D8%AF%20%D9%86%D9%82%D8%B4%D8%A8%D9%86%D8%AF%D9%8A%20-%20%D8%A7%D8%A8%D8%AA%D9%87%D8%A7%D9%84%D8%A7%D8%AA%20%D9%85%D8%B5%D8%B1%D9%8A/%D8%A3%D8%BA%D9%8A%D8%A8%20%D9%88%D8%B0%D9%88%20%D8%A7%D9%84%D9%84%D8%B7%D8%A7%D8%A6%D9%81%20%D9%84%D8%A7%20%D9%8A%D8%BA%D9%8A%D8%A8.mp3",
+  "start": 0,
+  "end": 194
+ },
+ {
+  "id": "tob_ilah",
+  "name": "نصر الدين طوبار",
+  "title": "يا إله العالمين",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/YaElahAlalminEbthalNasrEldinTobar/YaElahAlalmin.mp3",
+  "start": 0,
+  "end": 189
+ },
+ {
+  "id": "tob_yaman",
+  "name": "نصر الدين طوبار",
+  "title": "يا من يراني في علاه",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/Nasr_aldin_Toubar/Nasr_aldin_Toubar.mp3",
+  "start": 0,
+  "end": 179.5
+ },
+ {
+  "id": "tob_sobhanak",
+  "name": "نصر الدين طوبار",
+  "title": "سبحانك يا غافر الذنوب",
+  "place": "مصر",
+  "tawshih": true,
+  "url": "https://archive.org/download/nasr_el_din_tobar_sobhanak_ya_ghafer_alzunub/mix_55m14s%20%28audio-joiner.com%29.mp3",
+  "start": 0,
+  "end": 194.5
  }
 ]

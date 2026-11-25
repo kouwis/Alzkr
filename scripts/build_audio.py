@@ -35,9 +35,10 @@ def duration(p):
 
 
 def encode(src, dst, start=0.0, end=None, cut=None):
+    fade = 2.5 if end is not None and end - start > 90 else 1.2
     chain = []
     if end is not None:  # cut first (on the source's own clock), then fade the cut's last moment
-        chain += [f"atrim=start={start:.2f}:end={end:.2f}", "asetpts=PTS-STARTPTS", f"afade=t=out:st={max(0.0, end - start - 1.2):.2f}:d=1.2"]
+        chain += [f"atrim=start={start:.2f}:end={end:.2f}", "asetpts=PTS-STARTPTS", f"afade=t=out:st={max(0.0, end - start - fade):.2f}:d={fade}"]
     chain += ["silenceremove=start_periods=1:start_threshold=-45dB", "loudnorm=I=-16:TP=-1.5:LRA=11",
               "aresample=44100", "aformat=channel_layouts=mono"]
     # two steps (filters to WAV, then AAC): newer ffmpeg rejects loudnorm's frames straight into the AAC encoder
@@ -63,6 +64,13 @@ def encode(src, dst, start=0.0, end=None, cut=None):
 catalog = []
 for e in SPEC:
     src = download(e.get("assabile") or e.get("src") or e["id"], e.get("url"))
+    if e.get("tawshih"):  # a passage of a tawshih (for the alarms), about three minutes, faded out at a line's end
+        full = f"taw-{e['id']}.m4a"
+        encode(src, f"{OUT}/{full}", float(e.get("start", 0)), float(e["end"]))
+        item = {"id": e["id"], "name": e["name"], "title": e["title"], "place": e.get("place", ""), "kind": "tawshih",
+                "full": full, "fullSize": os.path.getsize(f"{OUT}/{full}"), "seconds": round(duration(f"{OUT}/{full}"))}
+        catalog.append(item); print(item, flush=True)
+        continue
     prefix = "b-" if e.get("bundled") else ""
     full = f"{prefix}{e['id']}.m4a"
     encode(src, f"{OUT}/{full}", cut=e.get("cut"))
