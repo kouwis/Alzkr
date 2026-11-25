@@ -108,8 +108,13 @@ object QuranAudio {
     /** Another reciter: chosen for good, and the verse playing now starts again in his voice. */
     fun choose(context: Context, id: String) {
         Reciters.choose(context, id)
-        state.value?.let { play(context, it.s, it.a) }
+        reciter.value = id
+        // playing: the same verse again at once in the new voice, keeping the passage and its repeats
+        if (state.value != null) send(context, QuranPlayerService.RECITER)
     }
+    /** the chosen reciter's id, for the screens to follow */
+    val reciter = MutableStateFlow<String?>(null)
+    fun current(context: Context): Reciter = Reciters.byId(reciter.value ?: Reciters.current(context).id)
 
     fun file(context: Context, r: Reciter, s: Int, a: Int) =
         File(context.filesDir, "recitations/${r.folder}/%03d%03d.mp3".format(s, a))
@@ -129,6 +134,7 @@ class QuranPlayerService : Service() {
         const val PREV = "com.kouwis.alzkr.quran.PREV"
         const val STOP = "com.kouwis.alzkr.quran.STOP"
         const val OPTIONS = "com.kouwis.alzkr.quran.OPTIONS"
+        const val RECITER = "com.kouwis.alzkr.quran.RECITER"
         private const val CHANNEL = "quran_audio"
         private const val ID = 7401
     }
@@ -167,6 +173,12 @@ class QuranPlayerService : Service() {
             NEXT -> skip(+1)
             PREV -> skip(-1)
             STOP -> finish()
+            RECITER -> if (QuranAudio.state.value != null) {
+                reciter = Reciters.current(this)
+                paused = false
+                ayahTurn = 1
+                start()
+            }
             OPTIONS -> {
                 opts = withRange(PlayOptions.load(this))
                 applySpeed(player)

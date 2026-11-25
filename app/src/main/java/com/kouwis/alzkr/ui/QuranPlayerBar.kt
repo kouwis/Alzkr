@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -139,16 +140,17 @@ private fun Avatar(name: String, size: androidx.compose.ui.unit.Dp) {
 fun SafeDialog(onDismiss: () -> Unit, maxWidth: androidx.compose.ui.unit.Dp = 440.dp, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     val c = LocalColors.current
     // at most ~3/4 of the screen's height, so there is always a clear margin above and below
-    val maxH = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.74f).dp
-    Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-        Box(
-            Modifier.fillMaxWidth()
+    // a full-screen window of its own: the card sits in the middle, clear of the status and navigation bars
+    Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        androidx.compose.foundation.layout.BoxWithConstraints(
+            Modifier.fillMaxSize()
                 .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null, onClick = onDismiss)
-                .padding(horizontal = 24.dp),
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             contentAlignment = Alignment.Center,
         ) {
             Column(
-                Modifier.widthIn(max = maxWidth).fillMaxWidth().heightIn(max = maxH)
+                Modifier.widthIn(max = maxWidth).fillMaxWidth().heightIn(max = maxHeight * 0.88f)
                     .shadow(16.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(c.bg)
                     .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {},
                 content = content,
@@ -163,7 +165,8 @@ fun SafeDialog(onDismiss: () -> Unit, maxWidth: androidx.compose.ui.unit.Dp = 44
 fun ReciterPicker(onDismiss: () -> Unit) {
     val c = LocalColors.current
     val context = LocalContext.current
-    val current = Reciters.current(context).id
+    QuranAudio.reciter.collectAsState().value
+    val current = QuranAudio.current(context).id
     SafeDialog(onDismiss) {
         DialogTitle(t("اختر القارئ"))
         LazyColumn(Modifier.weight(1f, fill = false), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 8.dp, end = 8.dp, bottom = 10.dp)) {
@@ -172,7 +175,8 @@ fun ReciterPicker(onDismiss: () -> Unit) {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (on) c.primarySoft else Color.Transparent)
                         .springClick(label = styles.first().name, pressedScale = 0.99f) {
-                            if (styles.size == 1 || !on) { QuranAudio.choose(context, styles.first().id); onDismiss() }
+                            if (!on) QuranAudio.choose(context, styles.first().id)
+                            onDismiss()
                         }
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -223,7 +227,8 @@ fun ListenSheet(q: QuranData, pageKeys: List<String>, startKey: String, mode0: L
     var pickSurah by remember { mutableStateOf<Int?>(null) } // 0 from, 1 to, 2 the one verse
     var pickAyah by remember { mutableStateOf<Int?>(null) }  // the same, for the verse's number
     var pickCount by remember { mutableStateOf<Int?>(null) } // 0 each verse, 1 the passage
-    val reciter = Reciters.current(context)
+    QuranAudio.reciter.collectAsState().value
+    val reciter = QuranAudio.current(context)
     fun keep(n: PlayOptions) { o = n; QuranAudio.setOptions(context, n) }
 
     SafeDialog(onDismiss) {
