@@ -118,6 +118,13 @@
   "short_end": 13.98
  },
  {
+  "id": "gazy",
+  "name": "محمد جازي",
+  "place": "",
+  "file": "scripts/audio-src/gazy.mp3",
+  "short_end": 29.5
+ },
+ {
   "id": "naq_aghib",
   "name": "سيد النقشبندي",
   "title": "أغيب وذو اللطائف لا يغيب",

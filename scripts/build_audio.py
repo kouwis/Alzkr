@@ -63,7 +63,8 @@ def encode(src, dst, start=0.0, end=None, cut=None):
 
 catalog = []
 for e in SPEC:
-    src = download(e.get("assabile") or e.get("src") or e["id"], e.get("url"))
+    # a recording kept in the repository (one the user sent), or fetched
+    src = e["file"] if e.get("file") else download(e.get("assabile") or e.get("src") or e["id"], e.get("url"))
     if e.get("tawshih"):  # a passage of a tawshih (for the alarms), about three minutes, faded out at a line's end
         full = f"taw-{e['id']}.m4a"
         encode(src, f"{OUT}/{full}", float(e.get("start", 0)), float(e["end"]))

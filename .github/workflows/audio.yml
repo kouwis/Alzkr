@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["scripts/probe_list.json", "scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", ".github/workflows/audio.yml"]
+    paths: ["scripts/probe_list.json", "scripts/probe_adhan.py", "scripts/build_audio.py", "scripts/audio_spec.json", "scripts/audio-src/**", ".github/workflows/audio.yml"]
 
 permissions:
   contents: write
