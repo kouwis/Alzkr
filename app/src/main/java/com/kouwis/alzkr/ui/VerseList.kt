@@ -66,6 +66,7 @@ fun VerseList(
     onVisibleVerse: (Int, Int) -> Unit,
     onLongPress: (String) -> Unit,
     onTap: () -> Unit,
+    follow: String? = null,
 ) {
     val haptics = LocalHapticFeedback.current
     val c = LocalColors.current
@@ -78,6 +79,15 @@ fun VerseList(
     LaunchedEffect(state) {
         snapshotFlow { state.firstVisibleItemIndex }.distinctUntilChanged().collect { i ->
             all.getOrNull(i)?.let { (s, a) -> onVisibleVerse(s, a) }
+        }
+    }
+    // the verse being recited is brought into view
+    LaunchedEffect(follow) {
+        val p = follow?.split(":")?.mapNotNull { it.toIntOrNull() } ?: return@LaunchedEffect
+        if (p.size == 2) {
+            val i = q.indexOfVerse(p[0], p[1])
+            val visible = state.layoutInfo.visibleItemsInfo.map { it.index }
+            if (i !in visible.dropLast(1)) state.animateScrollToItem(i)
         }
     }
     LazyColumn(state = state, modifier = Modifier.fillMaxSize().background(c.paper).displayCutoutPadding()) {

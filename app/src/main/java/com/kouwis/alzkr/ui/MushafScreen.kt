@@ -53,6 +53,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -208,6 +209,27 @@ fun MushafScreen(
     }
 
     val pageVerses = { pg: Int -> q.versesOnPage(pg, q.tajweedReady(prefs.tajweedOn)).map { "${it.first}:${it.second}" } }
+
+    // listening: the verse heard glows and the mushaf turns to it
+    val recitation by com.kouwis.alzkr.audio.QuranAudio.state.collectAsState()
+    var follow by remember { mutableStateOf<Int?>(null) }
+    var followKey by remember { mutableStateOf<String?>(null) }
+    var pickReciter by remember { mutableStateOf(false) }
+    LaunchedEffect(recitation?.s, recitation?.a) {
+        val r = recitation ?: return@LaunchedEffect
+        val key = "${r.s}:${r.a}"
+        focus = key; followKey = key
+        follow = q.pageOf(r.s, r.a, tj)
+    }
+    LaunchedEffect(Unit) {
+        com.kouwis.alzkr.audio.QuranAudio.error.collect { msg ->
+            if (msg != null) { Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show(); com.kouwis.alzkr.audio.QuranAudio.error.value = null }
+        }
+    }
+    val listenFrom = { key: String ->
+        parseKey(key)?.let { (s, a) -> com.kouwis.alzkr.audio.QuranAudio.play(ctx, s, a) }
+        Unit
+    }
     Box(Modifier.fillMaxSize().background(c.paper)) {
         if (verseMode) CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             VerseList(
@@ -217,9 +239,11 @@ fun MushafScreen(
                 onVisibleVerse = { s, a -> currentPage = q.pageOf(s, a, q.tajweedReady(prefs.tajweedOn)) },
                 onLongPress = { selected = it },
                 onTap = onTap,
+                follow = followKey,
             )
         } else {
             PagesPager(q, currentPage, selected, focus, prefs.bookmarks, tj, mistakesMap,
+                follow = follow,
                 onPage = { currentPage = it },
                 onLongPressVerse = { selected = it },
                 onTap = onTap,
@@ -274,7 +298,12 @@ fun MushafScreen(
                 onTajweed = { showLegend = true },
                 tajweedOn = prefs.tajweedOn && !verseMode,
                 onSearch = { nav.go(Screen.Search) },
+                onListen = { (pageVerses(currentPage).firstOrNull() ?: "1:1").let(listenFrom); showBars() },
             )
+        }
+
+        recitation?.let { r ->
+            QuranPlayerBar(q, r, onReciter = { pickReciter = true }, modifier = Modifier.align(Alignment.BottomCenter))
         }
 
         val sel = selected
@@ -289,7 +318,8 @@ fun MushafScreen(
                     scope.launch { store.toggleBookmark("a:$sel") }
                     Toast.makeText(ctx, if (wasOn) t("أُزيلت علامة الآية") else t("وُضعت علامة على الآية"), Toast.LENGTH_SHORT).show()
                 },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (recitation != null) 110.dp else 28.dp),
+                onListen = { listenFrom(sel); selected = null },
                 onFavorite = { scope.launch { store.toggleFavorite(sel) } },
                 onTafsir = { dialog = t("التفسير الميسر") to sel },
                 onTranslation = { dialog = t("الترجمة (English)") to sel },
@@ -309,6 +339,7 @@ fun MushafScreen(
     }
 
     if (showLegend) TajweedLegendDialog(onDismiss = { showLegend = false })
+    if (pickReciter) ReciterPicker(onDismiss = { pickReciter = false })
 
     picking?.let { key ->
         val (s, a) = parseKey(key) ?: return@let
@@ -360,6 +391,7 @@ private fun PagesPager(
     onPage: (Int) -> Unit,
     onLongPressVerse: (String) -> Unit,
     onTap: () -> Unit,
+    follow: Int? = null,
 ) {
     // pages that carry a bookmark (the page itself, or an ayah on it) show a ribbon
     val marked = remember(bookmarks) {
@@ -378,6 +410,11 @@ private fun PagesPager(
     val state = rememberPagerState(initialPage = page - 1) { 604 }
     LaunchedEffect(state) {
         androidx.compose.runtime.snapshotFlow { state.currentPage }.distinctUntilChanged().collect { onPage(it + 1) }
+    }
+    // the page of the verse being recited
+    LaunchedEffect(follow) {
+        val f = follow ?: return@LaunchedEffect
+        if (state.currentPage != f - 1) state.animateScrollToPage(f - 1)
     }
     val landscape = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
     // the mushaf always turns its pages from right to left, whatever the interface language
@@ -423,6 +460,7 @@ private fun TopBar(
     onTajweed: () -> Unit,
     tajweedOn: Boolean = false,
     onSearch: () -> Unit = {},
+    onListen: () -> Unit = {},
 ) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().shadow(6.dp).background(c.card)) {
@@ -445,6 +483,7 @@ private fun TopBar(
                     color = c.muted, fontSize = 11.sp, maxLines = 1,
                 )
             }
+            RoundIconButton(Ic.headphones, t("استماع"), onListen, tint = c.primary, size = 40.dp)
             RoundIconButton(Ic.search, t("بحث"), onSearch, size = 40.dp)
             RoundIconButton(
                 if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
@@ -465,6 +504,7 @@ private fun AyahActions(
     isBookmarked: Boolean,
     onBookmark: () -> Unit,
     modifier: Modifier,
+    onListen: () -> Unit,
     onFavorite: () -> Unit,
     onTafsir: () -> Unit,
     onTranslation: () -> Unit,
@@ -480,6 +520,7 @@ private fun AyahActions(
             .background(Color(0xFF1E2A28))
             .padding(6.dp),
     ) {
+        ActionItem(Ic.headphones, t("استماع"), Color(0xFFE9C77B), onListen)
         ActionItem(if (isBookmarked) Ic.bookmarkFilled else Ic.bookmark, t("علامة"), Color(0xFFE9C77B), onBookmark, Haptic.Confirm)
         ActionItem(Ic.pen, t("مراجعة"), if (isMistake) Color(0xFFF08C7E) else Color.White, onMistake)
         ActionItem(Ic.book, t("تفسير"), Color.White, onTafsir)
