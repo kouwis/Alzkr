@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -128,6 +132,31 @@ private fun Avatar(name: String, size: androidx.compose.ui.unit.Dp) {
     }
 }
 
+/**
+ * A dialog that always fits the screen, whatever its size: margins all round, never wider than a
+ * phone's width, never taller than the room left; its middle scrolls when it must.
+ */
+@Composable
+fun SafeDialog(onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val c = LocalColors.current
+    Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        androidx.compose.foundation.layout.BoxWithConstraints(
+            Modifier.fillMaxSize()
+                .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null, onClick = onDismiss)
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                Modifier.widthIn(max = 520.dp).fillMaxWidth().heightIn(max = maxHeight)
+                    .shadow(16.dp, RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(c.bg)
+                    .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {},
+                content = content,
+            )
+        }
+    }
+}
+
 /** Choosing the reciter: one card for each, his styles as choices (kept for next time). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -135,41 +164,39 @@ fun ReciterPicker(onDismiss: () -> Unit) {
     val c = LocalColors.current
     val context = LocalContext.current
     val current = Reciters.current(context).id
-    Dialog(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(c.bg).padding(top = 18.dp, bottom = 10.dp)) {
-            Text(t("اختر القارئ"), color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold,
-                modifier = Modifier.padding(horizontal = 22.dp).padding(bottom = 10.dp))
-            LazyColumn(Modifier.heightIn(max = 560.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(Reciters.byName, key = { it.first }) { (arName, styles) ->
-                    val on = styles.any { it.id == current }
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (on) c.primarySoft else c.card)
-                            .border(1.dp, if (on) c.primary.copy(alpha = 0.6f) else c.border, RoundedCornerShape(20.dp))
-                            .springClick(label = styles.first().name, pressedScale = 0.98f) {
-                                if (styles.size == 1 || !on) { QuranAudio.choose(context, styles.first().id); onDismiss() }
-                            }
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Avatar(styles.first().name, 46.dp)
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(styles.first().name, color = c.text, fontSize = 18.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
-                            FlowRow(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                styles.forEach { r ->
-                                    val sel = r.id == current
-                                    Text(
-                                        r.style, color = if (sel) c.onPrimary else c.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (sel) c.primary else c.chip)
-                                            .springClick(label = r.style) { QuranAudio.choose(context, r.id); onDismiss() }
-                                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                                    )
-                                }
+    SafeDialog(onDismiss) {
+        Text(t("اختر القارئ"), color = c.text, fontSize = 21.sp, fontFamily = AppFonts.naskhBold,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 8.dp))
+        LazyColumn(Modifier.weight(1f, fill = false), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(Reciters.byName, key = { it.first }) { (_, styles) ->
+                val on = styles.any { it.id == current }
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(if (on) c.primarySoft else c.card)
+                        .border(1.dp, if (on) c.primary.copy(alpha = 0.6f) else c.border, RoundedCornerShape(18.dp))
+                        .springClick(label = styles.first().name, pressedScale = 0.98f) {
+                            if (styles.size == 1 || !on) { QuranAudio.choose(context, styles.first().id); onDismiss() }
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Avatar(styles.first().name, 42.dp)
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(styles.first().name, color = c.text, fontSize = 17.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
+                        FlowRow(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            styles.forEach { r ->
+                                val sel = r.id == current
+                                Text(
+                                    r.style, color = if (sel) c.onPrimary else c.muted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(if (sel) c.primary else c.chip)
+                                        .springClick(label = r.style) { QuranAudio.choose(context, r.id); onDismiss() }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                )
                             }
                         }
-                        if (on) Box(Modifier.size(26.dp).clip(CircleShape).background(c.primary), contentAlignment = Alignment.Center) {
-                            Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(15.dp))
-                        }
+                    }
+                    if (on) Box(Modifier.size(24.dp).clip(CircleShape).background(c.primary), contentAlignment = Alignment.Center) {
+                        Icon(Ic.check, null, tint = c.onPrimary, modifier = Modifier.size(14.dp))
                     }
                 }
             }
@@ -177,76 +204,137 @@ fun ReciterPicker(onDismiss: () -> Unit) {
     }
 }
 
+/** What to listen to. */
+enum class ListenMode { Verse, Page, Range, Continue }
+
 /**
- * «إعدادات التلاوة»: the speed, each verse's repeats, and a range (from a verse to a verse) with its
- * repeats. [startKey] is where a new range starts by default (the verse on screen).
+ * «الاستماع»: before anything plays, what to listen to (one verse, the whole page, from a verse to a
+ * verse, or on from here), the reciter, the speed and the repeats. [pageKeys] are the verses of the
+ * page on screen; [startKey] the verse to begin with (the one long-pressed, or the page's first).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PlaybackOptions(q: QuranData, startKey: String, onDismiss: () -> Unit) {
+fun ListenSheet(q: QuranData, pageKeys: List<String>, startKey: String, mode0: ListenMode, onReciter: () -> Unit, onDismiss: () -> Unit) {
     val c = LocalColors.current
     val context = LocalContext.current
     val saved by QuranAudio.options.collectAsState()
+    fun key(k: String) = k.split(":").mapNotNull { it.toIntOrNull() }.let { (it.getOrElse(0) { 1 }) to (it.getOrElse(1) { 1 }) }
+    val (s0, a0) = key(startKey)
+    var mode by remember { mutableStateOf(mode0) }
+    var verse by remember { mutableStateOf(s0 to a0) }
     var o by remember {
-        val p = startKey.split(":").mapNotNull { it.toIntOrNull() }
-        val s0 = p.getOrElse(0) { 1 }; val a0 = p.getOrElse(1) { 1 }
         mutableStateOf(if (saved.fromS > 0) saved else saved.copy(fromS = s0, fromA = a0, toS = s0, toA = Reciters.ayahs[s0 - 1]))
     }
-    var pickSurah by remember { mutableStateOf<Int?>(null) } // 0: start, 1: end
-    fun save(n: PlayOptions) { o = n; QuranAudio.setOptions(context, n) }
-    Dialog(onDismissRequest = onDismiss) {
+    var pickSurah by remember { mutableStateOf<Int?>(null) } // 0 from, 1 to, 2 the one verse
+    val reciter = Reciters.current(context)
+    fun keep(n: PlayOptions) { o = n; QuranAudio.setOptions(context, n) }
+
+    SafeDialog(onDismiss) {
+        Text(t("الاستماع"), color = c.text, fontSize = 21.sp, fontFamily = AppFonts.naskhBold,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp))
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(c.bg).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(t("إعدادات التلاوة"), color = c.text, fontSize = 22.sp, fontFamily = AppFonts.naskhBold)
+            // the reciter
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).springClick(label = t("القارئ"), pressedScale = 0.98f, onClick = onReciter)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Avatar(reciter.name, 38.dp)
+                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text(reciter.name, color = c.text, fontSize = 16.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
+                    Text(reciter.style, color = c.muted, fontSize = 12.sp)
+                }
+                Text(t("تغيير"), color = c.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+
+            // what to listen to
+            Card {
+                Label(t("ماذا تسمع؟"))
+                Choice(t("آية واحدة"), mode == ListenMode.Verse) { mode = ListenMode.Verse }
+                if (mode == ListenMode.Verse) VerseChooser(t("الآية"), q, verse.first, verse.second, { pickSurah = 2 }) { verse = verse.first to it }
+                Choice(t("الصفحة كاملة"), mode == ListenMode.Page) { mode = ListenMode.Page }
+                Choice(t("من آية إلى آية"), mode == ListenMode.Range) { mode = ListenMode.Range }
+                if (mode == ListenMode.Range) {
+                    VerseChooser(t("من"), q, o.fromS, o.fromA, { pickSurah = 0 }) { keep(o.copy(fromA = it)) }
+                    VerseChooser(t("إلى"), q, o.toS, o.toA, { pickSurah = 1 }) { keep(o.copy(toA = it)) }
+                }
+                Choice(t("متابعة التلاوة من هنا"), mode == ListenMode.Continue) { mode = ListenMode.Continue }
+            }
 
             Card {
                 Label(t("سرعة التلاوة"))
-                val speeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    speeds.forEach { v ->
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f).forEach { v ->
                         val sel = o.speed == v
                         Text(
-                            speedLabel(v), color = if (sel) c.onPrimary else c.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(if (sel) c.primary else c.chip)
-                                .springClick(label = speedLabel(v)) { save(o.copy(speed = v)) }.padding(vertical = 9.dp),
+                            speedLabel(v), color = if (sel) c.onPrimary else c.text, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                            modifier = Modifier.widthIn(min = 52.dp).clip(RoundedCornerShape(12.dp)).background(if (sel) c.primary else c.chip)
+                                .springClick(label = speedLabel(v)) { keep(o.copy(speed = v)) }.padding(horizontal = 8.dp, vertical = 8.dp),
                         )
                     }
                 }
-            }
-
-            Card {
                 Label(t("تكرار كل آية"))
-                Stepper(if (o.ayahRepeat <= 1) t("مرة واحدة") else t("{0} مرات", num(o.ayahRepeat)),
-                    o.ayahRepeat > 1, o.ayahRepeat < 20,
-                    { save(o.copy(ayahRepeat = o.ayahRepeat - 1)) }, { save(o.copy(ayahRepeat = o.ayahRepeat + 1)) })
-            }
-
-            Card {
-                Label(t("تلاوة مقطع"))
-                VerseChooser(t("من"), q, o.fromS, o.fromA, { pickSurah = 0 }) { a -> save(o.copy(fromA = a)) }
-                VerseChooser(t("إلى"), q, o.toS, o.toA, { pickSurah = 1 }) { a -> save(o.copy(toA = a)) }
-                Label(t("تكرار المقطع"))
-                Stepper(when (o.rangeRepeat) { 0 -> t("بلا توقف"); 1 -> t("مرة واحدة"); else -> t("{0} مرات", num(o.rangeRepeat)) },
-                    o.rangeRepeat != 1, true,
-                    { save(o.copy(rangeRepeat = if (o.rangeRepeat == 0) 20 else o.rangeRepeat - 1)) },
-                    { save(o.copy(rangeRepeat = if (o.rangeRepeat >= 20) 0 else if (o.rangeRepeat == 0) 0 else o.rangeRepeat + 1)) })
-                val valid = o.fromS < o.toS || (o.fromS == o.toS && o.fromA <= o.toA)
-                Text(
-                    if (valid) t("تشغيل المقطع") else t("بداية المقطع بعد نهايته"),
-                    color = if (valid) Dark else c.muted, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(16.dp)).background(if (valid) Gold else c.chip)
-                        .springClick(label = t("تشغيل المقطع")) { if (valid) { QuranAudio.setOptions(context, o); QuranAudio.playRange(context); onDismiss() } }
-                        .padding(vertical = 13.dp),
-                )
+                Stepper(if (o.ayahRepeat <= 1) t("مرة واحدة") else t("{0} مرات", num(o.ayahRepeat)), o.ayahRepeat > 1, o.ayahRepeat < 20,
+                    { keep(o.copy(ayahRepeat = o.ayahRepeat - 1)) }, { keep(o.copy(ayahRepeat = o.ayahRepeat + 1)) })
+                if (mode == ListenMode.Page || mode == ListenMode.Range) {
+                    Label(if (mode == ListenMode.Page) t("تكرار الصفحة") else t("تكرار المقطع"))
+                    Stepper(when (o.rangeRepeat) { 0 -> t("بلا توقف"); 1 -> t("مرة واحدة"); else -> t("{0} مرات", num(o.rangeRepeat)) },
+                        o.rangeRepeat != 1, o.rangeRepeat != 0,
+                        { keep(o.copy(rangeRepeat = if (o.rangeRepeat == 0) 20 else o.rangeRepeat - 1)) },
+                        { keep(o.copy(rangeRepeat = if (o.rangeRepeat >= 20) 0 else o.rangeRepeat + 1)) })
+                }
             }
         }
+
+        // play: always in view at the bottom
+        val valid = mode != ListenMode.Range || o.fromS < o.toS || (o.fromS == o.toS && o.fromA <= o.toA)
+        Text(
+            if (valid) t("تشغيل") else t("بداية المقطع بعد نهايته"),
+            color = if (valid) Dark else c.muted, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            modifier = Modifier.padding(14.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(if (valid) Gold else c.chip)
+                .springClick(label = t("تشغيل")) {
+                    if (!valid) return@springClick
+                    when (mode) {
+                        ListenMode.Verse -> { keep(o.copy(fromS = verse.first, fromA = verse.second, toS = verse.first, toA = verse.second)); QuranAudio.playRange(context) }
+                        ListenMode.Page -> {
+                            val (fs, fa) = key(pageKeys.firstOrNull() ?: startKey); val (ts, ta) = key(pageKeys.lastOrNull() ?: startKey)
+                            keep(o.copy(fromS = fs, fromA = fa, toS = ts, toA = ta)); QuranAudio.playRange(context)
+                        }
+                        ListenMode.Range -> { QuranAudio.setOptions(context, o); QuranAudio.playRange(context) }
+                        ListenMode.Continue -> QuranAudio.play(context, s0, a0)
+                    }
+                    onDismiss()
+                }
+                .padding(vertical = 14.dp),
+        )
     }
     pickSurah?.let { which ->
         SurahList(q, onDismiss = { pickSurah = null }) { n ->
-            save(if (which == 0) o.copy(fromS = n, fromA = 1) else o.copy(toS = n, toA = Reciters.ayahs[n - 1]))
+            when (which) {
+                0 -> keep(o.copy(fromS = n, fromA = 1))
+                1 -> keep(o.copy(toS = n, toA = Reciters.ayahs[n - 1]))
+                else -> verse = n to 1
+            }
             pickSurah = null
         }
+    }
+}
+
+@Composable
+private fun Choice(label: String, on: Boolean, onClick: () -> Unit) {
+    val c = LocalColors.current
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) c.primarySoft else Color.Transparent)
+            .springClick(label = label, pressedScale = 0.98f, onClick = onClick).padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(20.dp).clip(CircleShape).border(2.dp, if (on) c.primary else c.muted, CircleShape), contentAlignment = Alignment.Center) {
+            if (on) Box(Modifier.size(10.dp).clip(CircleShape).background(c.primary))
+        }
+        Text(label, color = c.text, fontSize = 16.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.padding(start = 10.dp))
     }
 }
 
@@ -275,7 +363,7 @@ private fun Stepper(value: String, canDown: Boolean, canUp: Boolean, onDown: () 
 private fun Round(sign: String, on: Boolean, onClick: () -> Unit) {
     val c = LocalColors.current
     Box(
-        Modifier.size(40.dp).clip(CircleShape).background(if (on) c.primarySoft else c.chip)
+        Modifier.size(36.dp).clip(CircleShape).background(if (on) c.primarySoft else c.chip)
             .then(if (on) Modifier.springClick(label = sign, onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) { Text(sign, color = if (on) c.primary else c.muted, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
@@ -287,14 +375,14 @@ private fun VerseChooser(label: String, q: QuranData, s: Int, a: Int, onSurah: (
     val c = LocalColors.current
     val max = Reciters.ayahs[(s - 1).coerceIn(0, 113)]
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, color = c.muted, fontSize = 14.sp, modifier = Modifier.width(30.dp))
+        Text(label, color = c.muted, fontSize = 14.sp, modifier = Modifier.widthIn(min = 30.dp))
         Text(
             q.surahName(s), color = c.text, fontSize = 15.sp, fontFamily = AppFonts.naskhBold, maxLines = 1, textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(c.chip).springClick(label = label, onClick = onSurah)
                 .padding(vertical = 9.dp, horizontal = 8.dp),
         )
         Round("−", a > 1) { onAyah(a - 1) }
-        Text(num(a), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+        Text(num(a), color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.width(34.dp))
         Round("+", a < max) { onAyah(a + 1) }
     }
 }
@@ -302,9 +390,9 @@ private fun VerseChooser(label: String, q: QuranData, s: Int, a: Int, onSurah: (
 @Composable
 private fun SurahList(q: QuranData, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
     val c = LocalColors.current
-    Dialog(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(c.bg).padding(vertical = 10.dp)) {
-            LazyColumn(Modifier.heightIn(max = 520.dp)) {
+    SafeDialog(onDismiss) {
+        run {
+            LazyColumn(Modifier.weight(1f, fill = false).padding(vertical = 8.dp)) {
                 items((1..114).toList()) { n ->
                     Row(
                         Modifier.fillMaxWidth().springClick(label = q.surahName(n)) { onPick(n) }.padding(horizontal = 20.dp, vertical = 11.dp),

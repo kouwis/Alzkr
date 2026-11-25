@@ -215,7 +215,8 @@ fun MushafScreen(
     var follow by remember { mutableStateOf<Int?>(null) }
     var followKey by remember { mutableStateOf<String?>(null) }
     var pickReciter by remember { mutableStateOf(false) }
-    var showOptions by remember { mutableStateOf(false) }
+    // «الاستماع»: nothing plays before the reader says what (the verse to start from, and the choice shown first)
+    var listen by remember { mutableStateOf<Pair<String, ListenMode>?>(null) }
     LaunchedEffect(Unit) { com.kouwis.alzkr.audio.QuranAudio.loadOptions(ctx) }
     LaunchedEffect(recitation?.s, recitation?.a) {
         val r = recitation ?: return@LaunchedEffect
@@ -300,13 +301,12 @@ fun MushafScreen(
                 onTajweed = { showLegend = true },
                 tajweedOn = prefs.tajweedOn && !verseMode,
                 onSearch = { nav.go(Screen.Search) },
-                onListen = { (pageVerses(currentPage).firstOrNull() ?: "1:1").let(listenFrom); showBars() },
-                onListenOptions = { showOptions = true },
+                onListen = { listen = (pageVerses(currentPage).firstOrNull() ?: "1:1") to ListenMode.Page; showBars() },
             )
         }
 
         recitation?.let { r ->
-            QuranPlayerBar(q, r, onReciter = { pickReciter = true }, onOptions = { showOptions = true }, modifier = Modifier.align(Alignment.BottomCenter))
+            QuranPlayerBar(q, r, onReciter = { pickReciter = true }, onOptions = { listen = "${r.s}:${r.a}" to ListenMode.Range }, modifier = Modifier.align(Alignment.BottomCenter))
         }
 
         val sel = selected
@@ -322,7 +322,7 @@ fun MushafScreen(
                     Toast.makeText(ctx, if (wasOn) t("أُزيلت علامة الآية") else t("وُضعت علامة على الآية"), Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (recitation != null) 150.dp else 28.dp),
-                onListen = { listenFrom(sel); selected = null },
+                onListen = { listen = sel to ListenMode.Verse; selected = null },
                 onFavorite = { scope.launch { store.toggleFavorite(sel) } },
                 onTafsir = { dialog = t("التفسير الميسر") to sel },
                 onTranslation = { dialog = t("الترجمة (English)") to sel },
@@ -343,7 +343,9 @@ fun MushafScreen(
 
     if (showLegend) TajweedLegendDialog(onDismiss = { showLegend = false })
     if (pickReciter) ReciterPicker(onDismiss = { pickReciter = false })
-    if (showOptions) PlaybackOptions(q, recitation?.let { "${it.s}:${it.a}" } ?: pageVerses(currentPage).firstOrNull() ?: "1:1", onDismiss = { showOptions = false })
+    listen?.let { (key, mode) ->
+        ListenSheet(q, pageVerses(currentPage), key, mode, onReciter = { pickReciter = true }, onDismiss = { listen = null })
+    }
 
     picking?.let { key ->
         val (s, a) = parseKey(key) ?: return@let
@@ -465,7 +467,6 @@ private fun TopBar(
     tajweedOn: Boolean = false,
     onSearch: () -> Unit = {},
     onListen: () -> Unit = {},
-    onListenOptions: () -> Unit = {},
 ) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().shadow(6.dp).background(c.card)) {
@@ -489,7 +490,6 @@ private fun TopBar(
                 )
             }
             RoundIconButton(Ic.headphones, t("استماع"), onListen, tint = c.primary, size = 40.dp)
-            RoundIconButton(Ic.repeat, t("إعدادات التلاوة"), onListenOptions, size = 40.dp)
             RoundIconButton(Ic.search, t("بحث"), onSearch, size = 40.dp)
             RoundIconButton(
                 if (pageBookmarked) Ic.bookmarkFilled else Ic.bookmark,
