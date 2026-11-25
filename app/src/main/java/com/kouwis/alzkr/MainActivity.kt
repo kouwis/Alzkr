@@ -28,9 +28,21 @@ class MainActivity : ComponentActivity() {
                 androidx.compose.foundation.layout.Box {
                     AlzkrApp(open.value) { open.value = null }
                     if (splash.value) com.kouwis.alzkr.ui.Splash { splash.value = false }
+                    // whatever is sounding can always be stopped from inside the app
+                    com.kouwis.alzkr.alerts.SoundingOverlay()
                 }
             }
         }
+    }
+
+    /** While an adhan or an alarm sounds, a volume button stops it. */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        val vol = event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (vol && com.kouwis.alzkr.alerts.SoundService.active()) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN) com.kouwis.alzkr.alerts.SoundService.stopAll(this)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onNewIntent(intent: Intent) {

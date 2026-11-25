@@ -27,6 +27,8 @@ data class Dhikr(
     val check: String = "",
     /** a picture for a sunnah (see SunnahIcon) */
     val icon: String = "",
+    /** another number the hadith allows (the morning tahlil: ×100, or ×10), chosen by the user */
+    val alt: Int = 0,
 )
 
 @Serializable

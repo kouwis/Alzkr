@@ -46,6 +46,18 @@ class SoundService : Service() {
         /** The alarm now ringing (for the full-screen alarm page), or null. */
         val ringing = MutableStateFlow<AlertEvent?>(null)
 
+        /** The adhan now playing (so the app can offer to stop it), or null. */
+        val playing = MutableStateFlow<AlertEvent?>(null)
+
+        /** Anything sounding now (an adhan, an alarm). */
+        fun active() = ringing.value != null || playing.value != null
+
+        /** Stops whatever is sounding: from the app, a volume button, anywhere. */
+        fun stopAll(context: Context) {
+            if (!active()) return
+            runCatching { context.startService(Intent(context, SoundService::class.java).setAction(ACTION_STOP)) }
+        }
+
         fun start(context: Context, action: String, e: AlertEvent) {
             val i = Intent(context, SoundService::class.java).setAction(action)
                 .putExtra(EXTRA_EVENT, Json.encodeToString(AlertEvent.serializer(), e))
@@ -101,8 +113,9 @@ class SoundService : Service() {
             .addAction(0, t("إيقاف الأذان"), serviceIntent(ACTION_STOP, 2))
             .build()
         foreground(ID_PLAY, n)
+        playing.value = e
         if (!startPlayer(e.sound, loop = false, prayer = e.prayer)) finish(keepNote = true)
-        else listenForKeys()
+        else listenForKeys(power = true)
     }
 
     private fun ring(e: AlertEvent) {
@@ -129,6 +142,10 @@ class SoundService : Service() {
         ringing.value = e
         if (!startPlayer(e.sound, loop = true, prayer = e.prayer)) startPlayer("alarm", loop = true, prayer = null)
         vibrate()
+        // the volume buttons stop it too
+        listenForKeys(power = false)
+        // and its page opens at once when the phone allows it (the notification is the way in otherwise)
+        runCatching { startActivity(Intent(this, AlarmActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)) }
         handler.postDelayed({ finish(keepNote = false) }, ALARM_MAX_MS)
     }
 
@@ -195,7 +212,7 @@ class SoundService : Service() {
     private var screen: android.content.BroadcastReceiver? = null
     private var startedAt = 0L
 
-    private fun listenForKeys() {
+    private fun listenForKeys(power: Boolean) {
         startedAt = System.currentTimeMillis()
         runCatching {
             session = android.media.session.MediaSession(this, "adhan").apply {
@@ -215,6 +232,7 @@ class SoundService : Service() {
                 isActive = true
             }
         }
+        if (!power) return
         val r = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
                 // a moment's grace: the adhan's own notification may light the screen as it starts
@@ -228,7 +246,7 @@ class SoundService : Service() {
         }
     }
 
-    private fun stopByKey() { if (mode == ACTION_PLAY) finish(keepNote = true) }
+    private fun stopByKey() { if (mode != null) finish(keepNote = mode == ACTION_PLAY) }
 
     private fun stopListening() {
         session?.runCatching { isActive = false; release() }
@@ -251,6 +269,7 @@ class SoundService : Service() {
         val wasPlay = mode == ACTION_PLAY
         release()
         ringing.value = null
+        playing.value = null
         current = null; mode = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         if (keepNote && wasPlay && e != null) AlertReceiver.notify(this, e, Channels.ADHAN)
@@ -260,6 +279,7 @@ class SoundService : Service() {
     override fun onDestroy() {
         release()
         ringing.value = null
+        playing.value = null
         super.onDestroy()
     }
 }

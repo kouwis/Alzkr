@@ -59,6 +59,15 @@ class AlarmActivity : ComponentActivity() {
         setContent { AlzkrTheme { AlarmPage(::stop, ::snooze, ::finish) } }
     }
 
+    /** A volume button stops the alarm, as on the phone's own alarm clock. */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN) stop()
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     private fun send(action: String) {
         startService(Intent(this, SoundService::class.java).setAction(action))
         finish()
@@ -69,7 +78,7 @@ class AlarmActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AlarmPage(onStop: () -> Unit, onSnooze: () -> Unit, onGone: () -> Unit) {
+internal fun AlarmPage(onStop: () -> Unit, onSnooze: () -> Unit, onGone: () -> Unit) {
     val e by SoundService.ringing.collectAsState()
     var seen by remember { mutableStateOf(false) }
     LaunchedEffect(e) { if (e != null) seen = true else if (seen) onGone() }

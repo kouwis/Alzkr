@@ -135,10 +135,17 @@ private fun Dhikr.weight(): Int = parts.sumOf { p ->
 }
 
 @Composable
-private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, start: Int) {
+private fun Reader(q: QuranData, store: Prefs, nav: Nav, raw: AdhkarSection, start: Int) {
     val c = LocalColors.current
     val view = LocalView.current
     val context = LocalContext.current
+    // a dhikr with two numbers (×100 or ×10) is counted to the one the user chose (kept for next time)
+    val altPrefs = remember { context.getSharedPreferences("adhkar_alt", android.content.Context.MODE_PRIVATE) }
+    var altTick by remember { mutableStateOf(0) }
+    fun usesAlt(i: Int) = altPrefs.getBoolean("${raw.id}:$i", false)
+    val sec = remember(raw, altTick) {
+        raw.copy(items = raw.items.mapIndexed { i, d -> if (d.alt > 0 && usesAlt(i)) d.copy(count = d.alt) else d })
+    }
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val n = sec.items.size
@@ -246,7 +253,23 @@ private fun Reader(q: QuranData, store: Prefs, nav: Nav, sec: AdhkarSection, sta
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (counts[i] > 0) SmallAction(Ic.refresh, t("تصفير")) { counts[i] = 0; finished = false; view.haptic(Haptic.Delete) }
                 }
-                DhikrCounter(count = counts[i], target = target(i), done = complete(i), onTap = { tap(i) })
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    DhikrCounter(count = counts[i], target = target(i), done = complete(i), onTap = { tap(i) })
+                    val alt = raw.items[i].alt
+                    if (alt > 0) {
+                        // ×100 or ×10: both are in the hadith
+                        val other = if (usesAlt(i)) raw.items[i].count else alt
+                        Text(
+                            t("اجعله × {0}", num(other)), color = c.goldText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(14.dp)).background(c.goldSoft)
+                                .springClick(label = t("اجعله × {0}", num(other))) {
+                                    altPrefs.edit().putBoolean("${raw.id}:$i", !usesAlt(i)).apply()
+                                    counts[i] = 0; altTick++
+                                }
+                                .padding(horizontal = 12.dp, vertical = 5.dp),
+                        )
+                    }
+                }
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (target(i) > 0 && !complete(i)) SmallAction(Ic.check, t("أتممته")) { completeNow(i) }
                 }

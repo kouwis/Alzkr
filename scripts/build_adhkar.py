@@ -564,6 +564,8 @@ def main():
 
     if fails:
         raise SystemExit("\n".join(fails))
+    import adhkar_fixes  # vowel marks the source got wrong or left out, and the morning's ×10/×100 tahlil
+    sections = adhkar_fixes.apply(sections)
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, "adhkar.json"), "w", encoding="utf-8") as f:
         json.dump({"sections": sections}, f, ensure_ascii=False, separators=(",", ":"))
