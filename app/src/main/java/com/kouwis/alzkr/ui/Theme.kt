@@ -147,6 +147,8 @@ object Ic {
     val pause = make("pause", "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", fill = true)
     val nextTrack = make("nextTrack", "M6 6l8.5 6L6 18zM16 6h2v12h-2z", fill = true)
     val prevTrack = make("prevTrack", "M18 6l-8.5 6L18 18zM6 6h2v12H6z", fill = true)
+    val sliders = make("sliders", "M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4")
+    val repeat = make("repeat", "M17 3l3 3-3 3M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3M20 13v2a3 3 0 0 1-3 3H4")
     val headphones = make("headphones", "M4 15v-3a8 8 0 0 1 16 0v3M4 15h3v5H5a1 1 0 0 1-1-1zM20 15h-3v5h2a1 1 0 0 0 1-1z")
     val download = make("download", "M12 4v11M7 10.5l5 5 5-5M5 20h14")
     val plus = make("plus", "M12 5v14M5 12h14")

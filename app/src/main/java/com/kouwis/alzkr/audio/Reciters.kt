@@ -48,6 +48,10 @@ object Reciters {
     fun current(context: Context) = byId(sp(context).getString("reciter", null))
     fun choose(context: Context, id: String) = sp(context).edit().putString("reciter", id).apply()
 
+    /** Grouped by reciter: one name, his styles. */
+    val byName: List<Pair<String, List<Reciter>>> get() = all.groupBy { it.arName }.toList()
+
+
     /** The number of verses in each surah. */
     val ayahs = intArrayOf(
         7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135,

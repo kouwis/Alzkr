@@ -36,7 +36,34 @@ import java.net.URL
 import kotlin.coroutines.resume
 
 /** What is being recited now (null: nothing). */
-data class Recitation(val reciter: String, val s: Int, val a: Int, val playing: Boolean, val loading: Boolean)
+data class Recitation(
+    val reciter: String, val s: Int, val a: Int, val playing: Boolean, val loading: Boolean,
+    /** the verse's turn of [PlayOptions.ayahRepeat], and the range's of [PlayOptions.rangeRepeat] (from 1) */
+    val ayahTurn: Int = 1, val rangeTurn: Int = 1,
+    /** playing the chosen range */
+    val range: Boolean = false,
+)
+
+/**
+ * How to listen, kept for next time: the speed (0.5 to 2), each verse said [ayahRepeat] times, and the
+ * range from [fromS]:[fromA] to [toS]:[toA] (0: no end, carry on) said [rangeRepeat] times (0: always).
+ */
+data class PlayOptions(
+    val speed: Float = 1f, val ayahRepeat: Int = 1, val rangeRepeat: Int = 1,
+    val fromS: Int = 0, val fromA: Int = 0, val toS: Int = 0, val toA: Int = 0,
+) {
+    val hasRange get() = toS > 0
+    companion object {
+        private fun sp(c: Context) = c.getSharedPreferences("quran_audio", Context.MODE_PRIVATE)
+        fun load(c: Context) = sp(c).let {
+            PlayOptions(it.getFloat("speed", 1f), it.getInt("ayahRepeat", 1), it.getInt("rangeRepeat", 1),
+                it.getInt("fromS", 0), it.getInt("fromA", 0), it.getInt("toS", 0), it.getInt("toA", 0))
+        }
+        fun save(c: Context, o: PlayOptions) = sp(c).edit().putFloat("speed", o.speed).putInt("ayahRepeat", o.ayahRepeat)
+            .putInt("rangeRepeat", o.rangeRepeat).putInt("fromS", o.fromS).putInt("fromA", o.fromA)
+            .putInt("toS", o.toS).putInt("toA", o.toA).apply()
+    }
+}
 
 /**
  * Listening to the Quran, verse by verse: each verse is fetched once (kept for listening again
@@ -49,8 +76,8 @@ object QuranAudio {
     /** a message for the reader (no internet, …), shown once */
     val error = MutableStateFlow<String?>(null)
 
-    private fun send(context: Context, action: String, s: Int = 0, a: Int = 0) {
-        val i = Intent(context, QuranPlayerService::class.java).setAction(action).putExtra("s", s).putExtra("a", a)
+    private fun send(context: Context, action: String, s: Int = 0, a: Int = 0, range: Boolean = false) {
+        val i = Intent(context, QuranPlayerService::class.java).setAction(action).putExtra("s", s).putExtra("a", a).putExtra("range", range)
         runCatching {
             if (action == QuranPlayerService.PLAY) androidx.core.content.ContextCompat.startForegroundService(context, i)
             else context.startService(i)
@@ -62,6 +89,21 @@ object QuranAudio {
     fun next(context: Context) = send(context, QuranPlayerService.NEXT)
     fun previous(context: Context) = send(context, QuranPlayerService.PREV)
     fun stop(context: Context) = send(context, QuranPlayerService.STOP)
+
+    /** New options: kept, and taken up at once by what is playing (the speed straight away). */
+    fun setOptions(context: Context, o: PlayOptions) {
+        PlayOptions.save(context, o)
+        options.value = o
+        if (state.value != null) send(context, QuranPlayerService.OPTIONS)
+    }
+    val options = MutableStateFlow(PlayOptions())
+    fun loadOptions(context: Context) { options.value = PlayOptions.load(context) }
+
+    /** Plays the chosen range from its start. */
+    fun playRange(context: Context) {
+        val o = options.value
+        if (o.fromS > 0) send(context, QuranPlayerService.PLAY, o.fromS, o.fromA.coerceAtLeast(1), range = true)
+    }
 
     /** Another reciter: chosen for good, and the verse playing now starts again in his voice. */
     fun choose(context: Context, id: String) {
@@ -86,6 +128,7 @@ class QuranPlayerService : Service() {
         const val NEXT = "com.kouwis.alzkr.quran.NEXT"
         const val PREV = "com.kouwis.alzkr.quran.PREV"
         const val STOP = "com.kouwis.alzkr.quran.STOP"
+        const val OPTIONS = "com.kouwis.alzkr.quran.OPTIONS"
         private const val CHANNEL = "quran_audio"
         private const val ID = 7401
     }
@@ -98,6 +141,12 @@ class QuranPlayerService : Service() {
     private var a = 1
     private var paused = false
     private var focus: AudioFocusRequest? = null
+    private var opts = PlayOptions()
+    private var ayahTurn = 1
+    private var rangeTurn = 1
+    /** started with «تشغيل المقطع»: the chosen range applies (otherwise playing carries on) */
+    private var rangeOn = false
+    private fun withRange(o: PlayOptions) = if (rangeOn) o else o.copy(toS = 0, toA = 0)
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -105,6 +154,9 @@ class QuranPlayerService : Service() {
         when (intent?.action) {
             PLAY -> {
                 reciter = Reciters.current(this)
+                rangeOn = intent.getBooleanExtra("range", false)
+                opts = withRange(PlayOptions.load(this)); QuranAudio.options.value = PlayOptions.load(this)
+                rangeTurn = 1
                 s = intent.getIntExtra("s", 1).coerceIn(1, 114)
                 a = intent.getIntExtra("a", 1).coerceIn(1, Reciters.ayahs[s - 1])
                 paused = false
@@ -115,13 +167,18 @@ class QuranPlayerService : Service() {
             NEXT -> skip(+1)
             PREV -> skip(-1)
             STOP -> finish()
+            OPTIONS -> {
+                opts = withRange(PlayOptions.load(this))
+                applySpeed(player)
+                publish()
+            }
             else -> if (QuranAudio.state.value == null) stopSelf()
         }
         return START_NOT_STICKY
     }
 
     private fun publish(loading: Boolean = false) {
-        QuranAudio.state.value = Recitation(reciter.id, s, a, playing = !paused, loading = loading)
+        QuranAudio.state.value = Recitation(reciter.id, s, a, playing = !paused, loading = loading, ayahTurn = ayahTurn, rangeTurn = rangeTurn, range = rangeOn)
         notifyNow()
     }
 
@@ -133,11 +190,28 @@ class QuranPlayerService : Service() {
             while (isActive) {
                 // the basmala before a surah's first verse
                 if (a == 1 && s != 1 && s != 9) {
+                    ayahTurn = 1
                     publish(loading = true)
                     if (!playVerse(1, 1)) return@launch
                 }
-                publish(loading = true)
-                if (!playVerse(s, a)) return@launch
+                // the verse, as many times as chosen
+                ayahTurn = 1
+                while (true) {
+                    publish(loading = true)
+                    if (!playVerse(s, a)) return@launch
+                    if (ayahTurn >= opts.ayahRepeat.coerceAtLeast(1)) break
+                    ayahTurn++
+                }
+                ayahTurn = 1
+                // the end of the chosen range: again from its start, or done
+                if (opts.hasRange && s == opts.toS && a == opts.toA) {
+                    if (opts.rangeRepeat == 0 || rangeTurn < opts.rangeRepeat) {
+                        rangeTurn++
+                        s = opts.fromS.coerceIn(1, 114); a = opts.fromA.coerceIn(1, Reciters.ayahs[s - 1])
+                        continue
+                    }
+                    finish(); return@launch
+                }
                 // on to the next verse, and into the next surah
                 if (a < Reciters.ayahs[s - 1]) a++ else if (s < 114) { s++; a = 1 } else { finish(); return@launch }
             }
@@ -160,7 +234,8 @@ class QuranPlayerService : Service() {
         val ok = runCatching { mp.setDataSource(f.path); mp.prepare() }.isSuccess
         if (!ok) { f.delete(); mp.release(); player = null; return true }
         publish(loading = false)
-        if (!paused) mp.start()
+        applySpeed(mp)
+        if (!paused) mp.start() else runCatching { mp.pause() }
         suspendCancellableCoroutine { cont ->
             mp.setOnCompletionListener { if (cont.isActive) cont.resume(Unit) }
             mp.setOnErrorListener { _, _, _ -> if (cont.isActive) cont.resume(Unit); true }
@@ -191,6 +266,17 @@ class QuranPlayerService : Service() {
         repeat(3) {
             if (aa < Reciters.ayahs[ss - 1]) aa++ else if (ss < 114) { ss++; aa = 1 } else return
             fetch(ss, aa)
+        }
+    }
+
+    /** The chosen speed (Android 6 and later), keeping the reciter's pitch. */
+    private fun applySpeed(mp: MediaPlayer?) {
+        if (mp == null || Build.VERSION.SDK_INT < 23) return
+        runCatching {
+            val wasPlaying = mp.isPlaying
+            mp.playbackParams = mp.playbackParams.setSpeed(opts.speed.coerceIn(0.5f, 2f)).setPitch(1f)
+            // setting the speed starts a paused player: keep it as it was
+            if (!wasPlaying && paused) mp.pause()
         }
     }
 
