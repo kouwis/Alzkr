@@ -45,7 +45,7 @@ data class Recitation(
 )
 
 /**
- * How to listen, kept for next time: the speed (0.5 to 2), each verse said [ayahRepeat] times, and the
+ * How to listen, kept for next time: the speed (0.5 to 2), each verse said [ayahRepeat] times (0: always), and the
  * range from [fromS]:[fromA] to [toS]:[toA] (0: no end, carry on) said [rangeRepeat] times (0: always).
  */
 data class PlayOptions(
@@ -200,7 +200,8 @@ class QuranPlayerService : Service() {
                 while (true) {
                     publish(loading = true)
                     if (!playVerse(s, a)) return@launch
-                    if (ayahTurn >= opts.ayahRepeat.coerceAtLeast(1)) break
+                    // 0: the verse again and again, until stopped or skipped
+                    if (opts.ayahRepeat != 0 && ayahTurn >= opts.ayahRepeat) break
                     ayahTurn++
                 }
                 ayahTurn = 1

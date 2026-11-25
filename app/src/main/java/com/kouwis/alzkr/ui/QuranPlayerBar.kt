@@ -103,7 +103,7 @@ fun QuranPlayerBar(q: QuranData, r: Recitation, onReciter: () -> Unit, onOptions
             }
             PlayerButton(Ic.prevTrack, t("الآية التالية")) { QuranAudio.next(context) }
             Text(
-                if (o.ayahRepeat > 1) "${num(r.ayahTurn)}/${num(o.ayahRepeat)}" else "",
+                when { o.ayahRepeat == 0 -> "${num(r.ayahTurn)}/∞"; o.ayahRepeat > 1 -> "${num(r.ayahTurn)}/${num(o.ayahRepeat)}"; else -> "" },
                 color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.width(56.dp), textAlign = TextAlign.Center,
             )
@@ -223,9 +223,12 @@ fun ListenSheet(q: QuranData, pageKeys: List<String>, startKey: String, mode0: L
     var mode by remember { mutableStateOf(mode0) }
     var verse by remember { mutableStateOf(s0 to a0) }
     var o by remember {
-        mutableStateOf(if (saved.fromS > 0) saved else saved.copy(fromS = s0, fromA = a0, toS = s0, toA = Reciters.ayahs[s0 - 1]))
+        // a new passage starts and ends at the verse on screen (the reader moves the end on from there)
+        mutableStateOf(saved.copy(fromS = s0, fromA = a0, toS = s0, toA = a0))
     }
     var pickSurah by remember { mutableStateOf<Int?>(null) } // 0 from, 1 to, 2 the one verse
+    var pickAyah by remember { mutableStateOf<Int?>(null) }  // the same, for the verse's number
+    var pickCount by remember { mutableStateOf<Int?>(null) } // 0 each verse, 1 the passage
     val reciter = Reciters.current(context)
     fun keep(n: PlayOptions) { o = n; QuranAudio.setOptions(context, n) }
 
@@ -254,12 +257,12 @@ fun ListenSheet(q: QuranData, pageKeys: List<String>, startKey: String, mode0: L
             Card {
                 Label(t("ماذا تسمع؟"))
                 Choice(t("آية واحدة"), mode == ListenMode.Verse) { mode = ListenMode.Verse }
-                if (mode == ListenMode.Verse) VerseChooser(t("الآية"), q, verse.first, verse.second, { pickSurah = 2 }) { verse = verse.first to it }
+                if (mode == ListenMode.Verse) VerseChooser(t("الآية"), q, verse.first, verse.second, { pickSurah = 2 }) { pickAyah = 2 }
                 Choice(t("الصفحة كاملة"), mode == ListenMode.Page) { mode = ListenMode.Page }
                 Choice(t("من آية إلى آية"), mode == ListenMode.Range) { mode = ListenMode.Range }
                 if (mode == ListenMode.Range) {
-                    VerseChooser(t("من"), q, o.fromS, o.fromA, { pickSurah = 0 }) { keep(o.copy(fromA = it)) }
-                    VerseChooser(t("إلى"), q, o.toS, o.toA, { pickSurah = 1 }) { keep(o.copy(toA = it)) }
+                    VerseChooser(t("من"), q, o.fromS, o.fromA, { pickSurah = 0 }) { pickAyah = 0 }
+                    VerseChooser(t("إلى"), q, o.toS, o.toA, { pickSurah = 1 }) { pickAyah = 1 }
                 }
                 Choice(t("متابعة التلاوة من هنا"), mode == ListenMode.Continue) { mode = ListenMode.Continue }
             }
@@ -277,14 +280,14 @@ fun ListenSheet(q: QuranData, pageKeys: List<String>, startKey: String, mode0: L
                     }
                 }
                 Label(t("تكرار كل آية"))
-                Stepper(if (o.ayahRepeat <= 1) t("مرة واحدة") else t("{0} مرات", num(o.ayahRepeat)), o.ayahRepeat > 1, o.ayahRepeat < 20,
-                    { keep(o.copy(ayahRepeat = o.ayahRepeat - 1)) }, { keep(o.copy(ayahRepeat = o.ayahRepeat + 1)) })
+                Stepper(countLabel(o.ayahRepeat), o.ayahRepeat != 1, o.ayahRepeat != 0,
+                    { keep(o.copy(ayahRepeat = if (o.ayahRepeat == 0) MAX_COUNT else o.ayahRepeat - 1)) },
+                    { keep(o.copy(ayahRepeat = if (o.ayahRepeat >= MAX_COUNT) 0 else o.ayahRepeat + 1)) }) { pickCount = 0 }
                 if (mode == ListenMode.Page || mode == ListenMode.Range) {
                     Label(if (mode == ListenMode.Page) t("تكرار الصفحة") else t("تكرار المقطع"))
-                    Stepper(when (o.rangeRepeat) { 0 -> t("بلا توقف"); 1 -> t("مرة واحدة"); else -> t("{0} مرات", num(o.rangeRepeat)) },
-                        o.rangeRepeat != 1, o.rangeRepeat != 0,
-                        { keep(o.copy(rangeRepeat = if (o.rangeRepeat == 0) 20 else o.rangeRepeat - 1)) },
-                        { keep(o.copy(rangeRepeat = if (o.rangeRepeat >= 20) 0 else o.rangeRepeat + 1)) })
+                    Stepper(countLabel(o.rangeRepeat), o.rangeRepeat != 1, o.rangeRepeat != 0,
+                        { keep(o.copy(rangeRepeat = if (o.rangeRepeat == 0) MAX_COUNT else o.rangeRepeat - 1)) },
+                        { keep(o.copy(rangeRepeat = if (o.rangeRepeat >= MAX_COUNT) 0 else o.rangeRepeat + 1)) }) { pickCount = 1 }
                 }
             }
         }
@@ -314,11 +317,34 @@ fun ListenSheet(q: QuranData, pageKeys: List<String>, startKey: String, mode0: L
     pickSurah?.let { which ->
         SurahList(q, onDismiss = { pickSurah = null }) { n ->
             when (which) {
-                0 -> keep(o.copy(fromS = n, fromA = 1))
-                1 -> keep(o.copy(toS = n, toA = Reciters.ayahs[n - 1]))
+                0 -> keep(o.copy(fromS = n, fromA = 1, toS = if (o.toS < n) n else o.toS, toA = if (o.toS < n) 1 else o.toA))
+                1 -> keep(o.copy(toS = n, toA = if (n == o.fromS) o.fromA else 1))
                 else -> verse = n to 1
             }
             pickSurah = null
+        }
+    }
+    pickAyah?.let { which ->
+        // the list opens at the verse the reader is near (the page's, or the passage's start), not at 1
+        val (sNow, aNow) = when (which) { 0 -> o.fromS to o.fromA; 1 -> o.toS to o.toA; else -> verse }
+        val anchor = when {
+            which == 1 && o.toS == o.fromS -> o.fromA
+            sNow == s0 -> minOf(aNow, a0)
+            else -> aNow
+        }
+        NumberPicker(t("الآية"), Reciters.ayahs[sNow - 1], aNow, anchor, onDismiss = { pickAyah = null }) { n ->
+            when (which) {
+                0 -> keep(o.copy(fromA = n).let { if (it.toS == it.fromS && it.toA < n) it.copy(toA = n) else it })
+                1 -> keep(o.copy(toA = n))
+                else -> verse = sNow to n
+            }
+            pickAyah = null
+        }
+    }
+    pickCount?.let { which ->
+        CountPicker(if (which == 0) o.ayahRepeat else o.rangeRepeat, onDismiss = { pickCount = null }) { n ->
+            keep(if (which == 0) o.copy(ayahRepeat = n) else o.copy(rangeRepeat = n))
+            pickCount = null
         }
     }
 }
@@ -350,12 +376,54 @@ private fun Label(s: String) {
 }
 
 @Composable
-private fun Stepper(value: String, canDown: Boolean, canUp: Boolean, onDown: () -> Unit, onUp: () -> Unit) {
+private fun Stepper(value: String, canDown: Boolean, canUp: Boolean, onDown: () -> Unit, onUp: () -> Unit, onPick: () -> Unit) {
     val c = LocalColors.current
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Round("−", canDown, onDown)
-        Text(value, color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+        // tap the number for the list of numbers
+        Text(value, color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(c.chip).springClick(label = value, onClick = onPick).padding(vertical = 8.dp))
         Round("+", canUp, onUp)
+    }
+}
+
+private const val MAX_COUNT = 50
+
+private fun countLabel(n: Int) = when (n) { 0 -> t("بلا توقف") + " ∞"; 1 -> t("مرة واحدة"); else -> t("{0} مرات", num(n)) }
+
+/** How many times: ∞ (without end), then 1 to [MAX_COUNT]. */
+@Composable
+private fun CountPicker(current: Int, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
+    val values = listOf(0) + (1..MAX_COUNT)
+    NumberList(t("عدد المرات"), values, current, (values.indexOf(current) - 2).coerceAtLeast(0), { countLabel(it) }, onDismiss, onPick)
+}
+
+/** A verse's number, 1 to [max]; the list opens at [anchor]. */
+@Composable
+private fun NumberPicker(title: String, max: Int, current: Int, anchor: Int, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
+    NumberList(title, (1..max).toList(), current, (anchor - 1).coerceIn(0, max - 1), { t("الآية {0}", num(it)) }, onDismiss, onPick)
+}
+
+@Composable
+private fun NumberList(title: String, values: List<Int>, current: Int, first: Int, label: (Int) -> String, onDismiss: () -> Unit, onPick: (Int) -> Unit) {
+    val c = LocalColors.current
+    val state = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = first)
+    SafeDialog(onDismiss) {
+        Text(title, color = c.text, fontSize = 19.sp, fontFamily = AppFonts.naskhBold, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 6.dp))
+        LazyColumn(Modifier.weight(1f, fill = false).heightIn(max = 460.dp), state = state,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 10.dp, end = 10.dp, bottom = 12.dp)) {
+            items(values) { n ->
+                val on = n == current
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) c.primarySoft else Color.Transparent)
+                        .springClick(label = label(n)) { onPick(n) }.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(label(n), color = if (on) c.primary else c.text, fontSize = 17.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+                    if (on) Icon(Ic.check, null, tint = c.primary, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
     }
 }
 
@@ -381,9 +449,10 @@ private fun VerseChooser(label: String, q: QuranData, s: Int, a: Int, onSurah: (
             modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(c.chip).springClick(label = label, onClick = onSurah)
                 .padding(vertical = 9.dp, horizontal = 8.dp),
         )
-        Round("−", a > 1) { onAyah(a - 1) }
-        Text(num(a), color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.width(34.dp))
-        Round("+", a < max) { onAyah(a + 1) }
+        // tap the number for the list of the surah's verses
+        Text(num(a), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 64.dp).clip(RoundedCornerShape(12.dp)).background(c.chip).springClick(label = num(a), onClick = { onAyah(a) })
+                .padding(vertical = 9.dp, horizontal = 10.dp))
     }
 }
 
