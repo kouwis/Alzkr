@@ -1,0 +1,17 @@
+name: Probe reciters
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/probe_reciters.yml"]
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for f in Abdul_Basit_Murattal_192kbps Abdul_Basit_Murattal_64kbps Abdul_Basit_Mujawwad_128kbps Husary_128kbps Husary_64kbps Husary_Muallim_128kbps Husary_128kbps_Mujawwad Minshawy_Murattal_128kbps Minshawy_Mujawwad_192kbps Minshawy_Mujawwad_64kbps Mahmoud_Ali_Al_Banna_32kbps Alafasy_128kbps Alafasy_64kbps Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net Ahmed_ibn_Ali_al-Ajamy_64kbps_QuranExplorer.Com Abdurrahmaan_As-Sudais_192kbps Abdurrahmaan_As-Sudais_64kbps Maher_AlMuaiqly_64kbps MaherAlMuaiqly128kbps Saood_ash-Shuraym_128kbps Yasser_Ad-Dussary_128kbps Nasser_Alqatami_128kbps Abu_Bakr_Ash-Shaatree_128kbps Hudhaify_128kbps Muhammad_Jibreel_128kbps Mohammad_al_Tablaway_128kbps Ghamadi_40kbps Abdullah_Basfar_192kbps Muhammad_Ayyoub_128kbps Hani_Rifai_192kbps Fares_Abbad_64kbps Ali_Jaber_64kbps Mustafa_Ismail_48kbps; do
+            a=$(curl -s -o /dev/null -w "%{http_code}" -I "https://everyayah.com/data/$f/001001.mp3")
+            b=$(curl -s -o /dev/null -w "%{http_code}" -I "https://everyayah.com/data/$f/114006.mp3")
+            c=$(curl -s -o /dev/null -w "%{http_code}" -I "https://everyayah.com/data/$f/002282.mp3")
+            echo "PROBE $f $a $b $c"
+          done
