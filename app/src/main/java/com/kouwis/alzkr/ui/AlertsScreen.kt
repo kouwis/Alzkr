@@ -104,6 +104,20 @@ private val reminderTiles = mapOf(
     Reminder.WhiteDays to (AdhkarIc.moon to Color(0xFF8E9AAF)),
 )
 
+/** «الظهور فوق التطبيقات», re-checked when the user comes back from the system settings. */
+@Composable
+private fun rememberOverlayOk(): Boolean {
+    val context = LocalContext.current
+    var ok by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) ok = Settings.canDrawOverlays(context) }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
+    return ok
+}
+
 /** The phone's permissions alerts need, re-checked when the user comes back from the system settings. */
 @Composable
 private fun rememberPermits(): Triple<Boolean, Boolean, Boolean> {
@@ -142,6 +156,7 @@ fun AlertsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
     val cfg = prefs.alerts
     val catalog = remember { Sounds.catalog(context) }
     val (notifyOk, exactOk, fullOk) = rememberPermits()
+    val overlayOk = rememberOverlayOk()
     val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(Unit) {
         if (!cfg.setUp) store.setAlerts(cfg.copy(setUp = true))
@@ -174,10 +189,17 @@ fun AlertsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme {
                     if (Build.VERSION.SDK_INT >= 31) context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:" + context.packageName)))
                 }
             }
-            if (!fullOk && !cfg.fullScreenAsked && cfg.alarms.any { it.on }) item {
-                Warning(t("المنبّه على الشاشة"), t("اسمح بعرض المنبّه بملء الشاشة ليظهر فوق شاشة القفل")) {
+            // the alarm's page (stop / snooze) needs both: full screen over the lock screen, and over other apps
+            // when the phone is in use. Shown for as long as an alarm is set and one is missing.
+            if (!fullOk && cfg.alarms.any { it.on }) item {
+                Warning(t("شاشة المنبّه فوق القفل"), t("اسمح بعرض المنبّه بملء الشاشة لتظهر شاشة المنبّه (إيقاف وغفوة) والهاتف مقفول")) {
                     save(cfg.copy(fullScreenAsked = true))
                     if (Build.VERSION.SDK_INT >= 34) context.startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + context.packageName)))
+                }
+            }
+            if (!overlayOk && cfg.alarms.any { it.on }) item {
+                Warning(t("شاشة المنبّه أثناء الاستخدام"), t("اسمح «بالظهور فوق التطبيقات» لتظهر شاشة المنبّه وأنت تستخدم الهاتف")) {
+                    context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName)))
                 }
             }
 
