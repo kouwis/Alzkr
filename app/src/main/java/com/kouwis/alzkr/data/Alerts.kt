@@ -280,7 +280,10 @@ data class SoundEntry(
     val shortSize: Long = 0,
     val bundled: Boolean = false,
     val seconds: Int = 0,
-)
+    /** "adhan", or "tawshih": a passage of a tawshih (named [title]), for the alarms */
+    val kind: String = "adhan",
+    val title: String = "",
+) { val tawshih get() = kind == "tawshih" }
 
 object Sounds {
     private const val RELEASE = "https://github.com/kouwis/Alzkr/releases/download/audio-v1/"
@@ -294,7 +297,7 @@ object Sounds {
     /** The first bundled recording of the right kind (a Fajr adhan for Fajr). */
     fun defaultFor(p: Prayer, catalog: List<SoundEntry>): String {
         if (p == Prayer.Sunrise) return "sys"
-        val e = catalog.firstOrNull { it.bundled && it.fajr == (p == Prayer.Fajr) } ?: catalog.firstOrNull { it.bundled } ?: return "sys"
+        val e = catalog.firstOrNull { it.bundled && !it.tawshih && it.fajr == (p == Prayer.Fajr) } ?: catalog.firstOrNull { it.bundled && !it.tawshih } ?: return "sys"
         return "full:${e.id}"
     }
 
@@ -352,7 +355,7 @@ object Sounds {
         sound == "vib" -> t("اهتزاز فقط")
         else -> entry(catalog, sound)?.let { e ->
             val n = t(e.name)
-            if (sound.startsWith("short:")) t("{0} · تكبيرات", n) else if (e.fajr) t("{0} · أذان الفجر", n) else n
+            if (e.tawshih) t("{0} · {1}", t(e.title), n) else if (sound.startsWith("short:")) t("{0} · تكبيرات", n) else if (e.fajr) t("{0} · أذان الفجر", n) else n
         } ?: t("صوت الإشعار")
     }
 }

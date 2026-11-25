@@ -545,7 +545,11 @@ fun SoundPicker(kind: SoundKind, fajr: Boolean, catalog: List<SoundEntry>, selec
     val groups: List<Pair<String, List<String>>> = remember(kind, fajr, catalog, byPlace) {
         // alphabetical by the muezzin's name (in the interface language)
         val collator = java.text.Collator.getInstance(java.util.Locale(com.kouwis.alzkr.data.I18n.lang.code))
-        val sorted = catalog.sortedWith { a, b -> collator.compare(t(a.name), t(b.name)) }
+        val sorted = catalog.filter { !it.tawshih }.sortedWith { a, b -> collator.compare(t(a.name), t(b.name)) }
+        // the tawashih, each sheikh's together
+        val tawashih = catalog.filter { it.tawshih }.groupBy { it.name }.toList()
+            .sortedWith { a, b -> collator.compare(t(a.first), t(b.first)) }
+            .map { (n, l) -> t("تواشيح · {0}", t(n)) to l.map { "full:${it.id}" } }
         val fajrFull = sorted.filter { it.fajr }.map { "full:${it.id}" }
         val full = sorted.filter { !it.fajr }.map { "full:${it.id}" }
         val shorts = (sorted.filter { it.short != null && !it.fajr } +
@@ -555,11 +559,11 @@ fun SoundPicker(kind: SoundKind, fajr: Boolean, catalog: List<SoundEntry>, selec
         when (kind) {
             SoundKind.Adhan -> if (fajr) listOf(t("أذان الفجر") to fajrFull, t("التكبيرات فقط") to shorts, t("أذان كامل") to full, t("أصوات الهاتف") to phone)
             else listOf(t("أذان كامل") to full, t("التكبيرات فقط") to shorts, t("أصوات الهاتف") to phone)
-            SoundKind.Alert -> listOf(t("أصوات الهاتف") to phone, t("التكبيرات فقط") to shorts)
-            SoundKind.Alarm -> listOf(t("أصوات الهاتف") to phone, t("التكبيرات فقط") to shorts, t("أذان كامل") to full + fajrFull)
+            SoundKind.Alert -> listOf(t("أصوات الهاتف") to phone) + tawashih + listOf(t("التكبيرات فقط") to shorts)
+            SoundKind.Alarm -> listOf(t("أصوات الهاتف") to phone) + tawashih + listOf(t("التكبيرات فقط") to shorts, t("أذان كامل") to full + fajrFull)
         }.filter { it.second.isNotEmpty() }.flatMap { (title, list) ->
             // by place: each group split by where the muezzin is from
-            if (!byPlace || list.none { it.startsWith("full:") || it.startsWith("short:") }) listOf(title to list)
+            if (!byPlace || list.none { it.startsWith("full:") || it.startsWith("short:") } || list.any { Sounds.entry(catalog, it)?.tawshih == true }) listOf(title to list)
             else list.groupBy { Sounds.entry(catalog, it)?.place.orEmpty() }.toList()
                 .sortedWith { a, b -> collator.compare(t(a.first), t(b.first)) }
                 .map { (place, l) -> (if (place.isBlank()) title else "$title · ${t(place)}") to l }
@@ -623,11 +627,12 @@ fun SoundPicker(kind: SoundKind, fajr: Boolean, catalog: List<SoundEntry>, selec
                             } else Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) { Icon(Ic.bell, null, tint = c.muted, modifier = Modifier.size(20.dp)) }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(
-                                    e?.let { t(it.name) } ?: Sounds.label(catalog, s), color = c.text, fontSize = 16.sp, lineHeight = 22.sp,
+                                    e?.let { if (it.tawshih) t(it.title) else t(it.name) } ?: Sounds.label(catalog, s), color = c.text, fontSize = 16.sp, lineHeight = 22.sp,
                                     fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
                                 )
                                 val sub = buildList {
-                                    if (e != null && e.place.isNotBlank()) add(t(e.place))
+                                    if (e != null && e.tawshih) add(t("{0} دقيقة", com.kouwis.alzkr.data.ArabicText.digitsOf("%.1f".format(java.util.Locale.US, e.seconds / 60.0))))
+                                    else if (e != null && e.place.isNotBlank()) add(t(e.place))
                                     if (e != null && !ready) add(t("{0} ميجابايت", com.kouwis.alzkr.data.ArabicText.digitsOf("%.1f".format(java.util.Locale.US, size / 1_048_576.0))))
                                 }.joinToString(" · ")
                                 if (sub.isNotBlank()) Text(sub, color = c.muted, fontSize = 12.sp, lineHeight = 16.sp)
