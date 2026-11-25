@@ -1,0 +1,12 @@
+name: Probe tawashih
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/probe_tawashih.py"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/probe_tawashih.py
