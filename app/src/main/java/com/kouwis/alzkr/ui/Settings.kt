@@ -56,9 +56,7 @@ import kotlinx.coroutines.launch
 private data class Setting(val title: String, val icon: ImageVector, val tint: Color, val sub: String = "", val onClick: () -> Unit)
 
 /** Downloads the newest version straight away (every release carries the same file as Alzkr.apk). */
-private val RELEASES = if (com.kouwis.alzkr.BuildConfig.PLAY) "https://play.google.com/store/apps/details?id=com.kouwis.alzkr"
-    else "https://github.com/kouwis/Alzkr/releases/latest/download/Alzkr.apk"
-private const val PRIVACY = "https://github.com/kouwis/Alzkr/blob/main/PRIVACY.md"
+private const val RELEASES = "https://github.com/kouwis/Alzkr/releases/latest/download/Alzkr.apk"
 /** «ادعم التطبيق»: a gift to the app's maker through InstaPay (Egypt). */
 private const val INSTAPAY = "https://ipn.eg/S/mkouwis/instapay/1U7MKE"
 private const val INSTAPAY_ADDRESS = "mkouwis@instapay"
@@ -143,9 +141,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, t("انشر التطبيق")))
             },
             Setting(t("الاقتراحات والشكاوى"), Ic.mail, Color(0xFF1A9BD7)) { open("https://github.com/kouwis/Alzkr/issues") },
-        ) + listOfNotNull(
-            if (com.kouwis.alzkr.BuildConfig.PLAY) null else Setting(t("ادعم التطبيق"), Ic.gift, Color(0xFFD9A62E), t("دعم اختياري لصاحب التطبيق")) { support = true },
-            Setting(t("سياسة الخصوصية"), Ic.lock, Color(0xFF6E7F8D), t("لا نجمع أي بيانات عنك")) { open(PRIVACY) },
+            Setting(t("ادعم التطبيق"), Ic.gift, Color(0xFFD9A62E), t("دعم اختياري لصاحب التطبيق")) { support = true },
         ) + listOfNotNull(crash?.let { report ->
             Setting(t("إرسال تقرير العطل"), Ic.info, Color(0xFFE5484D), t("توقّف التطبيق مرة، فأرسل التقرير لنصلحه")) {
                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, report) }, t("إرسال تقرير العطل")))

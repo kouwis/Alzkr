@@ -9,16 +9,14 @@ val buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
 
 android {
     namespace = "com.kouwis.alzkr"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.kouwis.alzkr"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = buildNumber
         versionName = "0.1.$buildNumber"
-        // the Google Play build (-Pplay): shares the store's link, and has no support-by-transfer button (Play's payments rules)
-        buildConfigField("boolean", "PLAY", if (project.hasProperty("play")) "true" else "false")
     }
 
     signingConfigs {
@@ -30,22 +28,12 @@ android {
             keyAlias = "alzkr"
             keyPassword = "alzkrtest"
         }
-
-        // Google Play: the private upload key, given to CI as secrets (never committed). Used only for
-        // the bundle built with -Pplay (the APK on GitHub keeps the test key, so installs keep updating).
-        val ks = System.getenv("UPLOAD_KEYSTORE")
-        if (ks != null && file(ks).exists()) create("upload") {
-            storeFile = file(ks)
-            storePassword = System.getenv("UPLOAD_STORE_PASSWORD")
-            keyAlias = System.getenv("UPLOAD_KEY_ALIAS")
-            keyPassword = System.getenv("UPLOAD_KEY_PASSWORD")
-        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.findByName(if (project.hasProperty("play")) "upload" else "test") ?: signingConfigs.getByName("test")
+            signingConfig = signingConfigs.getByName("test")
         }
         debug {
             signingConfig = signingConfigs.getByName("test")
@@ -61,7 +49,6 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 }
 
