@@ -150,7 +150,10 @@ object PrayerTimes {
                 if (ishaGap > part(m.isha)) t[Prayer.Isha] = raw.getValue(Prayer.Maghrib) + part(m.isha)
             }
         }
-        return t.mapValues { (p, v) -> ((v + cfg.shift + (cfg.adjust[p] ?: 0)) % 1440 + 1440) % 1440 }
+        // the unified adhan of Greater Cairo's mosques is called a minute after the reckoned time (as heard
+        // in the mosques: Isha at 6:18 where the table says 6:17); sunrise is not an adhan and stays
+        val unified = if (cfg.cairoUnified && PrayerConfig.inGreaterCairo(atLat, atLng)) 1 else 0
+        return t.mapValues { (p, v) -> ((v + cfg.shift + (cfg.adjust[p] ?: 0) + if (p == Prayer.Sunrise) 0 else unified) % 1440 + 1440) % 1440 }
     }
 
     private fun compute(date: LocalDate, lat: Double, lng: Double, zone: ZoneId, fajrAngle: Double, ishaAngle: Double, asrFactor: Double): Map<Prayer, Int> {
