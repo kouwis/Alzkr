@@ -57,7 +57,6 @@ val HomeCardHeight = 384.dp
 fun SectionsHost(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, section: Int, onSection: (Int) -> Unit) {
     val pager = rememberPagerState(initialPage = section) { 2 }
     val scope = rememberCoroutineScope()
-    val soon = soon()
     val go: (Int) -> Unit = { i ->
         scope.launch { pager.animateScrollToPage(i, animationSpec = tween(520, easing = FastOutSlowInEasing)) }
     }
@@ -78,14 +77,14 @@ fun SectionsHost(q: QuranData, prefs: AppPrefs, store: Prefs, nav: Nav, section:
             modifier = Modifier.fillMaxSize(),
         ) { page ->
             if (page == 0) HomeScreen(q, prefs, store, nav) { dir -> if (dir > 0) go(1) }
-            else AdhkarHomeScreen(q, prefs, store, nav) { dir -> if (dir < 0) go(0) else soon(t("إسلاميات")) }
+            else AdhkarHomeScreen(q, prefs, store, nav) { dir -> if (dir < 0) go(0) }
         }
         SectionBar(
             position = pager.currentPage + pager.currentPageOffsetFraction,
             modifier = Modifier.align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
                 .padding(bottom = 12.dp),
-            onPick = { i -> if (i == 2) soon(t("إسلاميات")) else go(i) },
+            onPick = { i -> go(i) },
         )
     }
 }
@@ -115,7 +114,7 @@ private fun SectionBar(position: Float, modifier: Modifier, onPick: (Int) -> Uni
                 .background(pillColor),
         )
         Row {
-            listOf(t("القرآن"), t("الأذكار"), t("إسلاميات")).forEachIndexed { i, label ->
+            listOf(t("القرآن"), t("الأذكار")).forEachIndexed { i, label ->
                 val near = 1f - abs(position - i).coerceIn(0f, 1f) // 1 when the pill is on it
                 Box(
                     Modifier

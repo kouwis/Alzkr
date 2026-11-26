@@ -54,6 +54,26 @@ jobs:
       - name: Build APK
         run: gradle :app:assembleRelease --stacktrace
 
+      # Google Play: an app bundle signed with the upload key, when its secrets are set in the repository
+      - name: Build Play bundle
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -z "$UPLOAD_KEYSTORE_B64" ]; then echo "no upload key secrets yet: no Play bundle"; exit 0; fi
+          echo "$UPLOAD_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          UPLOAD_KEYSTORE="$RUNNER_TEMP/upload.jks" gradle :app:bundleRelease -Pplay --stacktrace
+          mkdir -p play && cp app/build/outputs/bundle/release/app-release.aab "play/Alzkr-0.1.${{ github.run_number }}.aab"
+          rm -f "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alzkr-play-bundle
+          path: play/*.aab
+          if-no-files-found: ignore
+
       - name: Rename APK
         run: |
           mkdir -p out
