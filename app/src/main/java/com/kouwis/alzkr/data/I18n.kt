@@ -33,6 +33,7 @@ object I18n {
     private var table: Map<String, String> = emptyMap()
 
     fun set(context: Context, l: Lang) {
+        ArabicText.load(context)
         if (l == lang && (l == Lang.AR || table.isNotEmpty())) return
         table = if (l == Lang.AR) emptyMap() else runCatching {
             val text = context.applicationContext.assets.open("i18n/${l.code}.json").bufferedReader(Charsets.UTF_8).use { it.readText() }

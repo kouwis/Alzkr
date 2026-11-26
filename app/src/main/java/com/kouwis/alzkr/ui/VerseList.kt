@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.TextUnit
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.ArabicText.num
+import com.kouwis.alzkr.data.ArabicText.quranNum
 import com.kouwis.alzkr.data.PageFonts
 import com.kouwis.alzkr.data.QuranData
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -124,11 +125,11 @@ fun VerseList(
                     if (prefs.translationOn) Inline(t("الترجمة"), c.goldText, q.translationOf(s, a))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "${q.surahName(s)} · ${num(a)}", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                            "${q.surahName(s)} · ${quranNum(a)}", color = c.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(c.primarySoft).padding(horizontal = 10.dp, vertical = 3.dp),
                         )
                         Box(Modifier.weight(1f))
-                        Text(t("ص {0}", num(q.pageOf(s, a))), color = c.muted, fontSize = 12.sp)
+                        Text(t("ص {0}", quranNum(q.pageOf(s, a))), color = c.muted, fontSize = 12.sp)
                     }
                 }
                 HorizontalDivider(color = c.frame2)

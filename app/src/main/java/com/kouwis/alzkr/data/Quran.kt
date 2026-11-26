@@ -1,5 +1,7 @@
 package com.kouwis.alzkr.data
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -200,8 +202,23 @@ object ArabicText {
         .trim()
 
     private val digits = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
-    /** A number in Arabic-Indic digits for Arabic, Western digits for the other languages. */
+
+    /**
+     * The digits outside the mushaf: "auto" (Arabic-Indic for Arabic, Western for the other
+     * languages), "ar" (٠١٢ always) or "en" (012 always). Kept in the settings ([load], [choose]);
+     * read during composition, so the screens redraw when it changes.
+     */
+    var digitMode by androidx.compose.runtime.mutableStateOf("auto")
+        private set
+    private fun sp(c: android.content.Context) = c.applicationContext.getSharedPreferences("display", android.content.Context.MODE_PRIVATE)
+    fun load(c: android.content.Context) { digitMode = sp(c).getString("digits", "auto") ?: "auto" }
+    fun choose(c: android.content.Context, mode: String) { sp(c).edit().putString("digits", mode).apply(); digitMode = mode }
+    private val western get() = when (digitMode) { "en" -> true; "ar" -> false; else -> !I18n.lang.rtl }
+
+    /** A number in the chosen digits (see [digitMode]). */
     fun num(n: Int): String = digitsOf(n.toString())
+    /** Inside the mushaf: verse, page, juz and hizb numbers always in Arabic-Indic digits, whatever the language or setting. */
+    fun quranNum(n: Int): String = n.toString().map { digits[it - '0'] }.joinToString("")
     /**
      * The ornate brackets ﴿ ﴾ kept facing the verse they hold, whatever the direction around them:
      * each is set apart as left-to-right, so the phone never mirrors its shape. Text keeps the usual
@@ -219,7 +236,7 @@ object ArabicText {
         }.joinToString("")
     }
 
-    fun digitsOf(s: String): String = if (!I18n.lang.rtl) s.map { if (it in '٠'..'٩') '0' + (it - '٠') else it }.joinToString("")
+    fun digitsOf(s: String): String = if (western) s.map { if (it in '٠'..'٩') '0' + (it - '٠') else it }.joinToString("")
         else s.map { if (it in '0'..'9') digits[it - '0'] else it }.joinToString("")
 }
 

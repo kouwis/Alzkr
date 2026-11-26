@@ -94,6 +94,7 @@ import com.kouwis.alzkr.data.AppFonts
 import kotlinx.coroutines.delay
 import com.kouwis.alzkr.data.AppPrefs
 import com.kouwis.alzkr.data.ArabicText.num
+import com.kouwis.alzkr.data.ArabicText.quranNum
 import com.kouwis.alzkr.data.Prefs
 import com.kouwis.alzkr.data.QuranData
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -188,8 +189,8 @@ fun MushafScreen(
             val juz = q.meta.juz.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
             val hizb = q.meta.hizb.firstOrNull { q.pageOf(it.s, it.a, tj) == currentPage }
             val note = when {
-                juz != null -> t("بداية الجزء {0}", num(juz.n))
-                hizb != null -> t("بداية الحزب {0}", num(hizb.n))
+                juz != null -> t("بداية الجزء {0}", quranNum(juz.n))
+                hizb != null -> t("بداية الحزب {0}", quranNum(hizb.n))
                 else -> null
             }
             if (note != null) { markNote = note; noteTick++ }
@@ -293,7 +294,7 @@ fun MushafScreen(
                 onBookmarkPage = {
                     val wasOn = pageMarked
                     scope.launch { store.togglePageBookmark(currentPage, ayahsOnPage) }
-                    Toast.makeText(ctx, if (wasOn) t("أُزيلت علامة الصفحة") else t("وُضعت علامة على صفحة {0}", num(currentPage)), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, if (wasOn) t("أُزيلت علامة الصفحة") else t("وُضعت علامة على صفحة {0}", quranNum(currentPage)), Toast.LENGTH_SHORT).show()
                     showBars()
                 },
                 onBack = { nav.back() },
@@ -363,7 +364,7 @@ fun MushafScreen(
         AlertDialog(
             onDismissRequest = { dialog = null },
             confirmButton = { TextButton(onClick = { dialog = null }) { Text(t("تم"), color = c.primary) } },
-            title = { Text("$title · ${q.surahName(s)} ${num(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold) },
+            title = { Text("$title · ${q.surahName(s)} ${quranNum(a)}", fontSize = 17.sp, fontWeight = FontWeight.Bold) },
             text = {
                 Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                     QuranVerse(q, s, a, fontSize = 22.sp, color = c.primary)
@@ -382,7 +383,7 @@ fun MushafScreen(
 
 private fun verseText(q: QuranData, key: String): String? {
     val (s, a) = parseKey(key) ?: return null
-    return t("{0} ﴿{1}﴾\n[سورة {2}]", q.simple(s, a), num(a), q.surahName(s))
+    return t("{0} ﴿{1}﴾\n[سورة {2}]", q.simple(s, a), quranNum(a), q.surahName(s))
 }
 
 @Composable
@@ -485,7 +486,7 @@ private fun TopBar(
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(q.surahName(q.surahOfPage(page, tj)), color = c.text, fontSize = 18.sp, fontFamily = AppFonts.naskhBold, maxLines = 1)
                 Text(
-                    t("صفحة {0} · الجزء {1} · الحزب {2}", num(page), num(q.juzOfPage(page, tj)), num(q.hizbOfPage(page, tj))),
+                    t("صفحة {0} · الجزء {1} · الحزب {2}", quranNum(page), quranNum(q.juzOfPage(page, tj)), quranNum(q.hizbOfPage(page, tj))),
                     color = c.muted, fontSize = 11.sp, maxLines = 1,
                 )
             }
@@ -630,7 +631,7 @@ private fun StudyPanel(q: QuranData, page: Int, tj: Boolean, tafsir: Boolean, tr
                         tafsir -> t("التفسير")
                         else -> t("الترجمة")
                     }
-                    Text(t("{0} · صفحة {1}", title, num(page)), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(t("{0} · صفحة {1}", title, quranNum(page)), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     if (tafsir) Chip(t("الميسر"), c.primarySoft, c.primary)
                     if (translation) Chip("English", c.goldSoft, c.goldText)
                     val rot by animateFloatAsState(if (expanded) 180f else 0f, label = "chev")
@@ -647,7 +648,7 @@ private fun StudyPanel(q: QuranData, page: Int, tj: Boolean, tafsir: Boolean, tr
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Chip("${q.surahName(s)} · ${num(a)}", c.chip, c.text)
+                        Chip("${q.surahName(s)} · ${quranNum(a)}", c.chip, c.text)
                         QuranVerse(q, s, a, fontSize = 22.sp, color = c.primary)
                         if (tafsir) Labeled(t("التفسير"), c.primary, q.tafsirOf(s, a), rtl = true)
                         if (translation) Labeled(t("الترجمة"), c.goldText, q.translationOf(s, a), rtl = false)

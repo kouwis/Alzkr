@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kouwis.alzkr.data.AppFonts
 import com.kouwis.alzkr.data.ArabicText.num
+import com.kouwis.alzkr.data.ArabicText.quranNum
 import com.kouwis.alzkr.data.PageFonts
 import com.kouwis.alzkr.data.PageLine
 import com.kouwis.alzkr.data.QuranData
@@ -146,8 +147,8 @@ private fun PageCanvas(
         val ornPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.bsml; strokeJoin = Paint.Join.ROUND } }
         val labelPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = AppFonts.naskhTf } }
         val surahLabel = q.surahName(q.surahOfPage(page, useTajweed))
-        val juzLabel = t("الجزء {0}", num(q.juzOfPage(page, useTajweed)))
-        val pageLabel = num(page)
+        val juzLabel = t("الجزء {0}", quranNum(q.juzOfPage(page, useTajweed)))
+        val pageLabel = quranNum(page)
         Canvas(
             Modifier
                 .fillMaxSize()

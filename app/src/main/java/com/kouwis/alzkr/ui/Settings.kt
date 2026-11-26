@@ -111,6 +111,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
     val c = LocalColors.current
     val scope = rememberCoroutineScope()
     var pickLang by remember { mutableStateOf(false) }
+    var pickDigits by remember { mutableStateOf(false) }
     var support by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var crash by remember { mutableStateOf(com.kouwis.alzkr.data.CrashLog.read(context)) }
@@ -125,6 +126,7 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
             Setting(t("مواقيت الصلاة"), AdhkarIc.clock, Color(0xFF2D8CFF),
                 (if (prefs.autoLocate) t("تلقائي") else t("يدوي")) + " · " + prefs.place.ifBlank { t("القاهرة") }) { nav.go(Screen.PrayerSettings) },
             Setting(t("اللغة"), Ic.globe, Color(0xFF1A9BD7), Lang.of(prefs.lang).native) { pickLang = true },
+            Setting(t("شكل الأرقام"), Ic.lines, Color(0xFF5E5CE6), digitLabel(com.kouwis.alzkr.data.ArabicText.digitMode)) { pickDigits = true },
             Setting(t("الأذان والتنبيهات"), Ic.speaker, Color(0xFF1FA67A), t("صوت الأذان، المنبّهات، التذكيرات")) { nav.go(Screen.Alerts) },
             Setting(t("الصمت أثناء الصلاة"), Ic.muted, Color(0xFF6E7F8D), if (prefs.alerts.silent.on) t("مفعّل") else t("غير مفعّل")) { nav.go(Screen.Silent) },
             Setting(t("التاريخ"), Ic.calendar, Color(0xFFFF453A), com.kouwis.alzkr.data.Hijri.hijriText(com.kouwis.alzkr.data.Hijri.of(java.time.LocalDate.now()))) { nav.go(Screen.DateSettings) },
@@ -192,7 +194,43 @@ fun SettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) {
     }
 
     if (support) SupportDialog(onOpen = { open(INSTAPAY) }) { support = false }
+    if (pickDigits) DigitsDialog(com.kouwis.alzkr.data.ArabicText.digitMode, { m ->
+        pickDigits = false
+        com.kouwis.alzkr.data.ArabicText.choose(context, m)
+        com.kouwis.alzkr.widget.WidgetUpdater.refresh(context)
+    }) { pickDigits = false }
     if (pickLang) LanguageDialog(Lang.of(prefs.lang), { l -> pickLang = false; scope.launch { store.setLang(l.code) } }) { pickLang = false }
+}
+
+private fun digitLabel(m: String) = when (m) { "ar" -> t("عربية ١٢٣"); "en" -> t("إنجليزية 123"); else -> t("حسب اللغة") }
+
+/** The digits outside the mushaf (the mushaf keeps its Arabic digits always). */
+@Composable
+private fun DigitsDialog(current: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+    val c = LocalColors.current
+    AlertDialog(
+        onDismissRequest = onDismiss, containerColor = c.card,
+        title = { Text(t("شكل الأرقام"), color = c.text, fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                listOf("auto", "ar", "en").forEach { m ->
+                    val on = m == current
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                            .background(if (on) c.primary.copy(alpha = 0.10f) else Color.Transparent)
+                            .clickable { if (on) onDismiss() else onPick(m) }.padding(horizontal = 12.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(digitLabel(m), color = if (on) c.primary else c.text, fontSize = 17.sp,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+                        if (on) Icon(Ic.check, null, tint = c.primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Text(t("أرقام المصحف تبقى عربية دائمًا."), color = c.muted, fontSize = 13.sp, modifier = Modifier.padding(start = 12.dp, top = 10.dp))
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(t("إغلاق"), color = c.primary) } },
+    )
 }
 
 /** The interface languages, each written in itself; the chosen one is ticked. */
