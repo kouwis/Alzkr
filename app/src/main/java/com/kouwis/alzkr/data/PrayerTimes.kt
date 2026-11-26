@@ -68,17 +68,33 @@ data class PrayerConfig(
     val shift: Int = 0,
     val adjust: Map<Prayer, Int> = emptyMap(),
     val iqama: Map<Prayer, Int> = DefaultIqama,
+    /** in Greater Cairo, Cairo's own times (the mosques' unified adhan), not the exact spot's */
+    val cairoUnified: Boolean = true,
 ) {
     fun methodFor(lat: Double, lng: Double) = method ?: CalcMethod.forPlace(lat, lng)
+
+    /** The place the times are worked out for: Cairo's, for anywhere in Greater Cairo when [cairoUnified] is on. */
+    fun placeFor(lat: Double, lng: Double): Pair<Double, Double> =
+        if (cairoUnified && inGreaterCairo(lat, lng)) CAIRO else lat to lng
 
     fun encode(): String = listOf(
         method?.name ?: "auto", if (asrHanafi) "hanafi" else "shafii", highLat.name, shift.toString(),
         Prayer.entries.joinToString(",") { (adjust[it] ?: 0).toString() },
         Prayer.entries.joinToString(",") { (iqama[it] ?: -1).toString() },
+        if (cairoUnified) "unified" else "own",
     ).joinToString("|")
 
     companion object {
         /** The usual time from the adhan to the iqama in Egypt's mosques, in minutes. */
+        /**
+         * Cairo as Dar al-Ifta's table reckons it: from these coordinates the times match its November 2026
+         * table to the minute (175 of 180; the rest a minute's rounding). Greater Cairo's mosques (Cairo,
+         * Giza, Qalyubia) call the unified adhan at these times, broadcast from one place.
+         */
+        val CAIRO = 30.06 to 31.27
+        /** Within about 45 km of Cairo: Cairo, Giza (6th of October, Sheikh Zayed), Qalyubia, New Cairo. */
+        fun inGreaterCairo(lat: Double, lng: Double) = Locator.km(lat, lng, CAIRO.first, CAIRO.second) <= 45.0
+
         val DefaultIqama = mapOf(Prayer.Fajr to 25, Prayer.Dhuhr to 20, Prayer.Asr to 20, Prayer.Maghrib to 10, Prayer.Isha to 20)
 
         fun decode(raw: String?): PrayerConfig {
@@ -91,6 +107,7 @@ data class PrayerConfig(
                 shift = f.getOrNull(3)?.toIntOrNull() ?: 0,
                 adjust = ints(4)?.let { v -> Prayer.entries.mapIndexedNotNull { i, p -> v.getOrNull(i)?.takeIf { it != 0 }?.let { p to it } }.toMap() } ?: emptyMap(),
                 iqama = ints(5)?.let { v -> Prayer.entries.mapIndexedNotNull { i, p -> v.getOrNull(i)?.takeIf { it >= 0 }?.let { p to it } }.toMap() } ?: DefaultIqama,
+                cairoUnified = f.getOrNull(6) != "own",
             )
         }
     }
@@ -108,7 +125,8 @@ object PrayerTimes {
     private const val SUN_ANGLE = 0.833
 
     /** Minutes after local midnight for each [Prayer], for [date] at [lat]/[lng] in [zone], with the user's settings. */
-    fun forDay(date: LocalDate, lat: Double, lng: Double, cfg: PrayerConfig = PrayerConfig(), zone: ZoneId = ZoneId.systemDefault()): Map<Prayer, Int> {
+    fun forDay(date: LocalDate, atLat: Double, atLng: Double, cfg: PrayerConfig = PrayerConfig(), zone: ZoneId = ZoneId.systemDefault()): Map<Prayer, Int> {
+        val (lat, lng) = cfg.placeFor(atLat, atLng)
         val m = cfg.methodFor(lat, lng)
         val raw = compute(date, lat, lng, zone, m.fajr, m.isha, if (cfg.asrHanafi) 2.0 else 1.0)
         val t = raw.toMutableMap()

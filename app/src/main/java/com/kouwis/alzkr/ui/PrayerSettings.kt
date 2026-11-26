@@ -216,6 +216,10 @@ fun PrayerSettingsScreen(prefs: AppPrefs, store: Prefs, nav: Nav) = AdhkarTheme 
                     ValueRow(t("خطوط العرض المرتفعة"), cfg.highLat.ar) { dialog = Dialog.HighLat }
                     Line()
                     ValueRow(t("التوقيت الصيفي"), when { cfg.shift > 0 -> t("+ ساعة"); cfg.shift < 0 -> t("− ساعة"); else -> t("حسب الهاتف") }) { dialog = Dialog.Shift }
+                    Line()
+                    ToggleRow(t("الأذان الموحد (مواقيت القاهرة)"), t("في القاهرة الكبرى: مع أذان المساجد في القاهرة والجيزة والقليوبية"), cfg.cairoUnified) { on ->
+                        save(cfg.copy(cairoUnified = on))
+                    }
                 }
             }
 
