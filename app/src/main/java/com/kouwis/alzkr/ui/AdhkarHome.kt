@@ -565,10 +565,6 @@ private fun DayCard(
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
-                Spacer(Modifier.weight(1f))
-                // the last third of the night: only to know when it starts
-                val fajrM = times.getValue(Prayer.Fajr); val maghribM = times.getValue(Prayer.Maghrib)
-                Text(t("الثلث الأخير {0}", clock(Math.floorMod(fajrM - (fajrM + 1440 - maghribM) / 3, 1440))), color = soft, fontSize = 12.sp, maxLines = 1)
             }
             Text(longDay(weekday), color = Color.White, fontSize = 50.sp, fontFamily = AppFonts.naskhBold, lineHeight = 74.sp)
             // the Gregorian date under the Hijri one (the sun or moon has the other side to itself)
